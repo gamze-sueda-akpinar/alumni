@@ -9,3 +9,7 @@ Route::get('/', function () {
 Route::get('/hello', function () {
     return 'Hello, World!';
 });
+
+Route::get('/hello/{name}', function (string $name) {
+    return 'Hello, ' . ucfirst($name) . '!';
+});
