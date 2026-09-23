@@ -22,7 +22,8 @@
                     Geçici Ana Sayfa
                 </span>
             </div>
-            <div>
+            <div class="flex items-center space-x-4">
+                <a href="/about" class="text-sm font-medium text-slate-600 hover:text-indigo-600 transition">Hakkımızda</a>
                 <a href="/admin" class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition shadow-sm">
                     Yönetim Paneli (Admin) &rarr;
                 </a>
