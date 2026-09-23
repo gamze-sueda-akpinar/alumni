@@ -13,3 +13,7 @@ Route::get('/hello', function () {
 Route::get('/hello/{name}', function (string $name) {
     return 'Hello, ' . ucfirst($name) . '!';
 });
+
+Route::get('/sum/{number1}/{number2}', function ($number1, $number2) {
+    return (string) ($number1 + $number2);
+});
