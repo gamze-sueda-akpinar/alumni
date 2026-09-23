@@ -18,6 +18,7 @@ services:
     container_name: alumni_web
     restart: unless-stopped
     ports:
+      - "80:80"
       - "8000:80"
     volumes:
       - .:/var/www/html
