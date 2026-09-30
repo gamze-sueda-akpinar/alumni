@@ -241,3 +241,36 @@ Route::match(['put', 'patch'], '/api/users/{id}', function (\Illuminate\Http\Req
         'data' => $updatedUser,
     ], 200);
 });
+
+// DELETE /api/users/{id} - Kullanıcı silme
+Route::delete('/api/users/{id}', function ($id) {
+    $users = Cache::get('api_users_list', []);
+
+    $userIndex = null;
+    $deletedUser = null;
+    foreach ($users as $index => $user) {
+        if ((string) $user['id'] === (string) $id) {
+            $userIndex = $index;
+            $deletedUser = $user;
+            break;
+        }
+    }
+
+    if ($userIndex === null) {
+        return response()->json([
+            'status' => 'error',
+            'message' => "User with ID {$id} not found",
+        ], 404);
+    }
+
+    // Kullanıcıyı diziden çıkar ve indeksleri yeniden düzenle
+    array_splice($users, $userIndex, 1);
+    Cache::forever('api_users_list', $users);
+
+    return response()->json([
+        'status' => 'success',
+        'message' => "User with ID {$id} deleted successfully",
+        'deleted_user' => $deletedUser,
+    ], 200);
+});
+
