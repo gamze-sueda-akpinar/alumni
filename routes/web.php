@@ -71,3 +71,52 @@ Route::post('/api/users', function (\Illuminate\Http\Request $request) {
         'data' => $simulatedUser,
     ], 201);
 });
+
+Route::get('/api/users', function () {
+    // Veritabanı kullanılmadan simüle edilmiş mezun kullanıcı listesi (Read / List all)
+    $users = [
+        [
+            'id' => 1,
+            'name' => 'Gamze Şüeda Akpınar',
+            'email' => 'gamze@example.com',
+            'student_number' => '2019123456',
+            'graduation_year' => 2024,
+            'department' => 'Bilgisayar Mühendisliği',
+            'current_company' => 'Google',
+            'current_position' => 'Software Engineer',
+            'city' => 'İstanbul',
+            'status' => 'approved',
+        ],
+        [
+            'id' => 2,
+            'name' => 'Ahmet Yılmaz',
+            'email' => 'ahmet.yilmaz@example.com',
+            'student_number' => '170102045',
+            'graduation_year' => 2021,
+            'department' => 'Bilgisayar Mühendisliği',
+            'current_company' => 'Trendyol',
+            'current_position' => 'Senior Backend Developer',
+            'city' => 'İstanbul',
+            'status' => 'approved',
+        ],
+        [
+            'id' => 3,
+            'name' => 'Elif Kaya',
+            'email' => 'elif.kaya@example.com',
+            'student_number' => '190104012',
+            'graduation_year' => 2023,
+            'department' => 'Yazılım Mühendisliği',
+            'current_company' => 'Getir',
+            'current_position' => 'Frontend Developer',
+            'city' => 'İzmir',
+            'status' => 'approved',
+        ],
+    ];
+
+    return response()->json([
+        'status' => 'success',
+        'message' => 'Users listed successfully (in-memory simulation)',
+        'total' => count($users),
+        'data' => $users,
+    ], 200);
+});
