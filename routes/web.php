@@ -274,3 +274,23 @@ Route::delete('/api/users/{id}', function ($id) {
     ], 200);
 });
 
+// GET /api/swagger - Swagger UI Arayüzü
+Route::get('/api/swagger', function () {
+    return view('swagger');
+});
+
+// GET /api/swagger.json - OpenAPI 3.0 Spesifikasyonu
+Route::get('/api/swagger.json', function () {
+    $path = public_path('openapi.json');
+    if (file_exists($path)) {
+        return response()->file($path, [
+            'Content-Type' => 'application/json; charset=utf-8'
+        ]);
+    }
+    return response()->json([
+        'status' => 'error',
+        'message' => 'Swagger OpenAPI specification file not found'
+    ], 404);
+});
+
+

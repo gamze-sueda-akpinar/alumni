@@ -1,0 +1,417 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Mezun Takip Sistemi (Alumni) API",
+    "description": "Mezun Takip Sistemi RESTful API dokümantasyonu. Sistem durumu, kullanıcı kayıtları, güncelleme ve silme işlemlerini içerir.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Gamze Şüeda Akpınar",
+      "email": "gamzesuedaakpinar@gmail.com"
+    }
+  },
+  "servers": [
+    {
+      "url": "/",
+      "description": "Mevcut Sunucu"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Sistem Sağlığı",
+      "description": "API ve veritabanı durum kontrolleri"
+    },
+    {
+      "name": "Mezun Kullanıcılar (Users)",
+      "description": "Mezun kullanıcı yönetimi ve CRUD işlemleri"
+    }
+  ],
+  "paths": {
+    "/api/health": {
+      "get": {
+        "tags": ["Sistem Sağlığı"],
+        "summary": "Sistem ve Veritabanı Sağlık Durumu",
+        "description": "API servisinin çalışıp çalışmadığını ve MySQL veritabanı bağlantısının durumunu kontrol eder.",
+        "operationId": "getHealthStatus",
+        "responses": {
+          "200": {
+            "description": "Sistem ve veritabanı sağlıklı",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "ok",
+                  "timestamp": "2026-09-30T10:45:00+03:00",
+                  "app_name": "Alumni Tracking System",
+                  "environment": "local",
+                  "database": {
+                    "connection": "mysql",
+                    "status": "connected",
+                    "database_name": "alumni"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/users": {
+      "get": {
+        "tags": ["Mezun Kullanıcılar (Users)"],
+        "summary": "Tüm Mezun Kullanıcıları Listele",
+        "description": "Sistemde kayıtlı olan tüm mezun kullanıcıların listesini döndürür.",
+        "operationId": "listUsers",
+        "responses": {
+          "200": {
+            "description": "Kullanıcılar başarıyla listelendi",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "success",
+                  "message": "Users listed successfully",
+                  "total": 5,
+                  "data": [
+                    {
+                      "id": 1,
+                      "name": "Gamze Şüeda Akpınar",
+                      "email": "gamze@example.com",
+                      "student_number": "2019123456",
+                      "graduation_year": 2024,
+                      "department": "Bilgisayar Mühendisliği",
+                      "current_company": "Google",
+                      "current_position": "Software Engineer",
+                      "city": "İstanbul",
+                      "status": "approved",
+                      "created_at": "2026-09-30T06:00:00+00:00"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Mezun Kullanıcılar (Users)"],
+        "summary": "Yeni Mezun Kullanıcı Oluştur",
+        "description": "Yeni bir mezun kullanıcısı kaydeder. İsim ve email zorunludur.",
+        "operationId": "createUser",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateUserRequest"
+              },
+              "example": {
+                "name": "Mehmet Demir",
+                "email": "mehmet.demir@example.com",
+                "student_number": "202011022",
+                "graduation_year": 2024,
+                "department": "Yazılım Mühendisliği",
+                "current_company": "Microsoft",
+                "current_position": "Cloud Engineer",
+                "city": "Ankara"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Kullanıcı başarıyla oluşturuldu",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "success",
+                  "message": "User created and saved successfully",
+                  "data": {
+                    "id": 7,
+                    "name": "Mehmet Demir",
+                    "email": "mehmet.demir@example.com",
+                    "student_number": "202011022",
+                    "graduation_year": 2024,
+                    "department": "Yazılım Mühendisliği",
+                    "current_company": "Microsoft",
+                    "current_position": "Cloud Engineer",
+                    "city": "Ankara",
+                    "status": "approved",
+                    "created_at": "2026-09-30T10:55:00+00:00"
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validasyon hatası (Eksik veya hatalı alanlar)"
+          }
+        }
+      }
+    },
+    "/api/users/{id}": {
+      "get": {
+        "tags": ["Mezun Kullanıcılar (Users)"],
+        "summary": "ID ile Tekil Kullanıcı Getir",
+        "description": "Belirtilen ID numarasına sahip kullanıcının detaylarını getirir.",
+        "operationId": "getUserById",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Kullanıcı ID numarası",
+            "schema": {
+              "type": "integer",
+              "example": 5
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Kullanıcı bulundu",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "success",
+                  "data": {
+                    "id": 5,
+                    "name": "Gamze Şüeda Akpınar",
+                    "email": "dilaramumcu@gmail.com",
+                    "student_number": "5469593427",
+                    "graduation_year": "2028",
+                    "department": "Management Information Systems",
+                    "current_company": "Google",
+                    "current_position": "Senior Software Engineer",
+                    "city": "İstanbul",
+                    "status": "approved",
+                    "created_at": "2026-09-30T07:29:06+00:00",
+                    "updated_at": "2026-09-30T07:47:00+00:00"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Kullanıcı bulunamadı",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "User with ID 999 not found"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["Mezun Kullanıcılar (Users)"],
+        "summary": "Kullanıcı Bilgilerini Güncelle (Tam Güncelleme - PUT)",
+        "description": "Kullanıcının profil bilgilerini günceller.",
+        "operationId": "updateUserPut",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Güncellenecek kullanıcı ID",
+            "schema": {
+              "type": "integer",
+              "example": 5
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateUserRequest"
+              },
+              "example": {
+                "name": "Gamze Şüeda Akpınar",
+                "email": "gamze@alumni.com",
+                "student_number": "5469593427",
+                "graduation_year": 2028,
+                "department": "Management Information Systems",
+                "current_company": "Google",
+                "current_position": "Staff Software Engineer",
+                "city": "Zürih"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Kullanıcı başarıyla güncellendi"
+          },
+          "404": {
+            "description": "Kullanıcı bulunamadı"
+          }
+        }
+      },
+      "patch": {
+        "tags": ["Mezun Kullanıcılar (Users)"],
+        "summary": "Kullanıcı Bilgilerini Kısmi Güncelle (PATCH)",
+        "description": "Kullanıcının sadece gönderilen belirli alanlarını günceller (örneğin sadece şirket ve pozisyon).",
+        "operationId": "updateUserPatch",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Güncellenecek kullanıcı ID",
+            "schema": {
+              "type": "integer",
+              "example": 5
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateUserRequest"
+              },
+              "example": {
+                "current_company": "Google DeepMind",
+                "current_position": "Research Scientist"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Kullanıcı kısmi olarak güncellendi"
+          },
+          "404": {
+            "description": "Kullanıcı bulunamadı"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Mezun Kullanıcılar (Users)"],
+        "summary": "Kullanıcıyı Sil (DELETE)",
+        "description": "Belirtilen ID numarasına sahip kullanıcıyı sistemden siler.",
+        "operationId": "deleteUser",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Silinecek kullanıcı ID",
+            "schema": {
+              "type": "integer",
+              "example": 5
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Kullanıcı başarıyla silindi",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "success",
+                  "message": "User with ID 5 deleted successfully",
+                  "deleted_user": {
+                    "id": 5,
+                    "name": "Gamze Şüeda Akpınar",
+                    "email": "gamze@example.com"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Kullanıcı bulunamadı",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "User with ID 999 not found"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "CreateUserRequest": {
+        "type": "object",
+        "required": ["name", "email"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Mehmet Demir"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "mehmet.demir@example.com"
+          },
+          "student_number": {
+            "type": "string",
+            "example": "202011022"
+          },
+          "graduation_year": {
+            "type": "integer",
+            "example": 2024
+          },
+          "department": {
+            "type": "string",
+            "example": "Yazılım Mühendisliği"
+          },
+          "current_company": {
+            "type": "string",
+            "example": "Microsoft"
+          },
+          "current_position": {
+            "type": "string",
+            "example": "Cloud Engineer"
+          },
+          "city": {
+            "type": "string",
+            "example": "Ankara"
+          }
+        }
+      },
+      "UpdateUserRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "student_number": {
+            "type": "string"
+          },
+          "graduation_year": {
+            "type": "integer"
+          },
+          "department": {
+            "type": "string"
+          },
+          "current_company": {
+            "type": "string"
+          },
+          "current_position": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["pending", "approved", "rejected"]
+          }
+        }
+      }
+    }
+  }
+}
