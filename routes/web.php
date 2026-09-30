@@ -46,3 +46,28 @@ Route::get('/api/health', function () {
         'database' => $dbStatus,
     ]);
 });
+
+Route::post('/api/users', function (\Illuminate\Http\Request $request) {
+    $validated = $request->validate([
+        'name' => 'required|string|max:255',
+        'email' => 'required|email|max:255',
+        'student_number' => 'nullable|string|max:50',
+        'graduation_year' => 'nullable|integer',
+        'department' => 'nullable|string|max:255',
+        'current_company' => 'nullable|string|max:255',
+        'current_position' => 'nullable|string|max:255',
+    ]);
+
+    // Veritabanı kullanılmadan simüle edilmiş kullanıcı verisi
+    $simulatedUser = array_merge([
+        'id' => rand(100, 999),
+    ], $validated, [
+        'created_at' => now()->toIso8601String(),
+    ]);
+
+    return response()->json([
+        'status' => 'success',
+        'message' => 'User created successfully (in-memory simulation)',
+        'data' => $simulatedUser,
+    ], 201);
+});
