@@ -176,3 +176,68 @@ Route::get('/api/users', function () {
         'data' => $users,
     ], 200);
 });
+
+// GET /api/users/{id} - Tekil kullanıcı getirme
+Route::get('/api/users/{id}', function ($id) {
+    $users = Cache::get('api_users_list', []);
+
+    foreach ($users as $user) {
+        if ((string) $user['id'] === (string) $id) {
+            return response()->json([
+                'status' => 'success',
+                'data' => $user,
+            ], 200);
+        }
+    }
+
+    return response()->json([
+        'status' => 'error',
+        'message' => "User with ID {$id} not found",
+    ], 404);
+});
+
+// PUT / PATCH /api/users/{id} - Kullanıcı güncelleme
+Route::match(['put', 'patch'], '/api/users/{id}', function (\Illuminate\Http\Request $request, $id) {
+    $users = Cache::get('api_users_list', []);
+
+    $userIndex = null;
+    foreach ($users as $index => $user) {
+        if ((string) $user['id'] === (string) $id) {
+            $userIndex = $index;
+            break;
+        }
+    }
+
+    if ($userIndex === null) {
+        return response()->json([
+            'status' => 'error',
+            'message' => "User with ID {$id} not found",
+        ], 404);
+    }
+
+    $validated = $request->validate([
+        'name' => 'sometimes|string|max:255',
+        'email' => 'sometimes|email|max:255',
+        'student_number' => 'nullable|string|max:50',
+        'graduation_year' => 'nullable|integer',
+        'department' => 'nullable|string|max:255',
+        'current_company' => 'nullable|string|max:255',
+        'current_position' => 'nullable|string|max:255',
+        'city' => 'nullable|string|max:255',
+        'status' => 'nullable|string|in:pending,approved,rejected',
+    ]);
+
+    // Mevcut alanların üzerine sadece gönderilen yeni alanları güncelle
+    $updatedUser = array_merge($users[$userIndex], $validated, [
+        'updated_at' => now()->toIso8601String(),
+    ]);
+
+    $users[$userIndex] = $updatedUser;
+    Cache::forever('api_users_list', $users);
+
+    return response()->json([
+        'status' => 'success',
+        'message' => "User with ID {$id} updated successfully",
+        'data' => $updatedUser,
+    ], 200);
+});
