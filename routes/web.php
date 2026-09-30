@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 
@@ -58,23 +59,7 @@ Route::post('/api/users', function (\Illuminate\Http\Request $request) {
         'current_position' => 'nullable|string|max:255',
     ]);
 
-    // Veritabanı kullanılmadan simüle edilmiş kullanıcı verisi
-    $simulatedUser = array_merge([
-        'id' => rand(100, 999),
-    ], $validated, [
-        'created_at' => now()->toIso8601String(),
-    ]);
-
-    return response()->json([
-        'status' => 'success',
-        'message' => 'User created successfully (in-memory simulation)',
-        'data' => $simulatedUser,
-    ], 201);
-});
-
-Route::get('/api/users', function () {
-    // Veritabanı kullanılmadan simüle edilmiş mezun kullanıcı listesi (Read / List all)
-    $users = [
+    $defaultUsers = [
         [
             'id' => 1,
             'name' => 'Gamze Şüeda Akpınar',
@@ -86,6 +71,7 @@ Route::get('/api/users', function () {
             'current_position' => 'Software Engineer',
             'city' => 'İstanbul',
             'status' => 'approved',
+            'created_at' => '2026-09-30T06:00:00+00:00',
         ],
         [
             'id' => 2,
@@ -98,6 +84,7 @@ Route::get('/api/users', function () {
             'current_position' => 'Senior Backend Developer',
             'city' => 'İstanbul',
             'status' => 'approved',
+            'created_at' => '2026-09-30T06:00:00+00:00',
         ],
         [
             'id' => 3,
@@ -110,12 +97,81 @@ Route::get('/api/users', function () {
             'current_position' => 'Frontend Developer',
             'city' => 'İzmir',
             'status' => 'approved',
+            'created_at' => '2026-09-30T06:00:00+00:00',
         ],
     ];
 
+    $users = Cache::get('api_users_list', $defaultUsers);
+
+    $nextId = count($users) > 0 ? max(array_column($users, 'id')) + 1 : 1;
+
+    $newUser = array_merge([
+        'id' => $nextId,
+    ], $validated, [
+        'city' => $request->input('city', 'İstanbul'),
+        'status' => 'approved',
+        'created_at' => now()->toIso8601String(),
+    ]);
+
+    // Yeni kullanıcıyı listeye ekle ve kalıcı olarak sakla
+    $users[] = $newUser;
+    Cache::forever('api_users_list', $users);
+
     return response()->json([
         'status' => 'success',
-        'message' => 'Users listed successfully (in-memory simulation)',
+        'message' => 'User created and saved successfully',
+        'data' => $newUser,
+    ], 201);
+});
+
+Route::get('/api/users', function () {
+    $defaultUsers = [
+        [
+            'id' => 1,
+            'name' => 'Gamze Şüeda Akpınar',
+            'email' => 'gamze@example.com',
+            'student_number' => '2019123456',
+            'graduation_year' => 2024,
+            'department' => 'Bilgisayar Mühendisliği',
+            'current_company' => 'Google',
+            'current_position' => 'Software Engineer',
+            'city' => 'İstanbul',
+            'status' => 'approved',
+            'created_at' => '2026-09-30T06:00:00+00:00',
+        ],
+        [
+            'id' => 2,
+            'name' => 'Ahmet Yılmaz',
+            'email' => 'ahmet.yilmaz@example.com',
+            'student_number' => '170102045',
+            'graduation_year' => 2021,
+            'department' => 'Bilgisayar Mühendisliği',
+            'current_company' => 'Trendyol',
+            'current_position' => 'Senior Backend Developer',
+            'city' => 'İstanbul',
+            'status' => 'approved',
+            'created_at' => '2026-09-30T06:00:00+00:00',
+        ],
+        [
+            'id' => 3,
+            'name' => 'Elif Kaya',
+            'email' => 'elif.kaya@example.com',
+            'student_number' => '190104012',
+            'graduation_year' => 2023,
+            'department' => 'Yazılım Mühendisliği',
+            'current_company' => 'Getir',
+            'current_position' => 'Frontend Developer',
+            'city' => 'İzmir',
+            'status' => 'approved',
+            'created_at' => '2026-09-30T06:00:00+00:00',
+        ],
+    ];
+
+    $users = Cache::get('api_users_list', $defaultUsers);
+
+    return response()->json([
+        'status' => 'success',
+        'message' => 'Users listed successfully',
         'total' => count($users),
         'data' => $users,
     ], 200);
