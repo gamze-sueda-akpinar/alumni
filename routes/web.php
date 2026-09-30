@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -28,4 +29,20 @@ Route::get('/home', function () {
 
 Route::get('/about', function () {
     return view('about');
+});
+
+Route::get('/api/health', function () {
+    try {
+        DB::connection()->getPdo();
+        $dbStatus = 'connected';
+    } catch (\Exception $e) {
+        $dbStatus = 'disconnected';
+    }
+
+    return response()->json([
+        'status' => 'ok',
+        'message' => 'Alumni Tracking System API is healthy',
+        'timestamp' => now()->toIso8601String(),
+        'database' => $dbStatus,
+    ]);
 });
