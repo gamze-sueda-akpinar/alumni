@@ -2,8 +2,8 @@
   "openapi": "3.0.3",
   "info": {
     "title": "Mezun Takip Sistemi (Alumni) API",
-    "description": "Mezun Takip Sistemi RESTful API dokümantasyonu. Sistem durumu, kullanıcı kayıtları, güncelleme ve silme işlemlerini içerir.",
-    "version": "1.0.0",
+    "description": "Mezun Takip Sistemi API ve Web Controller dokümantasyonu. /users (UserController) ve /api/users (ApiUserController) uç noktalarını, parametrelerini ve CRUD işlevlerini içerir.",
+    "version": "1.1.0",
     "contact": {
       "name": "Gamze Şüeda Akpınar",
       "email": "gamzesuedaakpinar@gmail.com"
@@ -21,8 +21,12 @@
       "description": "API ve veritabanı durum kontrolleri"
     },
     {
-      "name": "Mezun Kullanıcılar (Users)",
-      "description": "Mezun kullanıcı yönetimi ve CRUD işlemleri"
+      "name": "REST API (/api/users - ApiUserController)",
+      "description": "JSON tabanlı RESTful API CRUD işlemleri (ApiUserController tarafından yönetilir)"
+    },
+    {
+      "name": "Web Controller (/users - UserController)",
+      "description": "Web & Resource tabanlı kullanıcı CRUD işlemleri (UserController tarafından yönetilir)"
     }
   ],
   "paths": {
@@ -39,7 +43,7 @@
               "application/json": {
                 "example": {
                   "status": "ok",
-                  "timestamp": "2026-09-30T10:45:00+03:00",
+                  "timestamp": "2026-10-07T13:00:00+03:00",
                   "app_name": "Alumni Tracking System",
                   "environment": "local",
                   "database": {
@@ -56,10 +60,10 @@
     },
     "/api/users": {
       "get": {
-        "tags": ["Mezun Kullanıcılar (Users)"],
-        "summary": "Tüm Mezun Kullanıcıları Listele",
-        "description": "Sistemde kayıtlı olan tüm mezun kullanıcıların listesini döndürür.",
-        "operationId": "listUsers",
+        "tags": ["REST API (/api/users - ApiUserController)"],
+        "summary": "Tüm Mezun Kullanıcıları Listele (JSON)",
+        "description": "ApiUserController@index metodunu çağırarak tüm mezun kullanıcıları JSON formatında listeler.",
+        "operationId": "apiListUsers",
         "responses": {
           "200": {
             "description": "Kullanıcılar başarıyla listelendi",
@@ -91,10 +95,10 @@
         }
       },
       "post": {
-        "tags": ["Mezun Kullanıcılar (Users)"],
-        "summary": "Yeni Mezun Kullanıcı Oluştur",
-        "description": "Yeni bir mezun kullanıcısı kaydeder. İsim ve email zorunludur.",
-        "operationId": "createUser",
+        "tags": ["REST API (/api/users - ApiUserController)"],
+        "summary": "Yeni Mezun Kullanıcı Oluştur (JSON)",
+        "description": "ApiUserController@store metodunu çağırarak yeni bir kullanıcı oluşturur ve 201 Created döner.",
+        "operationId": "apiCreateUser",
         "requestBody": {
           "required": true,
           "content": {
@@ -124,34 +128,27 @@
                   "status": "success",
                   "message": "User created and saved successfully",
                   "data": {
-                    "id": 7,
+                    "id": 6,
                     "name": "Mehmet Demir",
                     "email": "mehmet.demir@example.com",
-                    "student_number": "202011022",
-                    "graduation_year": 2024,
-                    "department": "Yazılım Mühendisliği",
-                    "current_company": "Microsoft",
-                    "current_position": "Cloud Engineer",
-                    "city": "Ankara",
-                    "status": "approved",
-                    "created_at": "2026-09-30T10:55:00+00:00"
+                    "status": "approved"
                   }
                 }
               }
             }
           },
           "422": {
-            "description": "Validasyon hatası (Eksik veya hatalı alanlar)"
+            "description": "Validasyon hatası"
           }
         }
       }
     },
     "/api/users/{id}": {
       "get": {
-        "tags": ["Mezun Kullanıcılar (Users)"],
-        "summary": "ID ile Tekil Kullanıcı Getir",
-        "description": "Belirtilen ID numarasına sahip kullanıcının detaylarını getirir.",
-        "operationId": "getUserById",
+        "tags": ["REST API (/api/users - ApiUserController)"],
+        "summary": "ID ile Tekil Kullanıcı Detayı (JSON)",
+        "description": "ApiUserController@show metodu ile belirtilen ID'deki kullanıcının detaylarını getirir.",
+        "operationId": "apiGetUserById",
         "parameters": [
           {
             "name": "id",
@@ -160,7 +157,7 @@
             "description": "Kullanıcı ID numarası",
             "schema": {
               "type": "integer",
-              "example": 5
+              "example": 1
             }
           }
         ],
@@ -172,41 +169,25 @@
                 "example": {
                   "status": "success",
                   "data": {
-                    "id": 5,
+                    "id": 1,
                     "name": "Gamze Şüeda Akpınar",
-                    "email": "dilaramumcu@gmail.com",
-                    "student_number": "5469593427",
-                    "graduation_year": "2028",
-                    "department": "Management Information Systems",
-                    "current_company": "Google",
-                    "current_position": "Senior Software Engineer",
-                    "city": "İstanbul",
-                    "status": "approved",
-                    "created_at": "2026-09-30T07:29:06+00:00",
-                    "updated_at": "2026-09-30T07:47:00+00:00"
+                    "email": "gamze@example.com",
+                    "current_company": "Google"
                   }
                 }
               }
             }
           },
           "404": {
-            "description": "Kullanıcı bulunamadı",
-            "content": {
-              "application/json": {
-                "example": {
-                  "status": "error",
-                  "message": "User with ID 999 not found"
-                }
-              }
-            }
+            "description": "Kullanıcı bulunamadı"
           }
         }
       },
       "put": {
-        "tags": ["Mezun Kullanıcılar (Users)"],
-        "summary": "Kullanıcı Bilgilerini Güncelle (Tam Güncelleme - PUT)",
-        "description": "Kullanıcının profil bilgilerini günceller.",
-        "operationId": "updateUserPut",
+        "tags": ["REST API (/api/users - ApiUserController)"],
+        "summary": "Kullanıcı Tam Güncelleme (PUT)",
+        "description": "ApiUserController@update metodu ile kullanıcının tüm bilgilerini günceller.",
+        "operationId": "apiUpdateUserPut",
         "parameters": [
           {
             "name": "id",
@@ -215,7 +196,7 @@
             "description": "Güncellenecek kullanıcı ID",
             "schema": {
               "type": "integer",
-              "example": 5
+              "example": 1
             }
           }
         ],
@@ -229,12 +210,8 @@
               "example": {
                 "name": "Gamze Şüeda Akpınar",
                 "email": "gamze@alumni.com",
-                "student_number": "5469593427",
-                "graduation_year": 2028,
-                "department": "Management Information Systems",
                 "current_company": "Google",
-                "current_position": "Staff Software Engineer",
-                "city": "Zürih"
+                "current_position": "Staff Engineer"
               }
             }
           }
@@ -249,19 +226,18 @@
         }
       },
       "patch": {
-        "tags": ["Mezun Kullanıcılar (Users)"],
-        "summary": "Kullanıcı Bilgilerini Kısmi Güncelle (PATCH)",
-        "description": "Kullanıcının sadece gönderilen belirli alanlarını günceller (örneğin sadece şirket ve pozisyon).",
-        "operationId": "updateUserPatch",
+        "tags": ["REST API (/api/users - ApiUserController)"],
+        "summary": "Kullanıcı Kısmi Güncelleme (PATCH)",
+        "description": "ApiUserController@update metodu ile sadece gönderilen alanları günceller.",
+        "operationId": "apiUpdateUserPatch",
         "parameters": [
           {
             "name": "id",
             "in": "path",
             "required": true,
-            "description": "Güncellenecek kullanıcı ID",
             "schema": {
               "type": "integer",
-              "example": 5
+              "example": 1
             }
           }
         ],
@@ -273,8 +249,7 @@
                 "$ref": "#/components/schemas/UpdateUserRequest"
               },
               "example": {
-                "current_company": "Google DeepMind",
-                "current_position": "Research Scientist"
+                "current_position": "Lead AI Engineer"
               }
             }
           }
@@ -289,49 +264,216 @@
         }
       },
       "delete": {
-        "tags": ["Mezun Kullanıcılar (Users)"],
-        "summary": "Kullanıcıyı Sil (DELETE)",
-        "description": "Belirtilen ID numarasına sahip kullanıcıyı sistemden siler.",
-        "operationId": "deleteUser",
+        "tags": ["REST API (/api/users - ApiUserController)"],
+        "summary": "Kullanıcı Silme (DELETE)",
+        "description": "ApiUserController@destroy metodu ile kullanıcıyı sistemden siler.",
+        "operationId": "apiDeleteUser",
         "parameters": [
           {
             "name": "id",
             "in": "path",
             "required": true,
-            "description": "Silinecek kullanıcı ID",
             "schema": {
               "type": "integer",
-              "example": 5
+              "example": 4
             }
           }
         ],
         "responses": {
           "200": {
-            "description": "Kullanıcı başarıyla silindi",
+            "description": "Kullanıcı silindi",
             "content": {
               "application/json": {
                 "example": {
                   "status": "success",
-                  "message": "User with ID 5 deleted successfully",
-                  "deleted_user": {
-                    "id": 5,
-                    "name": "Gamze Şüeda Akpınar",
-                    "email": "gamze@example.com"
-                  }
+                  "message": "User with ID 4 deleted successfully"
                 }
               }
             }
           },
           "404": {
-            "description": "Kullanıcı bulunamadı",
+            "description": "Kullanıcı bulunamadı"
+          }
+        }
+      }
+    },
+    "/users": {
+      "get": {
+        "tags": ["Web Controller (/users - UserController)"],
+        "summary": "Web Kullanıcı Listesi (UserController@index)",
+        "description": "UserController@index metodunu çağırır. Blade görünümü (users.index) varsa sayfayı render eder, yoksa JSON listesi döner.",
+        "operationId": "webListUsers",
+        "responses": {
+          "200": {
+            "description": "Kullanıcı listesi başarıyla getirildi",
             "content": {
               "application/json": {
                 "example": {
-                  "status": "error",
-                  "message": "User with ID 999 not found"
+                  "status": "success",
+                  "message": "Users retrieved via UserController@index",
+                  "total": 5,
+                  "data": []
                 }
               }
             }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Web Controller (/users - UserController)"],
+        "summary": "Web Kullanıcı Kaydı (UserController@store)",
+        "description": "UserController@store metodu üzerinden yeni kullanıcı kaydeder.",
+        "operationId": "webStoreUser",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateUserRequest"
+              },
+              "example": {
+                "name": "Zeynep Arslan",
+                "email": "zeynep@example.com",
+                "student_number": "20210044",
+                "department": "Endüstri Mühendisliği",
+                "city": "Bursa"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Kullanıcı başarıyla kaydedildi"
+          },
+          "422": {
+            "description": "Validasyon hatası"
+          }
+        }
+      }
+    },
+    "/users/create": {
+      "get": {
+        "tags": ["Web Controller (/users - UserController)"],
+        "summary": "Yeni Kullanıcı Ekleme Formu (UserController@create)",
+        "description": "UserController@create metodunu çağırarak users.create Blade form görünümünü veya durum bilgisini döner.",
+        "operationId": "webCreateUserForm",
+        "responses": {
+          "200": {
+            "description": "Form sayfası hazır"
+          }
+        }
+      }
+    },
+    "/users/{id}": {
+      "get": {
+        "tags": ["Web Controller (/users - UserController)"],
+        "summary": "Web Kullanıcı Detayı (UserController@show)",
+        "description": "UserController@show metodu ile tekil kullanıcı detayını döner.",
+        "operationId": "webShowUser",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "example": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Kullanıcı bulundu"
+          },
+          "404": {
+            "description": "Kullanıcı bulunamadı"
+          }
+        }
+      },
+      "put": {
+        "tags": ["Web Controller (/users - UserController)"],
+        "summary": "Web Kullanıcı Güncelleme (UserController@update)",
+        "description": "UserController@update metodu üzerinden kullanıcıyı günceller.",
+        "operationId": "webUpdateUser",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "example": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateUserRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Kullanıcı güncellendi"
+          },
+          "404": {
+            "description": "Kullanıcı bulunamadı"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Web Controller (/users - UserController)"],
+        "summary": "Web Kullanıcı Silme (UserController@destroy)",
+        "description": "UserController@destroy metodu ile kullanıcıyı siler.",
+        "operationId": "webDestroyUser",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "example": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Kullanıcı silindi"
+          },
+          "404": {
+            "description": "Kullanıcı bulunamadı"
+          }
+        }
+      }
+    },
+    "/users/{id}/edit": {
+      "get": {
+        "tags": ["Web Controller (/users - UserController)"],
+        "summary": "Kullanıcı Düzenleme Formu (UserController@edit)",
+        "description": "UserController@edit metodunu çağırarak users.edit Blade form görünümünü veya düzenleme verisini döner.",
+        "operationId": "webEditUserForm",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "example": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Düzenleme formu hazır"
+          },
+          "404": {
+            "description": "Kullanıcı bulunamadı"
           }
         }
       }

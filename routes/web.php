@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\ApiUserController;
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
@@ -49,18 +51,18 @@ Route::get('/api/health', function () {
 });
 
 // =========================================================================
-// User Controllers & CRUD Routes (MVC Architecture)
+// 1. Web Controller Resource Routes (/users -> UserController)
 // =========================================================================
+Route::resource('users', UserController::class);
 
-// Web Controller Resource Routes (Blade / Web CRUD)
-Route::resource('users', \App\Http\Controllers\UserController::class);
-
-// API Controller RESTful Endpoints (JSON CRUD)
-Route::get('/api/users', [\App\Http\Controllers\ApiUserController::class, 'index']);
-Route::post('/api/users', [\App\Http\Controllers\ApiUserController::class, 'store']);
-Route::get('/api/users/{id}', [\App\Http\Controllers\ApiUserController::class, 'show']);
-Route::match(['put', 'patch'], '/api/users/{id}', [\App\Http\Controllers\ApiUserController::class, 'update']);
-Route::delete('/api/users/{id}', [\App\Http\Controllers\ApiUserController::class, 'destroy']);
+// =========================================================================
+// 2. RESTful API Routes (/api/users -> ApiUserController)
+// =========================================================================
+Route::get('/api/users', [ApiUserController::class, 'index'])->name('api.users.index');
+Route::post('/api/users', [ApiUserController::class, 'store'])->name('api.users.store');
+Route::get('/api/users/{id}', [ApiUserController::class, 'show'])->name('api.users.show');
+Route::match(['put', 'patch'], '/api/users/{id}', [ApiUserController::class, 'update'])->name('api.users.update');
+Route::delete('/api/users/{id}', [ApiUserController::class, 'destroy'])->name('api.users.destroy');
 
 // GET /api/swagger - Swagger UI Arayüzü
 Route::get('/api/swagger', function () {

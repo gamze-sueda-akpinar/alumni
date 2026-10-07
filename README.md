@@ -360,19 +360,35 @@ alumni/
 
 The application provides a comprehensive RESTful API for alumni management. An interactive **Swagger UI** is integrated at `/api/swagger`, powered by an **OpenAPI 3.0** specification at `/api/swagger.json`.
 
-### 🔗 Available Endpoints
+### 🔗 Available Endpoints (Web & API Controllers)
 
-| Method | Endpoint | Description | Query / Body | Response Code |
+#### 🌐 RESTful API Endpoints (`ApiUserController` — `/api/users`)
+| Method | Endpoint | Controller Action | Description | Query / Body | Response Code |
+| :---: | :--- | :--- | :--- | :--- | :---: |
+| **`GET`** | `/api/health` | Closure | Check API status & MySQL connectivity | None | `200 OK` |
+| **`GET`** | `/api/users` | `ApiUserController@index` | List all alumni users as JSON | None | `200 OK` |
+| **`POST`** | `/api/users` | `ApiUserController@store` | Register new alumni user (JSON) | JSON (`name`, `email`, ...) | `201 Created` |
+| **`GET`** | `/api/users/{id}` | `ApiUserController@show` | Get single user JSON by ID | URL Path (`id`) | `200 OK` / `404` |
+| **`PUT`** | `/api/users/{id}` | `ApiUserController@update`| Complete update of user profile | URL Path + Full JSON | `200 OK` / `404` |
+| **`PATCH`**| `/api/users/{id}` | `ApiUserController@update`| Partial update of user attributes | URL Path + Partial JSON | `200 OK` / `404` |
+| **`DELETE`**| `/api/users/{id}` | `ApiUserController@destroy`| Delete user record from system | URL Path (`id`) | `200 OK` / `404` |
+
+#### 🖥️ Web / Resource Controller Endpoints (`UserController` — `/users`)
+| Method | Endpoint | Controller Action | Description | Response Type |
 | :---: | :--- | :--- | :--- | :---: |
-| **`GET`** | `/api/health` | Check API status & MySQL connectivity | None | `200 OK` |
-| **`GET`** | `/api/users` | List all registered alumni users | None | `200 OK` |
-| **`POST`** | `/api/users` | Register a new alumni user | JSON (`name`, `email`, `student_number`, ...) | `201 Created` |
-| **`GET`** | `/api/users/{id}` | Get detailed information for a specific user | URL Path Parameter (`id`) | `200 OK` / `404` |
-| **`PUT`** | `/api/users/{id}` | Complete update of user profile attributes | URL Path (`id`) + Full JSON body | `200 OK` / `404` |
-| **`PATCH`**| `/api/users/{id}` | Partial update of specific user fields | URL Path (`id`) + Partial JSON body | `200 OK` / `404` |
-| **`DELETE`**| `/api/users/{id}` | Delete an alumni user from the system | URL Path Parameter (`id`) | `200 OK` / `404` |
-| **`GET`** | `/api/swagger` | Interactive Swagger UI in browser | None (Open in browser) | `200 OK` (HTML) |
-| **`GET`** | `/api/swagger.json` | Download OpenAPI 3.0 JSON specification | None | `200 OK` (JSON) |
+| **`GET`** | `/users` | `UserController@index` | Display users list / view | View / JSON (`200 OK`) |
+| **`GET`** | `/users/create` | `UserController@create` | Show user creation form | View (`users.create`) |
+| **`POST`** | `/users` | `UserController@store` | Store new user record | Redirect / JSON (`201`) |
+| **`GET`** | `/users/{id}` | `UserController@show` | Display single user details | View / JSON (`200 OK`) |
+| **`GET`** | `/users/{id}/edit`| `UserController@edit` | Show user edit form | View (`users.edit`) |
+| **`PUT`** | `/users/{id}` | `UserController@update` | Update existing user record | Redirect / JSON (`200`) |
+| **`DELETE`**| `/users/{id}` | `UserController@destroy`| Delete user record | JSON / Redirect |
+
+#### 📖 Documentation Endpoints
+| Method | Endpoint | Description | Response Type |
+| :---: | :--- | :--- | :---: |
+| **`GET`** | `/api/swagger` | Interactive Swagger UI in browser | HTML (`200 OK`) |
+| **`GET`** | `/api/swagger.json` | Download OpenAPI 3.0 JSON specification | JSON (`200 OK`) |
 
 ### 🚀 Accessing Swagger UI
 Simply navigate to:
