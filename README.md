@@ -169,6 +169,219 @@ The database architecture is structured around key relational entities:
 
 ---
 
+## 🏗️ MVC (Model-View-Controller) Architecture
+
+This application is engineered using **Laravel 11** adhering to the industry-standard **Model-View-Controller (MVC)** architectural pattern, integrated with **Filament v3** (TALL Stack) and a dedicated **RESTful API & Swagger Documentation Layer**.
+
+```mermaid
+flowchart TD
+    Client["👤 Client (Browser / Postman / Mobile / Swagger UI)"]
+    
+    subgraph Routing["Routing & Middleware Layer"]
+        WebRoute["routes/web.php"]
+        CSRF["CSRF & Request Validation Middleware"]
+    end
+    
+    subgraph Controller["🎮 Controller Layer (Logic & Orchestration)"]
+        RouteClosures["Route Closures / Action Handlers"]
+        FilamentRes["Filament Admin Resources & Pages"]
+        HttpCtrl["Http Base Controllers"]
+    end
+    
+    subgraph Model["🧠 Model Layer (Data & Business Entities)"]
+        Eloquent["Eloquent Models (app/Models/*)"]
+        CacheLayer["Cache Layer (In-Memory Data Store)"]
+        MySQL[("MySQL 8.0 Database")]
+    end
+    
+    subgraph View["👁️ View Layer (Presentation & UI)"]
+        BladeViews["Blade Templates (resources/views/*)"]
+        SwaggerUI["Swagger UI (resources/views/swagger.blade.php)"]
+        FilamentUI["Filament Livewire & Tailwind UI"]
+        JSONRes["JSON REST API Responses"]
+    end
+
+    Client -->|"HTTP Requests (GET, POST, PUT, PATCH, DELETE)"| WebRoute
+    WebRoute --> CSRF
+    CSRF --> Controller
+    Controller -->|"Query / Update / Validate"| Model
+    Model -->|"Data / State"| Controller
+    Controller -->|"Renders UI"| BladeViews
+    Controller -->|"Renders Admin"| FilamentUI
+    Controller -->|"Returns Data"| JSONRes
+    BladeViews --> Client
+    SwaggerUI --> Client
+    FilamentUI --> Client
+    JSONRes --> Client
+```
+
+### 1. 🧠 Model (M) — Data Structures, Relationships & Business Rules
+The **Model** layer encapsulates data schema, database interaction, business rules, and entity relationships using Laravel's **Eloquent ORM**:
+
+* **[`app/Models/User.php`](app/Models/User.php):** Core authentication and user management entity. Represents administrators, department coordinators, and alumni.
+* **[`app/Models/AlumniProfile.php`](app/Models/AlumniProfile.php):** Core alumni data model containing graduation year, student number, approval status, city, current company, and position. Belongs to `User` and `Department`.
+* **[`app/Models/Faculty.php`](app/Models/Faculty.php):** Academic faculties (e.g., Faculty of Engineering). Has a one-to-many relationship with `Department`.
+* **[`app/Models/Department.php`](app/Models/Department.php):** Academic departments (e.g., Computer Engineering, MIS). Belongs to `Faculty` and has many `AlumniProfile` records.
+* **[`app/Models/Experience.php`](app/Models/Experience.php):** Tracks professional career history, internship records, and current employment for graduates.
+* **[`app/Models/JobPosting.php`](app/Models/JobPosting.php):** Career openings, internships, and job advertisements shared for alumni.
+* **[`app/Models/Event.php`](app/Models/Event.php):** Reunions, seminars, conferences, and networking events for graduates.
+* **`database/migrations/`:** Database blueprint definitions establishing foreign keys, constraints, and table columns in MySQL.
+
+### 2. 👁️ View (V) — Presentation & User Interfaces
+The **View** layer handles presenting data to users, structuring layouts, and rendering interactive front-end screens:
+
+* **Blade Templates ([`resources/views/`](resources/views/)):**
+  * **[`resources/views/main.blade.php`](resources/views/main.blade.php):** Responsive, modern landing and home page designed with Tailwind CSS, featuring alumni success highlights and navigation.
+  * **[`resources/views/about.blade.php`](resources/views/about.blade.php):** About page presenting the purpose and vision of the Alumni Tracking System.
+  * **[`resources/views/swagger.blade.php`](resources/views/swagger.blade.php):** Embedded, interactive **Swagger UI 5.x** interface for live API exploration and testing directly in the browser.
+  * **[`resources/views/welcome.blade.php`](resources/views/welcome.blade.php):** Default framework landing template.
+* **Filament v3 Admin Panel UI:**
+  * Powered by the **TALL stack** (Tailwind CSS, Alpine.js, Laravel, Livewire). Renders reactive administration dashboards, data tables, filter modals, and statistics cards without writing manual HTML.
+
+### 3. 🎮 Controller (C) — Request Handling & Flow Control
+The **Controller** layer intercepts incoming HTTP requests, validates payloads, invokes Model operations, and returns the appropriate View or JSON response:
+
+* **Application Routes & Controllers ([`routes/web.php`](routes/web.php)):**
+  * Serves front-end Blade views (`/`, `/main`, `/about`, `/hello/{name}`).
+  * Acts as the controller and request handler for the RESTful API endpoints:
+    * `GET /api/health` — Checks API health and MySQL database connectivity.
+    * `GET /api/users` — Lists all alumni users.
+    * `POST /api/users` — Validates inputs and creates a new graduate record.
+    * `GET /api/users/{id}` — Fetches details of a specific user by ID.
+    * `PUT /api/users/{id}` — Replaces and updates full user profile information.
+    * `PATCH /api/users/{id}` — Partially updates specific attributes (e.g., job position).
+    * `DELETE /api/users/{id}` — Deletes an alumni record and returns confirmation.
+    * `GET /api/swagger` — Renders the interactive Swagger UI view.
+    * `GET /api/swagger.json` — Delivers the OpenAPI 3.0 specification file.
+* **Filament Admin Resources ([`app/Filament/Resources/`](app/Filament/Resources/)):**
+  * High-level CRUD controller classes (`AlumniProfileResource`, `DepartmentResource`, `FacultyResource`, `JobPostingResource`, `EventResource`) managing form schemas, table columns, queries, and permissions.
+* **Base Controller ([`app/Http/Controllers/Controller.php`](app/Http/Controllers/Controller.php)):**
+  * Foundation controller class for modular HTTP controllers.
+
+---
+
+## 📂 Project Directory & File Structure
+
+A detailed map of the directories, folders, and key files comprising the **Alumni Tracking System**:
+
+```text
+alumni/
+├── app/                                    # Core application codebase
+│   ├── Filament/                           # Filament v3 Admin Panel modules
+│   │   ├── Resources/                      # Administrative CRUD resources
+│   │   │   ├── AlumniProfileResource.php   # Alumni profile manager & table/form definitions
+│   │   │   ├── AlumniProfileResource/Pages # Create, Edit, List lifecycle pages
+│   │   │   ├── DepartmentResource.php      # Department manager & definitions
+│   │   │   ├── DepartmentResource/Pages    # Create, Edit, List lifecycle pages
+│   │   │   ├── EventResource.php           # Event manager & definitions
+│   │   │   ├── EventResource/Pages         # Create, Edit, List lifecycle pages
+│   │   │   ├── FacultyResource.php         # Faculty manager & definitions
+│   │   │   ├── FacultyResource/Pages       # Create, Edit, List lifecycle pages
+│   │   │   ├── JobPostingResource.php      # Job board manager & definitions
+│   │   │   └── JobPostingResource/Pages    # Create, Edit, List lifecycle pages
+│   │   └── Widgets/                        # Admin dashboard analytic widgets
+│   │       └── StatsOverview.php           # Quick metrics (total alumni, stats)
+│   ├── Http/                               # HTTP layer
+│   │   └── Controllers/                    # HTTP Controllers
+│   │       └── Controller.php              # Base Laravel controller
+│   ├── Models/                             # Eloquent ORM Models (Model layer)
+│   │   ├── AlumniProfile.php               # Alumni graduate profile entity
+│   │   ├── Department.php                  # Academic department entity
+│   │   ├── Event.php                       # Alumni reunions & events entity
+│   │   ├── Experience.php                  # Professional career history entity
+│   │   ├── Faculty.php                     # Faculty entity
+│   │   ├── JobPosting.php                  # Career opportunity entity
+│   │   └── User.php                        # Core user authentication entity
+│   └── Providers/                          # Service providers
+│       ├── AppServiceProvider.php          # Application bootstrap services
+│       └── Filament/                       # Filament panel providers
+│           └── AdminPanelProvider.php      # Filament dashboard configuration & colors
+├── bootstrap/                              # Framework initialization
+│   ├── app.php                             # Middleware pipeline, CSRF exemptions (api/*)
+│   └── providers.php                       # Application service provider registry
+├── config/                                 # Global application configuration
+│   ├── app.php                             # Timezone, locale, application keys
+│   ├── auth.php                            # Authentication guards & providers
+│   ├── cache.php                           # Caching stores (database, file, redis)
+│   ├── database.php                        # MySQL & Redis database connection settings
+│   └── ...                                 # Logging, session, mail configurations
+├── database/                               # Database migrations, seeders & factories
+│   ├── factories/                          # Dummy data factories for testing
+│   ├── migrations/                         # Database schema table definitions
+│   │   ├── 0001_01_01_000000_create_users_table.php
+│   │   ├── 2026_09_23_073223_create_faculties_table.php
+│   │   ├── 2026_09_23_073231_create_departments_table.php
+│   │   ├── 2026_09_23_073240_create_alumni_profiles_table.php
+│   │   ├── 2026_09_23_073248_create_experiences_table.php
+│   │   ├── 2026_09_23_073258_create_job_postings_table.php
+│   │   └── 2026_09_23_073306_create_events_table.php
+│   └── seeders/                            # Database seeders
+│       └── DatabaseSeeder.php              # Initial seed data for faculties & admin
+├── docker/                                 # Container configuration files
+│   ├── nginx/                              # Nginx reverse proxy service
+│   │   └── default.conf                    # Nginx server block (listening on 80 & 8000)
+│   └── php/                                # PHP service configuration
+│       └── local.ini                       # Custom PHP directives (memory, upload sizes)
+├── public/                                 # Public web server document root
+│   ├── index.php                           # Web server entry point
+│   ├── openapi.json                        # OpenAPI 3.0 specification for Swagger UI
+│   ├── robots.txt                          # Search engine bot instructions
+│   └── .htaccess                           # Apache URL rewrite rules
+├── resources/                              # Front-end view templates and assets (View layer)
+│   ├── css/                                # Tailwind and CSS stylesheets
+│   ├── js/                                 # JavaScript front-end assets
+│   └── views/                              # Blade templates
+│       ├── about.blade.php                 # Informational About Us view
+│       ├── main.blade.php                  # Public Home/Main portal view
+│       ├── swagger.blade.php               # Interactive Swagger UI view
+│       └── welcome.blade.php               # Framework default view
+├── routes/                                 # Application routing definitions (Controller layer)
+│   ├── console.php                         # Artisan CLI custom console commands
+│   └── web.php                             # Web routes, REST API routes, Swagger routes
+├── storage/                                # Compiled templates, sessions, logs, file uploads
+│   ├── app/                                # Application storage & files
+│   ├── framework/                          # Framework cache, sessions, views
+│   └── logs/                               # Laravel runtime logs (laravel.log)
+├── tests/                                  # Automated tests
+│   ├── Feature/                            # Feature & integration tests
+│   └── Unit/                               # Unit tests
+├── .env.example                            # Example environment variables
+├── .gitignore                              # Git version control ignore rules
+├── docker-compose.yml                      # Multi-container orchestration (App, Web, MySQL, PMA)
+├── Dockerfile                              # Custom PHP 8.3-FPM + Composer + Node container
+├── composer.json                           # PHP packages & autoload mapping
+├── package.json                            # NPM dependencies & front-end scripts
+└── README.md                               # Complete project documentation & guide
+```
+
+---
+
+## 📡 RESTful API & Interactive Swagger Documentation
+
+The application provides a comprehensive RESTful API for alumni management. An interactive **Swagger UI** is integrated at `/api/swagger`, powered by an **OpenAPI 3.0** specification at `/api/swagger.json`.
+
+### 🔗 Available Endpoints
+
+| Method | Endpoint | Description | Query / Body | Response Code |
+| :---: | :--- | :--- | :--- | :---: |
+| **`GET`** | `/api/health` | Check API status & MySQL connectivity | None | `200 OK` |
+| **`GET`** | `/api/users` | List all registered alumni users | None | `200 OK` |
+| **`POST`** | `/api/users` | Register a new alumni user | JSON (`name`, `email`, `student_number`, ...) | `201 Created` |
+| **`GET`** | `/api/users/{id}` | Get detailed information for a specific user | URL Path Parameter (`id`) | `200 OK` / `404` |
+| **`PUT`** | `/api/users/{id}` | Complete update of user profile attributes | URL Path (`id`) + Full JSON body | `200 OK` / `404` |
+| **`PATCH`**| `/api/users/{id}` | Partial update of specific user fields | URL Path (`id`) + Partial JSON body | `200 OK` / `404` |
+| **`DELETE`**| `/api/users/{id}` | Delete an alumni user from the system | URL Path Parameter (`id`) | `200 OK` / `404` |
+| **`GET`** | `/api/swagger` | Interactive Swagger UI in browser | None (Open in browser) | `200 OK` (HTML) |
+| **`GET`** | `/api/swagger.json` | Download OpenAPI 3.0 JSON specification | None | `200 OK` (JSON) |
+
+### 🚀 Accessing Swagger UI
+Simply navigate to:
+* **[http://localhost/api/swagger](http://localhost/api/swagger)** *(or `http://localhost:8000/api/swagger`)*
+
+Click **"Try it out"** on any endpoint to test requests directly in your browser without needing external tools.
+
+---
+
 ## 📸 Screenshots
 
 > *Screenshots will be updated as modules are finalized.*
