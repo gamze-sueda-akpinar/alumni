@@ -219,6 +219,8 @@ flowchart TD
 The **Model** layer encapsulates data schema, database interaction, business rules, and entity relationships using Laravel's **Eloquent ORM**:
 
 * **[`app/Models/User.php`](app/Models/User.php):** Core authentication and user management entity. Represents administrators, department coordinators, and alumni.
+* **[`app/Models/InMemoryUser.php`](app/Models/InMemoryUser.php):** Non-database standalone User Model providing full CRUD operations (`all()`, `find($id)`, `create($data)`, `update($id, $data)`, `delete($id)`) via in-memory caching.
+* **[`app/Models/UserModel.php`](app/Models/UserModel.php):** Extended alias for the non-database User Model.
 * **[`app/Models/AlumniProfile.php`](app/Models/AlumniProfile.php):** Core alumni data model containing graduation year, student number, approval status, city, current company, and position. Belongs to `User` and `Department`.
 * **[`app/Models/Faculty.php`](app/Models/Faculty.php):** Academic faculties (e.g., Faculty of Engineering). Has a one-to-many relationship with `Department`.
 * **[`app/Models/Department.php`](app/Models/Department.php):** Academic departments (e.g., Computer Engineering, MIS). Belongs to `Faculty` and has many `AlumniProfile` records.
@@ -284,14 +286,16 @@ alumni/
 │   ├── Http/                               # HTTP layer
 │   │   └── Controllers/                    # HTTP Controllers
 │   │       └── Controller.php              # Base Laravel controller
-│   ├── Models/                             # Eloquent ORM Models (Model layer)
+│   ├── Models/                             # Eloquent ORM & In-Memory Models (Model layer)
 │   │   ├── AlumniProfile.php               # Alumni graduate profile entity
 │   │   ├── Department.php                  # Academic department entity
 │   │   ├── Event.php                       # Alumni reunions & events entity
 │   │   ├── Experience.php                  # Professional career history entity
 │   │   ├── Faculty.php                     # Faculty entity
+│   │   ├── InMemoryUser.php                # Non-database User Model with full CRUD
 │   │   ├── JobPosting.php                  # Career opportunity entity
-│   │   └── User.php                        # Core user authentication entity
+│   │   ├── User.php                        # Core user authentication entity
+│   │   └── UserModel.php                   # Database-independent User model alias
 │   └── Providers/                          # Service providers
 │       ├── AppServiceProvider.php          # Application bootstrap services
 │       └── Filament/                       # Filament panel providers

@@ -53,4 +53,36 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Non-Database In-Memory CRUD Operations (Prototype Mode)
+    |--------------------------------------------------------------------------
+    */
+
+    public static function inMemoryAll(): array
+    {
+        return InMemoryUser::all();
+    }
+
+    public static function inMemoryFind($id): ?InMemoryUser
+    {
+        return InMemoryUser::find($id);
+    }
+
+    public static function inMemoryCreate(array $data): InMemoryUser
+    {
+        return InMemoryUser::create($data);
+    }
+
+    public static function inMemoryUpdate($id, array $data): ?InMemoryUser
+    {
+        return InMemoryUser::update($id, $data);
+    }
+
+    public static function inMemoryDelete($id): ?InMemoryUser
+    {
+        return InMemoryUser::delete($id);
+    }
 }
+

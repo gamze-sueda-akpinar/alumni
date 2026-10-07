@@ -48,6 +48,7 @@ Route::get('/api/health', function () {
     ]);
 });
 
+// POST /api/users - Yeni kullanıcı oluşturma (Model aracılığıyla)
 Route::post('/api/users', function (\Illuminate\Http\Request $request) {
     $validated = $request->validate([
         'name' => 'required|string|max:255',
@@ -57,164 +58,49 @@ Route::post('/api/users', function (\Illuminate\Http\Request $request) {
         'department' => 'nullable|string|max:255',
         'current_company' => 'nullable|string|max:255',
         'current_position' => 'nullable|string|max:255',
+        'city' => 'nullable|string|max:255',
     ]);
 
-    $defaultUsers = [
-        [
-            'id' => 1,
-            'name' => 'Gamze Şüeda Akpınar',
-            'email' => 'gamze@example.com',
-            'student_number' => '2019123456',
-            'graduation_year' => 2024,
-            'department' => 'Bilgisayar Mühendisliği',
-            'current_company' => 'Google',
-            'current_position' => 'Software Engineer',
-            'city' => 'İstanbul',
-            'status' => 'approved',
-            'created_at' => '2026-09-30T06:00:00+00:00',
-        ],
-        [
-            'id' => 2,
-            'name' => 'Ahmet Yılmaz',
-            'email' => 'ahmet.yilmaz@example.com',
-            'student_number' => '170102045',
-            'graduation_year' => 2021,
-            'department' => 'Bilgisayar Mühendisliği',
-            'current_company' => 'Trendyol',
-            'current_position' => 'Senior Backend Developer',
-            'city' => 'İstanbul',
-            'status' => 'approved',
-            'created_at' => '2026-09-30T06:00:00+00:00',
-        ],
-        [
-            'id' => 3,
-            'name' => 'Elif Kaya',
-            'email' => 'elif.kaya@example.com',
-            'student_number' => '190104012',
-            'graduation_year' => 2023,
-            'department' => 'Yazılım Mühendisliği',
-            'current_company' => 'Getir',
-            'current_position' => 'Frontend Developer',
-            'city' => 'İzmir',
-            'status' => 'approved',
-            'created_at' => '2026-09-30T06:00:00+00:00',
-        ],
-    ];
-
-    $users = Cache::get('api_users_list', $defaultUsers);
-
-    $nextId = count($users) > 0 ? max(array_column($users, 'id')) + 1 : 1;
-
-    $newUser = array_merge([
-        'id' => $nextId,
-    ], $validated, [
-        'city' => $request->input('city', 'İstanbul'),
-        'status' => 'approved',
-        'created_at' => now()->toIso8601String(),
-    ]);
-
-    // Yeni kullanıcıyı listeye ekle ve kalıcı olarak sakla
-    $users[] = $newUser;
-    Cache::forever('api_users_list', $users);
+    $newUser = \App\Models\InMemoryUser::create($validated);
 
     return response()->json([
         'status' => 'success',
         'message' => 'User created and saved successfully',
-        'data' => $newUser,
+        'data' => $newUser->toArray(),
     ], 201);
 });
 
+// GET /api/users - Kullanıcıları listeleme (Model aracılığıyla)
 Route::get('/api/users', function () {
-    $defaultUsers = [
-        [
-            'id' => 1,
-            'name' => 'Gamze Şüeda Akpınar',
-            'email' => 'gamze@example.com',
-            'student_number' => '2019123456',
-            'graduation_year' => 2024,
-            'department' => 'Bilgisayar Mühendisliği',
-            'current_company' => 'Google',
-            'current_position' => 'Software Engineer',
-            'city' => 'İstanbul',
-            'status' => 'approved',
-            'created_at' => '2026-09-30T06:00:00+00:00',
-        ],
-        [
-            'id' => 2,
-            'name' => 'Ahmet Yılmaz',
-            'email' => 'ahmet.yilmaz@example.com',
-            'student_number' => '170102045',
-            'graduation_year' => 2021,
-            'department' => 'Bilgisayar Mühendisliği',
-            'current_company' => 'Trendyol',
-            'current_position' => 'Senior Backend Developer',
-            'city' => 'İstanbul',
-            'status' => 'approved',
-            'created_at' => '2026-09-30T06:00:00+00:00',
-        ],
-        [
-            'id' => 3,
-            'name' => 'Elif Kaya',
-            'email' => 'elif.kaya@example.com',
-            'student_number' => '190104012',
-            'graduation_year' => 2023,
-            'department' => 'Yazılım Mühendisliği',
-            'current_company' => 'Getir',
-            'current_position' => 'Frontend Developer',
-            'city' => 'İzmir',
-            'status' => 'approved',
-            'created_at' => '2026-09-30T06:00:00+00:00',
-        ],
-    ];
-
-    $users = Cache::get('api_users_list', $defaultUsers);
+    $users = \App\Models\InMemoryUser::all();
 
     return response()->json([
         'status' => 'success',
         'message' => 'Users listed successfully',
         'total' => count($users),
-        'data' => $users,
+        'data' => array_map(fn($u) => $u->toArray(), $users),
     ], 200);
 });
 
-// GET /api/users/{id} - Tekil kullanıcı getirme
+// GET /api/users/{id} - Tekil kullanıcı getirme (Model aracılığıyla)
 Route::get('/api/users/{id}', function ($id) {
-    $users = Cache::get('api_users_list', []);
+    $user = \App\Models\InMemoryUser::find($id);
 
-    foreach ($users as $user) {
-        if ((string) $user['id'] === (string) $id) {
-            return response()->json([
-                'status' => 'success',
-                'data' => $user,
-            ], 200);
-        }
-    }
-
-    return response()->json([
-        'status' => 'error',
-        'message' => "User with ID {$id} not found",
-    ], 404);
-});
-
-// PUT / PATCH /api/users/{id} - Kullanıcı güncelleme
-Route::match(['put', 'patch'], '/api/users/{id}', function (\Illuminate\Http\Request $request, $id) {
-    $users = Cache::get('api_users_list', []);
-
-    $userIndex = null;
-    foreach ($users as $index => $user) {
-        if ((string) $user['id'] === (string) $id) {
-            $userIndex = $index;
-            break;
-        }
-    }
-
-    if ($userIndex === null) {
+    if (!$user) {
         return response()->json([
             'status' => 'error',
             'message' => "User with ID {$id} not found",
         ], 404);
     }
 
+    return response()->json([
+        'status' => 'success',
+        'data' => $user->toArray(),
+    ], 200);
+});
+
+// PUT / PATCH /api/users/{id} - Kullanıcı güncelleme (Model aracılığıyla)
+Route::match(['put', 'patch'], '/api/users/{id}', function (\Illuminate\Http\Request $request, $id) {
     $validated = $request->validate([
         'name' => 'sometimes|string|max:255',
         'email' => 'sometimes|email|max:255',
@@ -227,50 +113,37 @@ Route::match(['put', 'patch'], '/api/users/{id}', function (\Illuminate\Http\Req
         'status' => 'nullable|string|in:pending,approved,rejected',
     ]);
 
-    // Mevcut alanların üzerine sadece gönderilen yeni alanları güncelle
-    $updatedUser = array_merge($users[$userIndex], $validated, [
-        'updated_at' => now()->toIso8601String(),
-    ]);
+    $updatedUser = \App\Models\InMemoryUser::update($id, $validated);
 
-    $users[$userIndex] = $updatedUser;
-    Cache::forever('api_users_list', $users);
-
-    return response()->json([
-        'status' => 'success',
-        'message' => "User with ID {$id} updated successfully",
-        'data' => $updatedUser,
-    ], 200);
-});
-
-// DELETE /api/users/{id} - Kullanıcı silme
-Route::delete('/api/users/{id}', function ($id) {
-    $users = Cache::get('api_users_list', []);
-
-    $userIndex = null;
-    $deletedUser = null;
-    foreach ($users as $index => $user) {
-        if ((string) $user['id'] === (string) $id) {
-            $userIndex = $index;
-            $deletedUser = $user;
-            break;
-        }
-    }
-
-    if ($userIndex === null) {
+    if (!$updatedUser) {
         return response()->json([
             'status' => 'error',
             'message' => "User with ID {$id} not found",
         ], 404);
     }
 
-    // Kullanıcıyı diziden çıkar ve indeksleri yeniden düzenle
-    array_splice($users, $userIndex, 1);
-    Cache::forever('api_users_list', $users);
+    return response()->json([
+        'status' => 'success',
+        'message' => "User with ID {$id} updated successfully",
+        'data' => $updatedUser->toArray(),
+    ], 200);
+});
+
+// DELETE /api/users/{id} - Kullanıcı silme (Model aracılığıyla)
+Route::delete('/api/users/{id}', function ($id) {
+    $deletedUser = \App\Models\InMemoryUser::delete($id);
+
+    if (!$deletedUser) {
+        return response()->json([
+            'status' => 'error',
+            'message' => "User with ID {$id} not found",
+        ], 404);
+    }
 
     return response()->json([
         'status' => 'success',
         'message' => "User with ID {$id} deleted successfully",
-        'deleted_user' => $deletedUser,
+        'deleted_user' => $deletedUser->toArray(),
     ], 200);
 });
 
