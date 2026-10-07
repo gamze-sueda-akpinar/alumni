@@ -51,9 +51,14 @@ Route::get('/api/health', function () {
 });
 
 // =========================================================================
-// 1. Web Controller Resource Routes (/users -> UserController)
+// 1. Web Controller Routes with View Layer (/users -> UserController)
+//    - GET  /users        --> listing (R) renders resources/views/users/index.blade.php
+//    - POST /users        --> creating (C) validates input, creates user & redirects
+//    - GET  /users/create --> renders resources/views/users/create.blade.php form
 // =========================================================================
-Route::resource('users', UserController::class);
+Route::get('/users', [UserController::class, 'index'])->name('users.index');
+Route::post('/users', [UserController::class, 'store'])->name('users.store');
+Route::resource('users', UserController::class)->except(['index', 'store']);
 
 // =========================================================================
 // 2. RESTful API Routes (/api/users -> ApiUserController)

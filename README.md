@@ -233,6 +233,8 @@ The **Model** layer encapsulates data schema, database interaction, business rul
 The **View** layer handles presenting data to users, structuring layouts, and rendering interactive front-end screens:
 
 * **Blade Templates ([`resources/views/`](resources/views/)):**
+  * **[`resources/views/users/index.blade.php`](resources/views/users/index.blade.php):** Web user directory & listing view (`GET /users` — Read) with responsive table and quick creation form (`POST /users` — Create).
+  * **[`resources/views/users/create.blade.php`](resources/views/users/create.blade.php):** Dedicated user registration form view (`GET /users/create`).
   * **[`resources/views/main.blade.php`](resources/views/main.blade.php):** Responsive, modern landing and home page designed with Tailwind CSS, featuring alumni success highlights and navigation.
   * **[`resources/views/about.blade.php`](resources/views/about.blade.php):** About page presenting the purpose and vision of the Alumni Tracking System.
   * **[`resources/views/swagger.blade.php`](resources/views/swagger.blade.php):** Embedded, interactive **Swagger UI 5.x** interface for live API exploration and testing directly in the browser.
@@ -331,6 +333,9 @@ alumni/
 │   ├── css/                                # Tailwind and CSS stylesheets
 │   ├── js/                                 # JavaScript front-end assets
 │   └── views/                              # Blade templates
+│       ├── users/                          # User CRUD View Layer
+│       │   ├── create.blade.php            # New user creation form (POST /users)
+│       │   └── index.blade.php             # User directory & listing table (GET /users)
 │       ├── about.blade.php                 # Informational About Us view
 │       ├── main.blade.php                  # Public Home/Main portal view
 │       ├── swagger.blade.php               # Interactive Swagger UI view

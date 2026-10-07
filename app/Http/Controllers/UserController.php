@@ -81,7 +81,7 @@ class UserController extends Controller
             ], 201);
         }
 
-        return redirect()->back()->with('success', 'User created successfully');
+        return redirect('/users')->with('success', 'Mezun kullanıcı başarıyla kaydedildi!');
     }
 
     /**
