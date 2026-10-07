@@ -48,104 +48,19 @@ Route::get('/api/health', function () {
     ]);
 });
 
-// POST /api/users - Yeni kullanıcı oluşturma (Model aracılığıyla)
-Route::post('/api/users', function (\Illuminate\Http\Request $request) {
-    $validated = $request->validate([
-        'name' => 'required|string|max:255',
-        'email' => 'required|email|max:255',
-        'student_number' => 'nullable|string|max:50',
-        'graduation_year' => 'nullable|integer',
-        'department' => 'nullable|string|max:255',
-        'current_company' => 'nullable|string|max:255',
-        'current_position' => 'nullable|string|max:255',
-        'city' => 'nullable|string|max:255',
-    ]);
+// =========================================================================
+// User Controllers & CRUD Routes (MVC Architecture)
+// =========================================================================
 
-    $newUser = \App\Models\InMemoryUser::create($validated);
+// Web Controller Resource Routes (Blade / Web CRUD)
+Route::resource('users', \App\Http\Controllers\UserController::class);
 
-    return response()->json([
-        'status' => 'success',
-        'message' => 'User created and saved successfully',
-        'data' => $newUser->toArray(),
-    ], 201);
-});
-
-// GET /api/users - Kullanıcıları listeleme (Model aracılığıyla)
-Route::get('/api/users', function () {
-    $users = \App\Models\InMemoryUser::all();
-
-    return response()->json([
-        'status' => 'success',
-        'message' => 'Users listed successfully',
-        'total' => count($users),
-        'data' => array_map(fn($u) => $u->toArray(), $users),
-    ], 200);
-});
-
-// GET /api/users/{id} - Tekil kullanıcı getirme (Model aracılığıyla)
-Route::get('/api/users/{id}', function ($id) {
-    $user = \App\Models\InMemoryUser::find($id);
-
-    if (!$user) {
-        return response()->json([
-            'status' => 'error',
-            'message' => "User with ID {$id} not found",
-        ], 404);
-    }
-
-    return response()->json([
-        'status' => 'success',
-        'data' => $user->toArray(),
-    ], 200);
-});
-
-// PUT / PATCH /api/users/{id} - Kullanıcı güncelleme (Model aracılığıyla)
-Route::match(['put', 'patch'], '/api/users/{id}', function (\Illuminate\Http\Request $request, $id) {
-    $validated = $request->validate([
-        'name' => 'sometimes|string|max:255',
-        'email' => 'sometimes|email|max:255',
-        'student_number' => 'nullable|string|max:50',
-        'graduation_year' => 'nullable|integer',
-        'department' => 'nullable|string|max:255',
-        'current_company' => 'nullable|string|max:255',
-        'current_position' => 'nullable|string|max:255',
-        'city' => 'nullable|string|max:255',
-        'status' => 'nullable|string|in:pending,approved,rejected',
-    ]);
-
-    $updatedUser = \App\Models\InMemoryUser::update($id, $validated);
-
-    if (!$updatedUser) {
-        return response()->json([
-            'status' => 'error',
-            'message' => "User with ID {$id} not found",
-        ], 404);
-    }
-
-    return response()->json([
-        'status' => 'success',
-        'message' => "User with ID {$id} updated successfully",
-        'data' => $updatedUser->toArray(),
-    ], 200);
-});
-
-// DELETE /api/users/{id} - Kullanıcı silme (Model aracılığıyla)
-Route::delete('/api/users/{id}', function ($id) {
-    $deletedUser = \App\Models\InMemoryUser::delete($id);
-
-    if (!$deletedUser) {
-        return response()->json([
-            'status' => 'error',
-            'message' => "User with ID {$id} not found",
-        ], 404);
-    }
-
-    return response()->json([
-        'status' => 'success',
-        'message' => "User with ID {$id} deleted successfully",
-        'deleted_user' => $deletedUser->toArray(),
-    ], 200);
-});
+// API Controller RESTful Endpoints (JSON CRUD)
+Route::get('/api/users', [\App\Http\Controllers\ApiUserController::class, 'index']);
+Route::post('/api/users', [\App\Http\Controllers\ApiUserController::class, 'store']);
+Route::get('/api/users/{id}', [\App\Http\Controllers\ApiUserController::class, 'show']);
+Route::match(['put', 'patch'], '/api/users/{id}', [\App\Http\Controllers\ApiUserController::class, 'update']);
+Route::delete('/api/users/{id}', [\App\Http\Controllers\ApiUserController::class, 'destroy']);
 
 // GET /api/swagger - Swagger UI Arayüzü
 Route::get('/api/swagger', function () {

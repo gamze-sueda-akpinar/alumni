@@ -241,24 +241,16 @@ The **View** layer handles presenting data to users, structuring layouts, and re
   * Powered by the **TALL stack** (Tailwind CSS, Alpine.js, Laravel, Livewire). Renders reactive administration dashboards, data tables, filter modals, and statistics cards without writing manual HTML.
 
 ### 3. 🎮 Controller (C) — Request Handling & Flow Control
-The **Controller** layer intercepts incoming HTTP requests, validates payloads, invokes Model operations, and returns the appropriate View or JSON response:
-
-* **Application Routes & Controllers ([`routes/web.php`](routes/web.php)):**
+* **Web & API Controllers ([`app/Http/Controllers/`](app/Http/Controllers/)):**
+  * **[`app/Http/Controllers/UserController.php`](app/Http/Controllers/UserController.php):** Web/Resource controller handling full CRUD lifecycle methods (`index`, `create`, `store`, `show`, `edit`, `update`, `destroy`) with view and JSON response support.
+  * **[`app/Http/Controllers/ApiUserController.php`](app/Http/Controllers/ApiUserController.php):** Dedicated RESTful JSON controller managing the API CRUD operations (`index`, `store`, `show`, `update`, `destroy`) powered by the `InMemoryUser` model.
+  * **[`app/Http/Controllers/Api/ApiUserController.php`](app/Http/Controllers/Api/ApiUserController.php):** Namespaced API controller alias for modular route binding.
+  * **[`app/Http/Controllers/Controller.php`](app/Http/Controllers/Controller.php):** Base Laravel foundation controller class.
+* **Application Routes ([`routes/web.php`](routes/web.php)):**
   * Serves front-end Blade views (`/`, `/main`, `/about`, `/hello/{name}`).
-  * Acts as the controller and request handler for the RESTful API endpoints:
-    * `GET /api/health` — Checks API health and MySQL database connectivity.
-    * `GET /api/users` — Lists all alumni users.
-    * `POST /api/users` — Validates inputs and creates a new graduate record.
-    * `GET /api/users/{id}` — Fetches details of a specific user by ID.
-    * `PUT /api/users/{id}` — Replaces and updates full user profile information.
-    * `PATCH /api/users/{id}` — Partially updates specific attributes (e.g., job position).
-    * `DELETE /api/users/{id}` — Deletes an alumni record and returns confirmation.
-    * `GET /api/swagger` — Renders the interactive Swagger UI view.
-    * `GET /api/swagger.json` — Delivers the OpenAPI 3.0 specification file.
+  * Directs resource requests to `UserController` (`/users`) and RESTful endpoints to `ApiUserController` (`/api/users`).
 * **Filament Admin Resources ([`app/Filament/Resources/`](app/Filament/Resources/)):**
   * High-level CRUD controller classes (`AlumniProfileResource`, `DepartmentResource`, `FacultyResource`, `JobPostingResource`, `EventResource`) managing form schemas, table columns, queries, and permissions.
-* **Base Controller ([`app/Http/Controllers/Controller.php`](app/Http/Controllers/Controller.php)):**
-  * Foundation controller class for modular HTTP controllers.
 
 ---
 
@@ -284,8 +276,12 @@ alumni/
 │   │   └── Widgets/                        # Admin dashboard analytic widgets
 │   │       └── StatsOverview.php           # Quick metrics (total alumni, stats)
 │   ├── Http/                               # HTTP layer
-│   │   └── Controllers/                    # HTTP Controllers
-│   │       └── Controller.php              # Base Laravel controller
+│   │   └── Controllers/                    # HTTP Controllers (Controller layer)
+│   │       ├── Api/                        # API Controllers namespace
+│   │       │   └── ApiUserController.php   # Namespaced REST API Controller
+│   │       ├── ApiUserController.php       # JSON RESTful API CRUD Controller
+│   │       ├── Controller.php              # Base Laravel controller
+│   │       └── UserController.php          # Web & Resource CRUD Controller
 │   ├── Models/                             # Eloquent ORM & In-Memory Models (Model layer)
 │   │   ├── AlumniProfile.php               # Alumni graduate profile entity
 │   │   ├── Department.php                  # Academic department entity
