@@ -49,6 +49,17 @@
         </div>
         @endif
 
+        <!-- Flash Message (Error) -->
+        @if(session('error'))
+        <div class="mb-6 p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 flex items-center justify-between shadow-sm">
+            <div class="flex items-center gap-3">
+                <span class="text-xl">❌</span>
+                <span class="font-medium">{{ session('error') }}</span>
+            </div>
+            <button onclick="this.parentElement.remove()" class="text-rose-600 hover:text-rose-900 font-bold">&times;</button>
+        </div>
+        @endif
+
         <!-- Validation Errors -->
         @if($errors->any())
         <div class="mb-6 p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 shadow-sm">
@@ -68,10 +79,10 @@
             <div>
                 <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-700 text-xs font-semibold mb-2">
                     <span>👥</span>
-                    <span>GET /users (Read - Listing) & POST /users (Create)</span>
+                    <span>Full CRUD View: Create (C), Read (R), Update (U), Delete (D)</span>
                 </div>
                 <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">Kayıtlı Mezunlar ve Kullanıcılar</h1>
-                <p class="text-sm text-slate-500 mt-1">Sistemde kayıtlı mezunların detaylı listesi ve yeni kullanıcı kaydı.</p>
+                <p class="text-sm text-slate-500 mt-1">Sistemde kayıtlı mezunların detaylı listesi, profili inceleme, düzenleme ve silme işlemleri.</p>
             </div>
             <div class="flex items-center gap-3">
                 <span class="px-4 py-2 bg-white border border-slate-200 rounded-xl shadow-sm text-sm font-semibold text-slate-700">
@@ -159,13 +170,15 @@
                             <th class="py-3.5 px-4">Mevcut Şirket & Pozisyon</th>
                             <th class="py-3.5 px-4">Şehir</th>
                             <th class="py-3.5 px-4">Durum</th>
+                            <th class="py-3.5 px-4 text-right">İşlemler (CRUD)</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 text-sm">
                         @forelse($users as $user)
+                        @php $uid = $user->id ?? $user['id']; @endphp
                         <tr class="hover:bg-slate-50/75 transition">
                             <td class="py-3.5 px-4 font-bold text-slate-500">
-                                #{{ $user->id ?? $user['id'] }}
+                                #{{ $uid }}
                             </td>
                             <td class="py-3.5 px-4">
                                 <div class="font-semibold text-slate-900">{{ $user->name ?? $user['name'] }}</div>
@@ -189,10 +202,30 @@
                                     {{ $user->status ?? $user['status'] ?? 'approved' }}
                                 </span>
                             </td>
+                            <td class="py-3.5 px-4 text-right whitespace-nowrap">
+                                <div class="inline-flex items-center gap-1.5 justify-end">
+                                    <a href="/users/{{ $uid }}" title="Detayı İncele"
+                                       class="px-2.5 py-1 text-xs font-semibold bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg transition border border-indigo-200">
+                                        👁️ İncele
+                                    </a>
+                                    <a href="/users/{{ $uid }}/edit" title="Düzenle"
+                                       class="px-2.5 py-1 text-xs font-semibold bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-lg transition border border-amber-200">
+                                        ✏️ Düzenle
+                                    </a>
+                                    <form action="/users/{{ $uid }}" method="POST" class="inline" onsubmit="return confirm('Bu kullanıcıyı silmek istediğinize emin misiniz?');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" title="Sil"
+                                                class="px-2.5 py-1 text-xs font-semibold bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-lg transition border border-rose-200">
+                                            🗑️ Sil
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="7" class="py-12 text-center text-slate-500">
+                            <td colspan="8" class="py-12 text-center text-slate-500">
                                 <span class="text-4xl block mb-2">📭</span>
                                 Sistemde henüz kayıtlı kullanıcı bulunmamaktadır.
                             </td>

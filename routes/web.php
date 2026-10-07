@@ -52,13 +52,21 @@ Route::get('/api/health', function () {
 
 // =========================================================================
 // 1. Web Controller Routes with View Layer (/users -> UserController)
-//    - GET  /users        --> listing (R) renders resources/views/users/index.blade.php
-//    - POST /users        --> creating (C) validates input, creates user & redirects
-//    - GET  /users/create --> renders resources/views/users/create.blade.php form
+//    - [C] GET    /users/create    --> Renders users.create form view
+//    - [C] POST   /users           --> Stores new user and redirects to /users
+//    - [R] GET    /users           --> Listing all users via users.index view
+//    - [R] GET    /users/{id}      --> Single user details via users.show view
+//    - [U] GET    /users/{id}/edit --> Renders users.edit form view
+//    - [U] PUT    /users/{id}      --> Updates user data and redirects to /users
+//    - [D] DELETE /users/{id}      --> Deletes user and redirects to /users
 // =========================================================================
 Route::get('/users', [UserController::class, 'index'])->name('users.index');
+Route::get('/users/create', [UserController::class, 'create'])->name('users.create');
 Route::post('/users', [UserController::class, 'store'])->name('users.store');
-Route::resource('users', UserController::class)->except(['index', 'store']);
+Route::get('/users/{id}', [UserController::class, 'show'])->name('users.show');
+Route::get('/users/{id}/edit', [UserController::class, 'edit'])->name('users.edit');
+Route::match(['put', 'patch'], '/users/{id}', [UserController::class, 'update'])->name('users.update');
+Route::delete('/users/{id}', [UserController::class, 'destroy'])->name('users.destroy');
 
 // =========================================================================
 // 2. RESTful API Routes (/api/users -> ApiUserController)

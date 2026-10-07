@@ -85,20 +85,23 @@ class UserController extends Controller
     }
 
     /**
-     * Display the specified user (READ - Single).
+     * Display the specified user (READ - Single View).
      *
      * @param  int|string  $id
-     * @return \Illuminate\Http\JsonResponse|\Illuminate\View\View
+     * @return \Illuminate\Http\JsonResponse|\Illuminate\View\View|\Illuminate\Http\RedirectResponse
      */
     public function show($id)
     {
         $user = InMemoryUser::find($id);
 
         if (!$user) {
-            return response()->json([
-                'status' => 'error',
-                'message' => "User with ID {$id} not found",
-            ], 404);
+            if (request()->wantsJson()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => "User with ID {$id} not found",
+                ], 404);
+            }
+            return redirect('/users')->with('error', "ID #{$id} olan mezun bulunamadı.");
         }
 
         if (view()->exists('users.show')) {
@@ -116,17 +119,20 @@ class UserController extends Controller
      * Show the form for editing the specified user (UPDATE - Form view).
      *
      * @param  int|string  $id
-     * @return \Illuminate\Http\JsonResponse|\Illuminate\View\View
+     * @return \Illuminate\Http\JsonResponse|\Illuminate\View\View|\Illuminate\Http\RedirectResponse
      */
     public function edit($id)
     {
         $user = InMemoryUser::find($id);
 
         if (!$user) {
-            return response()->json([
-                'status' => 'error',
-                'message' => "User with ID {$id} not found",
-            ], 404);
+            if (request()->wantsJson()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => "User with ID {$id} not found",
+                ], 404);
+            }
+            return redirect('/users')->with('error', "ID #{$id} olan mezun bulunamadı.");
         }
 
         if (view()->exists('users.edit')) {
@@ -164,10 +170,13 @@ class UserController extends Controller
         $updatedUser = InMemoryUser::update($id, $validated);
 
         if (!$updatedUser) {
-            return response()->json([
-                'status' => 'error',
-                'message' => "User with ID {$id} not found",
-            ], 404);
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => "User with ID {$id} not found",
+                ], 404);
+            }
+            return redirect('/users')->with('error', "ID #{$id} olan mezun bulunamadı.");
         }
 
         if ($request->wantsJson()) {
@@ -178,7 +187,7 @@ class UserController extends Controller
             ]);
         }
 
-        return redirect()->back()->with('success', 'User updated successfully');
+        return redirect('/users')->with('success', "Mezun #{$id} ({$updatedUser->name}) bilgileri başarıyla güncellendi!");
     }
 
     /**
@@ -192,16 +201,23 @@ class UserController extends Controller
         $deletedUser = InMemoryUser::delete($id);
 
         if (!$deletedUser) {
-            return response()->json([
-                'status' => 'error',
-                'message' => "User with ID {$id} not found",
-            ], 404);
+            if (request()->wantsJson()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => "User with ID {$id} not found",
+                ], 404);
+            }
+            return redirect('/users')->with('error', "ID #{$id} olan mezun bulunamadı.");
         }
 
-        return response()->json([
-            'status' => 'success',
-            'message' => "User with ID {$id} deleted successfully via UserController@destroy",
-            'deleted_user' => $deletedUser->toArray(),
-        ]);
+        if (request()->wantsJson()) {
+            return response()->json([
+                'status' => 'success',
+                'message' => "User with ID {$id} deleted successfully via UserController@destroy",
+                'deleted_user' => $deletedUser->toArray(),
+            ]);
+        }
+
+        return redirect('/users')->with('success', "Mezun #{$id} ({$deletedUser->name}) başarıyla silindi!");
     }
 }
