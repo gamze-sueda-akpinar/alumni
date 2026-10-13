@@ -221,6 +221,8 @@ The **Model** layer encapsulates data schema, database interaction, business rul
 * **[`app/Models/User.php`](app/Models/User.php):** Core authentication and user management entity. Represents administrators, department coordinators, and alumni.
 * **[`app/Models/InMemoryUser.php`](app/Models/InMemoryUser.php):** Non-database standalone User Model providing full CRUD operations (`all()`, `find($id)`, `create($data)`, `update($id, $data)`, `delete($id)`) via in-memory caching.
 * **[`app/Models/UserModel.php`](app/Models/UserModel.php):** Extended alias for the non-database User Model.
+* **[`app/Models/Announcement.php`](app/Models/Announcement.php):** Non-database standalone Announcement Model with full CRUD operations (`all()`, `find($id)`, `published()`, `pinned()`, `byCategory()`, `create()`, `update()`, `delete()`) and mock dataset.
+* **[`app/Models/InMemoryAnnouncement.php`](app/Models/InMemoryAnnouncement.php):** Non-database Announcement Model alias.
 * **[`app/Models/AlumniProfile.php`](app/Models/AlumniProfile.php):** Core alumni data model containing graduation year, student number, approval status, city, current company, and position. Belongs to `User` and `Department`.
 * **[`app/Models/Faculty.php`](app/Models/Faculty.php):** Academic faculties (e.g., Faculty of Engineering). Has a one-to-many relationship with `Department`.
 * **[`app/Models/Department.php`](app/Models/Department.php):** Academic departments (e.g., Computer Engineering, MIS). Belongs to `Faculty` and has many `AlumniProfile` records.
@@ -288,10 +290,12 @@ alumni/
 │   │       └── UserController.php          # Web & Resource CRUD Controller
 │   ├── Models/                             # Eloquent ORM & In-Memory Models (Model layer)
 │   │   ├── AlumniProfile.php               # Alumni graduate profile entity
+│   │   ├── Announcement.php                # Non-database Announcement Model with full CRUD
 │   │   ├── Department.php                  # Academic department entity
 │   │   ├── Event.php                       # Alumni reunions & events entity
 │   │   ├── Experience.php                  # Professional career history entity
 │   │   ├── Faculty.php                     # Faculty entity
+│   │   ├── InMemoryAnnouncement.php        # Non-database Announcement Model alias
 │   │   ├── InMemoryUser.php                # Non-database User Model with full CRUD
 │   │   ├── JobPosting.php                  # Career opportunity entity
 │   │   ├── User.php                        # Core user authentication entity
