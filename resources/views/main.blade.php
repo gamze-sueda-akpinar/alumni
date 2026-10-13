@@ -23,9 +23,13 @@
                 </span>
             </div>
             <div class="flex items-center space-x-4">
+                <a href="/users" class="text-sm font-medium text-slate-600 hover:text-indigo-600 transition">Mezunlar</a>
+                <a href="/announcements" class="text-sm font-medium text-slate-600 hover:text-indigo-600 transition">Duyurular</a>
+                <a href="/job-postings" class="text-sm font-medium text-slate-600 hover:text-indigo-600 transition">İş İlanları</a>
                 <a href="/about" class="text-sm font-medium text-slate-600 hover:text-indigo-600 transition">Hakkımızda</a>
+                <a href="/api/swagger" class="text-sm font-medium text-slate-600 hover:text-indigo-600 transition">Swagger UI</a>
                 <a href="/admin" class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition shadow-sm">
-                    Yönetim Paneli (Admin) &rarr;
+                    Yönetim Paneli &rarr;
                 </a>
             </div>
         </div>

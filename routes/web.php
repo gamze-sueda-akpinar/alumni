@@ -2,7 +2,9 @@
 
 use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\ApiAnnouncementController;
+use App\Http\Controllers\ApiJobPostingController;
 use App\Http\Controllers\ApiUserController;
+use App\Http\Controllers\JobPostingController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -105,6 +107,33 @@ Route::post('/api/announcements', [ApiAnnouncementController::class, 'store'])->
 Route::get('/api/announcements/{id}', [ApiAnnouncementController::class, 'show'])->name('api.announcements.show');
 Route::match(['put', 'patch'], '/api/announcements/{id}', [ApiAnnouncementController::class, 'update'])->name('api.announcements.update');
 Route::delete('/api/announcements/{id}', [ApiAnnouncementController::class, 'destroy'])->name('api.announcements.destroy');
+
+// =========================================================================
+// 5. Web Controller Routes with View Layer (/job-postings -> JobPostingController)
+//    - [C] GET    /job-postings/create    --> Renders job_postings.create form view
+//    - [C] POST   /job-postings           --> Stores new job posting and redirects
+//    - [R] GET    /job-postings           --> Listing all job postings via index view
+//    - [R] GET    /job-postings/{id}      --> Single job posting details via show view
+//    - [U] GET    /job-postings/{id}/edit --> Renders job_postings.edit form view
+//    - [U] PUT    /job-postings/{id}      --> Updates job posting data and redirects
+//    - [D] DELETE /job-postings/{id}      --> Deletes job posting and redirects
+// =========================================================================
+Route::get('/job-postings', [JobPostingController::class, 'index'])->name('job-postings.index');
+Route::get('/job-postings/create', [JobPostingController::class, 'create'])->name('job-postings.create');
+Route::post('/job-postings', [JobPostingController::class, 'store'])->name('job-postings.store');
+Route::get('/job-postings/{id}', [JobPostingController::class, 'show'])->name('job-postings.show');
+Route::get('/job-postings/{id}/edit', [JobPostingController::class, 'edit'])->name('job-postings.edit');
+Route::match(['put', 'patch'], '/job-postings/{id}', [JobPostingController::class, 'update'])->name('job-postings.update');
+Route::delete('/job-postings/{id}', [JobPostingController::class, 'destroy'])->name('job-postings.destroy');
+
+// =========================================================================
+// 6. RESTful API Routes (/api/job-postings -> ApiJobPostingController)
+// =========================================================================
+Route::get('/api/job-postings', [ApiJobPostingController::class, 'index'])->name('api.job-postings.index');
+Route::post('/api/job-postings', [ApiJobPostingController::class, 'store'])->name('api.job-postings.store');
+Route::get('/api/job-postings/{id}', [ApiJobPostingController::class, 'show'])->name('api.job-postings.show');
+Route::match(['put', 'patch'], '/api/job-postings/{id}', [ApiJobPostingController::class, 'update'])->name('api.job-postings.update');
+Route::delete('/api/job-postings/{id}', [ApiJobPostingController::class, 'destroy'])->name('api.job-postings.destroy');
 
 // GET /api/swagger - Swagger UI Arayüzü
 Route::get('/api/swagger', function () {

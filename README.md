@@ -228,6 +228,7 @@ The **Model** layer encapsulates data schema, database interaction, business rul
 * **[`app/Models/Department.php`](app/Models/Department.php):** Academic departments (e.g., Computer Engineering, MIS). Belongs to `Faculty` and has many `AlumniProfile` records.
 * **[`app/Models/Experience.php`](app/Models/Experience.php):** Tracks professional career history, internship records, and current employment for graduates.
 * **[`app/Models/JobPosting.php`](app/Models/JobPosting.php):** Career openings, internships, and job advertisements shared for alumni.
+* **[`app/Models/InMemoryJobPosting.php`](app/Models/InMemoryJobPosting.php):** Non-database standalone JobPosting Model with full CRUD operations (`all()`, `find($id)`, `active()`, `byCompany()`, `create()`, `update()`, `delete()`) and mock dataset.
 * **[`app/Models/Event.php`](app/Models/Event.php):** Reunions, seminars, conferences, and networking events for graduates.
 * **`database/migrations/`:** Database blueprint definitions establishing foreign keys, constraints, and table columns in MySQL.
 
@@ -243,6 +244,10 @@ The **View** layer handles presenting data to users, structuring layouts, and re
   * **[`resources/views/announcements/show.blade.php`](resources/views/announcements/show.blade.php):** Detailed single announcement view (`GET /announcements/{id}` — Read Single) displaying title, category, audience, publisher, and full body content.
   * **[`resources/views/announcements/edit.blade.php`](resources/views/announcements/edit.blade.php):** Announcement editing form view (`GET /announcements/{id}/edit` — Update Form) with `@method('PUT')`.
   * **[`resources/views/announcements/create.blade.php`](resources/views/announcements/create.blade.php):** Standalone announcement publication form view (`GET /announcements/create` — Create Form).
+  * **[`resources/views/job_postings/index.blade.php`](resources/views/job_postings/index.blade.php):** Job postings listing & career board view (`GET /job-postings` — Read) with company badges, active status, quick posting form (`POST /job-postings` — Create), and action buttons.
+  * **[`resources/views/job_postings/show.blade.php`](resources/views/job_postings/show.blade.php):** Detailed single job posting view (`GET /job-postings/{id}` — Read Single) with responsibilities, qualifications, and deadline.
+  * **[`resources/views/job_postings/edit.blade.php`](resources/views/job_postings/edit.blade.php):** Job posting editing form view (`GET /job-postings/{id}/edit` — Update Form) with `@method('PUT')`.
+  * **[`resources/views/job_postings/create.blade.php`](resources/views/job_postings/create.blade.php):** Standalone job posting publication form view (`GET /job-postings/create` — Create Form).
   * **[`resources/views/main.blade.php`](resources/views/main.blade.php):** Responsive, modern landing and home page designed with Tailwind CSS, featuring alumni success highlights and navigation.
   * **[`resources/views/about.blade.php`](resources/views/about.blade.php):** About page presenting the purpose and vision of the Alumni Tracking System.
   * **[`resources/views/swagger.blade.php`](resources/views/swagger.blade.php):** Embedded, interactive **Swagger UI 5.x** interface for live API exploration and testing directly in the browser.
@@ -258,6 +263,9 @@ The **View** layer handles presenting data to users, structuring layouts, and re
   * **[`app/Http/Controllers/AnnouncementController.php`](app/Http/Controllers/AnnouncementController.php):** Web/Resource controller handling full CRUD lifecycle methods (`index`, `create`, `store`, `show`, `edit`, `update`, `destroy`) for announcements with Blade views and JSON fallbacks.
   * **[`app/Http/Controllers/ApiAnnouncementController.php`](app/Http/Controllers/ApiAnnouncementController.php):** Dedicated RESTful JSON API controller managing CRUD operations (`index`, `store`, `show`, `update`, `destroy`) for announcements powered by the `Announcement` model.
   * **[`app/Http/Controllers/Api/ApiAnnouncementController.php`](app/Http/Controllers/Api/ApiAnnouncementController.php):** Namespaced API announcement controller alias for modular route binding.
+  * **[`app/Http/Controllers/JobPostingController.php`](app/Http/Controllers/JobPostingController.php):** Web/Resource controller handling full CRUD lifecycle methods (`index`, `create`, `store`, `show`, `edit`, `update`, `destroy`) for job postings with Blade views and JSON fallbacks.
+  * **[`app/Http/Controllers/ApiJobPostingController.php`](app/Http/Controllers/ApiJobPostingController.php):** Dedicated RESTful JSON API controller managing CRUD operations (`index`, `store`, `show`, `update`, `destroy`) for job postings powered by the `InMemoryJobPosting` model.
+  * **[`app/Http/Controllers/Api/ApiJobPostingController.php`](app/Http/Controllers/Api/ApiJobPostingController.php):** Namespaced API job posting controller alias for modular route binding.
   * **[`app/Http/Controllers/Controller.php`](app/Http/Controllers/Controller.php):** Base Laravel foundation controller class.
 * **Application Routes ([`routes/web.php`](routes/web.php)):**
   * Serves front-end Blade views (`/`, `/main`, `/about`, `/hello/{name}`).
@@ -307,6 +315,7 @@ alumni/
 │   │   ├── Experience.php                  # Professional career history entity
 │   │   ├── Faculty.php                     # Faculty entity
 │   │   ├── InMemoryAnnouncement.php        # Non-database Announcement Model alias
+│   │   ├── InMemoryJobPosting.php          # Non-database JobPosting Model with full CRUD
 │   │   ├── InMemoryUser.php                # Non-database User Model with full CRUD
 │   │   ├── JobPosting.php                  # Career opportunity entity
 │   │   ├── User.php                        # Core user authentication entity
@@ -355,6 +364,11 @@ alumni/
 │       │   ├── edit.blade.php              # Announcement edit form (GET /announcements/{id}/edit -> PUT /announcements/{id})
 │       │   ├── index.blade.php             # Announcements directory & listing (GET /announcements)
 │       │   └── show.blade.php              # Single announcement detail view (GET /announcements/{id})
+│       ├── job_postings/                   # Job Postings CRUD View Layer
+│       │   ├── create.blade.php            # New job posting form (GET /job-postings/create -> POST /job-postings)
+│       │   ├── edit.blade.php              # Job posting edit form (GET /job-postings/{id}/edit -> PUT /job-postings/{id})
+│       │   ├── index.blade.php             # Job postings board & listing (GET /job-postings)
+│       │   └── show.blade.php              # Single job posting detail view (GET /job-postings/{id})
 │       ├── users/                          # User CRUD View Layer
 │       │   ├── create.blade.php            # New user creation form (GET /users/create -> POST /users)
 │       │   ├── edit.blade.php              # User edit form (GET /users/{id}/edit -> PUT /users/{id})
@@ -433,6 +447,27 @@ The application provides a comprehensive RESTful API for alumni management. An i
 | **`GET`** | `/announcements/{id}/edit`| `AnnouncementController@edit` | Show announcement edit form | View (`announcements.edit`) |
 | **`PUT`** | `/announcements/{id}` | `AnnouncementController@update` | Update existing announcement | Redirect / JSON (`200`) |
 | **`DELETE`**| `/announcements/{id}` | `AnnouncementController@destroy`| Delete announcement record | JSON / Redirect |
+
+#### 💼 RESTful API Endpoints (`ApiJobPostingController` — `/api/job-postings`)
+| Method | Endpoint | Controller Action | Description | Query / Body | Response Code |
+| :---: | :--- | :--- | :--- | :--- | :---: |
+| **`GET`** | `/api/job-postings` | `ApiJobPostingController@index` | List all job postings as JSON | Query (`?company=`, `?active=`) | `200 OK` |
+| **`POST`** | `/api/job-postings` | `ApiJobPostingController@store` | Publish new job posting (JSON) | JSON (`title`, `company_name`, ...) | `201 Created` |
+| **`GET`** | `/api/job-postings/{id}` | `ApiJobPostingController@show` | Get single job posting by ID | URL Path (`id`) | `200 OK` / `404` |
+| **`PUT`** | `/api/job-postings/{id}` | `ApiJobPostingController@update`| Complete update of job posting | URL Path + Full JSON | `200 OK` / `404` |
+| **`PATCH`**| `/api/job-postings/{id}` | `ApiJobPostingController@update`| Partial update of job posting | URL Path + Partial JSON | `200 OK` / `404` |
+| **`DELETE`**| `/api/job-postings/{id}` | `ApiJobPostingController@destroy`| Delete job posting from system | URL Path (`id`) | `200 OK` / `404` |
+
+#### 💼 Web / Resource Controller Endpoints (`JobPostingController` — `/job-postings`)
+| Method | Endpoint | Controller Action | Description | Response Type |
+| :---: | :--- | :--- | :--- | :--- | :---: |
+| **`GET`** | `/job-postings` | `JobPostingController@index` | Display job postings board / view | View (`job_postings.index`) |
+| **`GET`** | `/job-postings/create` | `JobPostingController@create` | Show job posting creation form | View (`job_postings.create`) |
+| **`POST`** | `/job-postings` | `JobPostingController@store` | Store & publish new job posting | Redirect / JSON (`201`) |
+| **`GET`** | `/job-postings/{id}` | `JobPostingController@show` | Display single job posting details | View (`job_postings.show`) |
+| **`GET`** | `/job-postings/{id}/edit`| `JobPostingController@edit` | Show job posting edit form | View (`job_postings.edit`) |
+| **`PUT`** | `/job-postings/{id}` | `JobPostingController@update` | Update existing job posting | Redirect / JSON (`200`) |
+| **`DELETE`**| `/job-postings/{id}` | `JobPostingController@destroy`| Delete job posting record | JSON / Redirect |
 
 #### 📖 Documentation Endpoints
 | Method | Endpoint | Description | Response Type |

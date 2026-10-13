@@ -27,6 +27,7 @@
             <div class="flex items-center space-x-3">
                 <a href="/users" class="text-sm font-medium text-slate-600 hover:text-indigo-600 transition px-3 py-2">Mezunlar</a>
                 <a href="/announcements" class="text-sm font-semibold text-indigo-600 transition px-3 py-2">Duyurular</a>
+                <a href="/job-postings" class="text-sm font-medium text-slate-600 hover:text-indigo-600 transition px-3 py-2">İş İlanları</a>
                 <a href="/api/swagger" class="text-sm font-medium text-slate-600 hover:text-indigo-600 transition px-3 py-2">Swagger UI</a>
                 <a href="/admin" class="text-sm font-medium text-slate-600 hover:text-indigo-600 transition px-3 py-2">Admin Paneli</a>
                 <a href="/announcements/create" class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition shadow-sm">
