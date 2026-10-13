@@ -2,8 +2,8 @@
   "openapi": "3.0.3",
   "info": {
     "title": "Mezun Takip Sistemi (Alumni) API",
-    "description": "Mezun Takip Sistemi API ve Web Controller dokümantasyonu. /users (UserController) ve /api/users (ApiUserController) uç noktalarını, parametrelerini ve CRUD işlevlerini içerir.",
-    "version": "1.1.0",
+    "description": "Mezun Takip Sistemi API ve Web Controller dokümantasyonu. /users (UserController), /api/users (ApiUserController), /announcements (AnnouncementController) ve /api/announcements (ApiAnnouncementController) uç noktalarını ve CRUD işlevlerini içerir.",
+    "version": "1.2.0",
     "contact": {
       "name": "Gamze Şüeda Akpınar",
       "email": "gamzesuedaakpinar@gmail.com"
@@ -27,12 +27,22 @@
     {
       "name": "Web Controller (/users - UserController)",
       "description": "Web & Resource tabanlı kullanıcı CRUD işlemleri (UserController tarafından yönetilir)"
+    },
+    {
+      "name": "REST API (/api/announcements - ApiAnnouncementController)",
+      "description": "JSON tabanlı RESTful duyuru CRUD işlemleri (ApiAnnouncementController tarafından yönetilir)"
+    },
+    {
+      "name": "Web Controller (/announcements - AnnouncementController)",
+      "description": "Web & Resource tabanlı duyuru CRUD işlemleri ve Blade görünümleri (AnnouncementController tarafından yönetilir)"
     }
   ],
   "paths": {
     "/api/health": {
       "get": {
-        "tags": ["Sistem Sağlığı"],
+        "tags": [
+          "Sistem Sağlığı"
+        ],
         "summary": "Sistem ve Veritabanı Sağlık Durumu",
         "description": "API servisinin çalışıp çalışmadığını ve MySQL veritabanı bağlantısının durumunu kontrol eder.",
         "operationId": "getHealthStatus",
@@ -60,7 +70,9 @@
     },
     "/api/users": {
       "get": {
-        "tags": ["REST API (/api/users - ApiUserController)"],
+        "tags": [
+          "REST API (/api/users - ApiUserController)"
+        ],
         "summary": "Tüm Mezun Kullanıcıları Listele (JSON)",
         "description": "ApiUserController@index metodunu çağırarak tüm mezun kullanıcıları JSON formatında listeler.",
         "operationId": "apiListUsers",
@@ -95,7 +107,9 @@
         }
       },
       "post": {
-        "tags": ["REST API (/api/users - ApiUserController)"],
+        "tags": [
+          "REST API (/api/users - ApiUserController)"
+        ],
         "summary": "Yeni Mezun Kullanıcı Oluştur (JSON)",
         "description": "ApiUserController@store metodunu çağırarak yeni bir kullanıcı oluşturur ve 201 Created döner.",
         "operationId": "apiCreateUser",
@@ -145,7 +159,9 @@
     },
     "/api/users/{id}": {
       "get": {
-        "tags": ["REST API (/api/users - ApiUserController)"],
+        "tags": [
+          "REST API (/api/users - ApiUserController)"
+        ],
         "summary": "ID ile Tekil Kullanıcı Detayı (JSON)",
         "description": "ApiUserController@show metodu ile belirtilen ID'deki kullanıcının detaylarını getirir.",
         "operationId": "apiGetUserById",
@@ -184,7 +200,9 @@
         }
       },
       "put": {
-        "tags": ["REST API (/api/users - ApiUserController)"],
+        "tags": [
+          "REST API (/api/users - ApiUserController)"
+        ],
         "summary": "Kullanıcı Tam Güncelleme (PUT)",
         "description": "ApiUserController@update metodu ile kullanıcının tüm bilgilerini günceller.",
         "operationId": "apiUpdateUserPut",
@@ -226,7 +244,9 @@
         }
       },
       "patch": {
-        "tags": ["REST API (/api/users - ApiUserController)"],
+        "tags": [
+          "REST API (/api/users - ApiUserController)"
+        ],
         "summary": "Kullanıcı Kısmi Güncelleme (PATCH)",
         "description": "ApiUserController@update metodu ile sadece gönderilen alanları günceller.",
         "operationId": "apiUpdateUserPatch",
@@ -264,7 +284,9 @@
         }
       },
       "delete": {
-        "tags": ["REST API (/api/users - ApiUserController)"],
+        "tags": [
+          "REST API (/api/users - ApiUserController)"
+        ],
         "summary": "Kullanıcı Silme (DELETE)",
         "description": "ApiUserController@destroy metodu ile kullanıcıyı sistemden siler.",
         "operationId": "apiDeleteUser",
@@ -299,7 +321,9 @@
     },
     "/users": {
       "get": {
-        "tags": ["Web Controller (/users - UserController)"],
+        "tags": [
+          "Web Controller (/users - UserController)"
+        ],
         "summary": "Web Kullanıcı Listesi (UserController@index)",
         "description": "UserController@index metodunu çağırır. Blade görünümü (users.index) varsa sayfayı render eder, yoksa JSON listesi döner.",
         "operationId": "webListUsers",
@@ -320,7 +344,9 @@
         }
       },
       "post": {
-        "tags": ["Web Controller (/users - UserController)"],
+        "tags": [
+          "Web Controller (/users - UserController)"
+        ],
         "summary": "Web Kullanıcı Kaydı (UserController@store)",
         "description": "UserController@store metodu üzerinden yeni kullanıcı kaydeder.",
         "operationId": "webStoreUser",
@@ -353,7 +379,9 @@
     },
     "/users/create": {
       "get": {
-        "tags": ["Web Controller (/users - UserController)"],
+        "tags": [
+          "Web Controller (/users - UserController)"
+        ],
         "summary": "Yeni Kullanıcı Ekleme Formu (UserController@create)",
         "description": "UserController@create metodunu çağırarak users.create Blade form görünümünü veya durum bilgisini döner.",
         "operationId": "webCreateUserForm",
@@ -366,7 +394,9 @@
     },
     "/users/{id}": {
       "get": {
-        "tags": ["Web Controller (/users - UserController)"],
+        "tags": [
+          "Web Controller (/users - UserController)"
+        ],
         "summary": "Web Kullanıcı Detayı (UserController@show)",
         "description": "UserController@show metodu ile tekil kullanıcı detayını döner.",
         "operationId": "webShowUser",
@@ -391,7 +421,9 @@
         }
       },
       "put": {
-        "tags": ["Web Controller (/users - UserController)"],
+        "tags": [
+          "Web Controller (/users - UserController)"
+        ],
         "summary": "Web Kullanıcı Güncelleme (UserController@update)",
         "description": "UserController@update metodu üzerinden kullanıcıyı günceller.",
         "operationId": "webUpdateUser",
@@ -426,7 +458,9 @@
         }
       },
       "delete": {
-        "tags": ["Web Controller (/users - UserController)"],
+        "tags": [
+          "Web Controller (/users - UserController)"
+        ],
         "summary": "Web Kullanıcı Silme (UserController@destroy)",
         "description": "UserController@destroy metodu ile kullanıcıyı siler.",
         "operationId": "webDestroyUser",
@@ -453,7 +487,9 @@
     },
     "/users/{id}/edit": {
       "get": {
-        "tags": ["Web Controller (/users - UserController)"],
+        "tags": [
+          "Web Controller (/users - UserController)"
+        ],
         "summary": "Kullanıcı Düzenleme Formu (UserController@edit)",
         "description": "UserController@edit metodunu çağırarak users.edit Blade form görünümünü veya düzenleme verisini döner.",
         "operationId": "webEditUserForm",
@@ -477,13 +513,444 @@
           }
         }
       }
+    },
+    "/api/announcements": {
+      "get": {
+        "tags": [
+          "REST API (/api/announcements - ApiAnnouncementController)"
+        ],
+        "summary": "Tüm Duyuruları Listele (JSON)",
+        "description": "ApiAnnouncementController@index metodunu çağırarak tüm duyuruları JSON formatında listeler.",
+        "operationId": "apiListAnnouncements",
+        "responses": {
+          "200": {
+            "description": "Duyurular başarıyla listelendi",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "success",
+                  "message": "Announcements listed successfully",
+                  "total": 3,
+                  "data": [
+                    {
+                      "id": 1,
+                      "title": "2026 Yıllık Mezunlar Zirvesi ve Kariyer Fuarı",
+                      "content": "Üniversitemizin geleneksel mezunlar zirvesi bu yıl 25 Kasım tarihinde ana kampüs kongre merkezinde gerçekleştirilecektir.",
+                      "category": "Etkinlik",
+                      "author": "Mezunlar İlişkileri Koordinatörlüğü",
+                      "target_audience": "Tüm Mezunlar",
+                      "is_pinned": true,
+                      "status": "published",
+                      "published_at": "2026-10-01T10:00:00+03:00",
+                      "created_at": "2026-10-01T09:30:00+03:00",
+                      "updated_at": null
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "REST API (/api/announcements - ApiAnnouncementController)"
+        ],
+        "summary": "Yeni Duyuru Yayınla (JSON)",
+        "description": "ApiAnnouncementController@store metodunu çağırarak yeni bir duyuru kaydı oluşturur ve 201 Created döner.",
+        "operationId": "apiCreateAnnouncement",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAnnouncementRequest"
+              },
+              "example": {
+                "title": "2026 Girişimcilik ve Kuluçka Hibe Desteği",
+                "content": "Teknokent bünyesinde mezunlarımızın kurduğu start-up'lara özel 500.000 TL hibe destek çağrısı açılmıştır.",
+                "category": "Kariyer",
+                "author": "Girişimcilik Kulübü & Mezunlar Derneği",
+                "target_audience": "Tüm Mezunlar",
+                "is_pinned": true,
+                "status": "published"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Duyuru başarıyla oluşturuldu",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "success",
+                  "message": "Announcement created and published successfully",
+                  "data": {
+                    "id": 4,
+                    "title": "2026 Girişimcilik ve Kuluçka Hibe Desteği",
+                    "status": "published"
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validasyon hatası"
+          }
+        }
+      }
+    },
+    "/api/announcements/{id}": {
+      "get": {
+        "tags": [
+          "REST API (/api/announcements - ApiAnnouncementController)"
+        ],
+        "summary": "ID ile Tekil Duyuru Detayı (JSON)",
+        "description": "ApiAnnouncementController@show metodu ile belirtilen ID numarasına sahip duyurunun detaylarını getirir.",
+        "operationId": "apiGetAnnouncementById",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Duyuru ID numarası",
+            "schema": {
+              "type": "integer",
+              "example": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Duyuru bulundu",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "success",
+                  "data": {
+                    "id": 1,
+                    "title": "2026 Yıllık Mezunlar Zirvesi ve Kariyer Fuarı",
+                    "category": "Etkinlik",
+                    "status": "published"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Duyuru bulunamadı"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "REST API (/api/announcements - ApiAnnouncementController)"
+        ],
+        "summary": "Duyuru Tam Güncelleme (PUT)",
+        "description": "ApiAnnouncementController@update metodu ile duyurunun tüm alanlarını günceller.",
+        "operationId": "apiUpdateAnnouncementPut",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Güncellenecek duyuru ID",
+            "schema": {
+              "type": "integer",
+              "example": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAnnouncementRequest"
+              },
+              "example": {
+                "title": "2026 Yıllık Mezunlar Zirvesi ve Kariyer Fuarı (Kayıtlar Açıldı)",
+                "content": "Etkinlik programı güncellendi ve konuşmacı listesi ilan edildi.",
+                "category": "Etkinlik",
+                "is_pinned": true,
+                "status": "published"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Duyuru başarıyla güncellendi"
+          },
+          "404": {
+            "description": "Duyuru bulunamadı"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "REST API (/api/announcements - ApiAnnouncementController)"
+        ],
+        "summary": "Duyuru Kısmi Güncelleme (PATCH)",
+        "description": "ApiAnnouncementController@update metodu ile duyurunun seçili alanlarını günceller.",
+        "operationId": "apiUpdateAnnouncementPatch",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "example": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAnnouncementRequest"
+              },
+              "example": {
+                "is_pinned": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Duyuru kısmi olarak güncellendi"
+          },
+          "404": {
+            "description": "Duyuru bulunamadı"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "REST API (/api/announcements - ApiAnnouncementController)"
+        ],
+        "summary": "Duyuru Silme (DELETE)",
+        "description": "ApiAnnouncementController@destroy metodu ile duyuruyu sistemden siler.",
+        "operationId": "apiDeleteAnnouncement",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "example": 3
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Duyuru silindi",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "success",
+                  "message": "Announcement with ID 3 deleted successfully"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Duyuru bulunamadı"
+          }
+        }
+      }
+    },
+    "/announcements": {
+      "get": {
+        "tags": [
+          "Web Controller (/announcements - AnnouncementController)"
+        ],
+        "summary": "Web Duyuru Listesi (AnnouncementController@index)",
+        "description": "AnnouncementController@index metodunu çağırarak announcements.index Blade görünümünü render eder.",
+        "operationId": "webListAnnouncements",
+        "responses": {
+          "200": {
+            "description": "Duyuru listesi başarıyla getirildi"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Web Controller (/announcements - AnnouncementController)"
+        ],
+        "summary": "Web Duyuru Oluşturma (AnnouncementController@store)",
+        "description": "AnnouncementController@store metodu üzerinden yeni duyuru kaydeder ve duyurular sayfasına yönlendirir.",
+        "operationId": "webStoreAnnouncement",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAnnouncementRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Duyuru başarıyla kaydedildi"
+          },
+          "422": {
+            "description": "Validasyon hatası"
+          }
+        }
+      }
+    },
+    "/announcements/create": {
+      "get": {
+        "tags": [
+          "Web Controller (/announcements - AnnouncementController)"
+        ],
+        "summary": "Yeni Duyuru Yayınlama Formu (AnnouncementController@create)",
+        "description": "AnnouncementController@create metodunu çağırarak announcements.create Blade form görünümünü döner.",
+        "operationId": "webCreateAnnouncementForm",
+        "responses": {
+          "200": {
+            "description": "Duyuru ekleme formu hazır"
+          }
+        }
+      }
+    },
+    "/announcements/{id}": {
+      "get": {
+        "tags": [
+          "Web Controller (/announcements - AnnouncementController)"
+        ],
+        "summary": "Web Duyuru Detayı (AnnouncementController@show)",
+        "description": "AnnouncementController@show metodu ile announcements.show Blade detay görünümünü render eder.",
+        "operationId": "webShowAnnouncement",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "example": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Duyuru detay sayfası görüntülendi"
+          },
+          "404": {
+            "description": "Duyuru bulunamadı"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Web Controller (/announcements - AnnouncementController)"
+        ],
+        "summary": "Web Duyuru Güncelleme (AnnouncementController@update)",
+        "description": "AnnouncementController@update metodu üzerinden duyuru kaydını günceller.",
+        "operationId": "webUpdateAnnouncement",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "example": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAnnouncementRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Duyuru güncellendi"
+          },
+          "404": {
+            "description": "Duyuru bulunamadı"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Web Controller (/announcements - AnnouncementController)"
+        ],
+        "summary": "Web Duyuru Silme (AnnouncementController@destroy)",
+        "description": "AnnouncementController@destroy metodu ile duyuruyu siler ve listeye yönlendirir.",
+        "operationId": "webDestroyAnnouncement",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "example": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Duyuru silindi"
+          },
+          "404": {
+            "description": "Duyuru bulunamadı"
+          }
+        }
+      }
+    },
+    "/announcements/{id}/edit": {
+      "get": {
+        "tags": [
+          "Web Controller (/announcements - AnnouncementController)"
+        ],
+        "summary": "Duyuru Düzenleme Formu (AnnouncementController@edit)",
+        "description": "AnnouncementController@edit metodunu çağırarak announcements.edit Blade form görünümünü döner.",
+        "operationId": "webEditAnnouncementForm",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "example": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Düzenleme formu hazır"
+          },
+          "404": {
+            "description": "Duyuru bulunamadı"
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
       "CreateUserRequest": {
         "type": "object",
-        "required": ["name", "email"],
+        "required": [
+          "name",
+          "email"
+        ],
         "properties": {
           "name": {
             "type": "string",
@@ -550,7 +1017,85 @@
           },
           "status": {
             "type": "string",
-            "enum": ["pending", "approved", "rejected"]
+            "enum": [
+              "pending",
+              "approved",
+              "rejected"
+            ]
+          }
+        }
+      },
+      "CreateAnnouncementRequest": {
+        "type": "object",
+        "required": [
+          "title",
+          "content"
+        ],
+        "properties": {
+          "title": {
+            "type": "string",
+            "example": "2026 Mezunlar Zirvesi ve Kariyer Fuarı"
+          },
+          "content": {
+            "type": "string",
+            "example": "Üniversitemizin geleneksel mezunlar zirvesi bu yıl 25 Kasım tarihinde ana kampüs kongre merkezinde gerçekleştirilecektir."
+          },
+          "category": {
+            "type": "string",
+            "example": "Etkinlik"
+          },
+          "author": {
+            "type": "string",
+            "example": "Mezunlar Ofisi"
+          },
+          "target_audience": {
+            "type": "string",
+            "example": "Tüm Mezunlar"
+          },
+          "is_pinned": {
+            "type": "boolean",
+            "example": true
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "published",
+              "draft",
+              "archived"
+            ],
+            "example": "published"
+          }
+        }
+      },
+      "UpdateAnnouncementRequest": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "example": "2026 Mezunlar Zirvesi (Tarih Güncellendi)"
+          },
+          "content": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "author": {
+            "type": "string"
+          },
+          "target_audience": {
+            "type": "string"
+          },
+          "is_pinned": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "published",
+              "draft",
+              "archived"
+            ]
           }
         }
       }

@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\AnnouncementController;
+use App\Http\Controllers\ApiAnnouncementController;
 use App\Http\Controllers\ApiUserController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Cache;
@@ -76,6 +78,33 @@ Route::post('/api/users', [ApiUserController::class, 'store'])->name('api.users.
 Route::get('/api/users/{id}', [ApiUserController::class, 'show'])->name('api.users.show');
 Route::match(['put', 'patch'], '/api/users/{id}', [ApiUserController::class, 'update'])->name('api.users.update');
 Route::delete('/api/users/{id}', [ApiUserController::class, 'destroy'])->name('api.users.destroy');
+
+// =========================================================================
+// 3. Web Controller Routes with View Layer (/announcements -> AnnouncementController)
+//    - [C] GET    /announcements/create    --> Renders announcements.create form view
+//    - [C] POST   /announcements           --> Stores new announcement and redirects
+//    - [R] GET    /announcements           --> Listing all announcements via index view
+//    - [R] GET    /announcements/{id}      --> Single announcement details via show view
+//    - [U] GET    /announcements/{id}/edit --> Renders announcements.edit form view
+//    - [U] PUT    /announcements/{id}      --> Updates announcement data and redirects
+//    - [D] DELETE /announcements/{id}      --> Deletes announcement and redirects
+// =========================================================================
+Route::get('/announcements', [AnnouncementController::class, 'index'])->name('announcements.index');
+Route::get('/announcements/create', [AnnouncementController::class, 'create'])->name('announcements.create');
+Route::post('/announcements', [AnnouncementController::class, 'store'])->name('announcements.store');
+Route::get('/announcements/{id}', [AnnouncementController::class, 'show'])->name('announcements.show');
+Route::get('/announcements/{id}/edit', [AnnouncementController::class, 'edit'])->name('announcements.edit');
+Route::match(['put', 'patch'], '/announcements/{id}', [AnnouncementController::class, 'update'])->name('announcements.update');
+Route::delete('/announcements/{id}', [AnnouncementController::class, 'destroy'])->name('announcements.destroy');
+
+// =========================================================================
+// 4. RESTful API Routes (/api/announcements -> ApiAnnouncementController)
+// =========================================================================
+Route::get('/api/announcements', [ApiAnnouncementController::class, 'index'])->name('api.announcements.index');
+Route::post('/api/announcements', [ApiAnnouncementController::class, 'store'])->name('api.announcements.store');
+Route::get('/api/announcements/{id}', [ApiAnnouncementController::class, 'show'])->name('api.announcements.show');
+Route::match(['put', 'patch'], '/api/announcements/{id}', [ApiAnnouncementController::class, 'update'])->name('api.announcements.update');
+Route::delete('/api/announcements/{id}', [ApiAnnouncementController::class, 'destroy'])->name('api.announcements.destroy');
 
 // GET /api/swagger - Swagger UI Arayüzü
 Route::get('/api/swagger', function () {

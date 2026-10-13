@@ -239,6 +239,10 @@ The **View** layer handles presenting data to users, structuring layouts, and re
   * **[`resources/views/users/show.blade.php`](resources/views/users/show.blade.php):** Detailed single user profile view (`GET /users/{id}` — Read Single) with edit and delete actions.
   * **[`resources/views/users/edit.blade.php`](resources/views/users/edit.blade.php):** User profile editing form view (`GET /users/{id}/edit` — Update Form) with `@method('PUT')`.
   * **[`resources/views/users/create.blade.php`](resources/views/users/create.blade.php):** Dedicated user registration form view (`GET /users/create` — Create Form).
+  * **[`resources/views/announcements/index.blade.php`](resources/views/announcements/index.blade.php):** Announcements listing & directory view (`GET /announcements` — Read) with category badges, pinned announcement highlighting, action buttons, and quick creation form (`POST /announcements` — Create).
+  * **[`resources/views/announcements/show.blade.php`](resources/views/announcements/show.blade.php):** Detailed single announcement view (`GET /announcements/{id}` — Read Single) displaying title, category, audience, publisher, and full body content.
+  * **[`resources/views/announcements/edit.blade.php`](resources/views/announcements/edit.blade.php):** Announcement editing form view (`GET /announcements/{id}/edit` — Update Form) with `@method('PUT')`.
+  * **[`resources/views/announcements/create.blade.php`](resources/views/announcements/create.blade.php):** Standalone announcement publication form view (`GET /announcements/create` — Create Form).
   * **[`resources/views/main.blade.php`](resources/views/main.blade.php):** Responsive, modern landing and home page designed with Tailwind CSS, featuring alumni success highlights and navigation.
   * **[`resources/views/about.blade.php`](resources/views/about.blade.php):** About page presenting the purpose and vision of the Alumni Tracking System.
   * **[`resources/views/swagger.blade.php`](resources/views/swagger.blade.php):** Embedded, interactive **Swagger UI 5.x** interface for live API exploration and testing directly in the browser.
@@ -249,12 +253,16 @@ The **View** layer handles presenting data to users, structuring layouts, and re
 ### 3. 🎮 Controller (C) — Request Handling & Flow Control
 * **Web & API Controllers ([`app/Http/Controllers/`](app/Http/Controllers/)):**
   * **[`app/Http/Controllers/UserController.php`](app/Http/Controllers/UserController.php):** Web/Resource controller handling full CRUD lifecycle methods (`index`, `create`, `store`, `show`, `edit`, `update`, `destroy`) with view and JSON response support.
-  * **[`app/Http/Controllers/ApiUserController.php`](app/Http/Controllers/ApiUserController.php):** Dedicated RESTful JSON controller managing the API CRUD operations (`index`, `store`, `show`, `update`, `destroy`) powered by the `InMemoryUser` model.
+  * **[`app/Http/Controllers/ApiUserController.php`](app/Http/Controllers/ApiUserController.php):** Dedicated RESTful JSON controller managing the User API CRUD operations (`index`, `store`, `show`, `update`, `destroy`) powered by the `InMemoryUser` model.
   * **[`app/Http/Controllers/Api/ApiUserController.php`](app/Http/Controllers/Api/ApiUserController.php):** Namespaced API controller alias for modular route binding.
+  * **[`app/Http/Controllers/AnnouncementController.php`](app/Http/Controllers/AnnouncementController.php):** Web/Resource controller handling full CRUD lifecycle methods (`index`, `create`, `store`, `show`, `edit`, `update`, `destroy`) for announcements with Blade views and JSON fallbacks.
+  * **[`app/Http/Controllers/ApiAnnouncementController.php`](app/Http/Controllers/ApiAnnouncementController.php):** Dedicated RESTful JSON API controller managing CRUD operations (`index`, `store`, `show`, `update`, `destroy`) for announcements powered by the `Announcement` model.
+  * **[`app/Http/Controllers/Api/ApiAnnouncementController.php`](app/Http/Controllers/Api/ApiAnnouncementController.php):** Namespaced API announcement controller alias for modular route binding.
   * **[`app/Http/Controllers/Controller.php`](app/Http/Controllers/Controller.php):** Base Laravel foundation controller class.
 * **Application Routes ([`routes/web.php`](routes/web.php)):**
   * Serves front-end Blade views (`/`, `/main`, `/about`, `/hello/{name}`).
-  * Directs resource requests to `UserController` (`/users`) and RESTful endpoints to `ApiUserController` (`/api/users`).
+  * Directs user resource requests to `UserController` (`/users`) and RESTful endpoints to `ApiUserController` (`/api/users`).
+  * Directs announcement resource requests to `AnnouncementController` (`/announcements`) and RESTful endpoints to `ApiAnnouncementController` (`/api/announcements`).
 * **Filament Admin Resources ([`app/Filament/Resources/`](app/Filament/Resources/)):**
   * High-level CRUD controller classes (`AlumniProfileResource`, `DepartmentResource`, `FacultyResource`, `JobPostingResource`, `EventResource`) managing form schemas, table columns, queries, and permissions.
 
@@ -284,7 +292,10 @@ alumni/
 │   ├── Http/                               # HTTP layer
 │   │   └── Controllers/                    # HTTP Controllers (Controller layer)
 │   │       ├── Api/                        # API Controllers namespace
+│   │       │   ├── ApiAnnouncementController.php # Namespaced REST Announcement Controller
 │   │       │   └── ApiUserController.php   # Namespaced REST API Controller
+│   │       ├── AnnouncementController.php  # Web & Resource Announcement CRUD Controller
+│   │       ├── ApiAnnouncementController.php # JSON RESTful API Announcement CRUD Controller
 │   │       ├── ApiUserController.php       # JSON RESTful API CRUD Controller
 │   │       ├── Controller.php              # Base Laravel controller
 │   │       └── UserController.php          # Web & Resource CRUD Controller
@@ -305,7 +316,7 @@ alumni/
 │       └── Filament/                       # Filament panel providers
 │           └── AdminPanelProvider.php      # Filament dashboard configuration & colors
 ├── bootstrap/                              # Framework initialization
-│   ├── app.php                             # Middleware pipeline, CSRF exemptions (api/*)
+│   ├── app.php                             # Middleware pipeline, CSRF exemptions (api/*, users, announcements)
 │   └── providers.php                       # Application service provider registry
 ├── config/                                 # Global application configuration
 │   ├── app.php                             # Timezone, locale, application keys
@@ -339,6 +350,11 @@ alumni/
 │   ├── css/                                # Tailwind and CSS stylesheets
 │   ├── js/                                 # JavaScript front-end assets
 │   └── views/                              # Blade templates
+│       ├── announcements/                  # Announcement CRUD View Layer
+│       │   ├── create.blade.php            # New announcement form (GET /announcements/create -> POST /announcements)
+│       │   ├── edit.blade.php              # Announcement edit form (GET /announcements/{id}/edit -> PUT /announcements/{id})
+│       │   ├── index.blade.php             # Announcements directory & listing (GET /announcements)
+│       │   └── show.blade.php              # Single announcement detail view (GET /announcements/{id})
 │       ├── users/                          # User CRUD View Layer
 │       │   ├── create.blade.php            # New user creation form (GET /users/create -> POST /users)
 │       │   ├── edit.blade.php              # User edit form (GET /users/{id}/edit -> PUT /users/{id})
@@ -386,6 +402,16 @@ The application provides a comprehensive RESTful API for alumni management. An i
 | **`PATCH`**| `/api/users/{id}` | `ApiUserController@update`| Partial update of user attributes | URL Path + Partial JSON | `200 OK` / `404` |
 | **`DELETE`**| `/api/users/{id}` | `ApiUserController@destroy`| Delete user record from system | URL Path (`id`) | `200 OK` / `404` |
 
+#### 📢 RESTful API Endpoints (`ApiAnnouncementController` — `/api/announcements`)
+| Method | Endpoint | Controller Action | Description | Query / Body | Response Code |
+| :---: | :--- | :--- | :--- | :--- | :---: |
+| **`GET`** | `/api/announcements` | `ApiAnnouncementController@index` | List all announcements as JSON | None | `200 OK` |
+| **`POST`** | `/api/announcements` | `ApiAnnouncementController@store` | Create new announcement (JSON) | JSON (`title`, `content`, ...) | `201 Created` |
+| **`GET`** | `/api/announcements/{id}` | `ApiAnnouncementController@show` | Get single announcement by ID | URL Path (`id`) | `200 OK` / `404` |
+| **`PUT`** | `/api/announcements/{id}` | `ApiAnnouncementController@update`| Complete update of announcement | URL Path + Full JSON | `200 OK` / `404` |
+| **`PATCH`**| `/api/announcements/{id}` | `ApiAnnouncementController@update`| Partial update of announcement | URL Path + Partial JSON | `200 OK` / `404` |
+| **`DELETE`**| `/api/announcements/{id}` | `ApiAnnouncementController@destroy`| Delete announcement from system | URL Path (`id`) | `200 OK` / `404` |
+
 #### 🖥️ Web / Resource Controller Endpoints (`UserController` — `/users`)
 | Method | Endpoint | Controller Action | Description | Response Type |
 | :---: | :--- | :--- | :--- | :---: |
@@ -396,6 +422,17 @@ The application provides a comprehensive RESTful API for alumni management. An i
 | **`GET`** | `/users/{id}/edit`| `UserController@edit` | Show user edit form | View (`users.edit`) |
 | **`PUT`** | `/users/{id}` | `UserController@update` | Update existing user record | Redirect / JSON (`200`) |
 | **`DELETE`**| `/users/{id}` | `UserController@destroy`| Delete user record | JSON / Redirect |
+
+#### 📢 Web / Resource Controller Endpoints (`AnnouncementController` — `/announcements`)
+| Method | Endpoint | Controller Action | Description | Response Type |
+| :---: | :--- | :--- | :--- | :--- | :---: |
+| **`GET`** | `/announcements` | `AnnouncementController@index` | Display announcements list / view | View (`announcements.index`) |
+| **`GET`** | `/announcements/create` | `AnnouncementController@create` | Show announcement creation form | View (`announcements.create`) |
+| **`POST`** | `/announcements` | `AnnouncementController@store` | Store & publish new announcement | Redirect / JSON (`201`) |
+| **`GET`** | `/announcements/{id}` | `AnnouncementController@show` | Display single announcement details | View (`announcements.show`) |
+| **`GET`** | `/announcements/{id}/edit`| `AnnouncementController@edit` | Show announcement edit form | View (`announcements.edit`) |
+| **`PUT`** | `/announcements/{id}` | `AnnouncementController@update` | Update existing announcement | Redirect / JSON (`200`) |
+| **`DELETE`**| `/announcements/{id}` | `AnnouncementController@destroy`| Delete announcement record | JSON / Redirect |
 
 #### 📖 Documentation Endpoints
 | Method | Endpoint | Description | Response Type |

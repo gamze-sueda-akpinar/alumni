@@ -16,6 +16,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'api/*',
             'users',
             'users/*',
+            'announcements',
+            'announcements/*',
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
