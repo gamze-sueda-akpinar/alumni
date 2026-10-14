@@ -2,13 +2,17 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\InMemoryUser;
+use App\Models\AlumniProfile;
+use App\Models\Department;
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 
 /**
  * Class UserController
  *
- * Web/Application Controller handling User CRUD operations.
+ * Web/Resource Controller handling User & AlumniProfile CRUD operations
+ * directly backed by the MySQL relational database.
  *
  * @package App\Http\Controllers
  */
@@ -21,17 +25,18 @@ class UserController extends Controller
      */
     public function index()
     {
-        $users = InMemoryUser::all();
+        $users = User::with(['alumniProfile.department'])->latest()->get();
 
         if (view()->exists('users.index')) {
-            return view('users.index', compact('users'));
+            $departments = Department::orderBy('name')->get();
+            return view('users.index', compact('users', 'departments'));
         }
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Users retrieved via UserController@index',
-            'total' => count($users),
-            'data' => array_map(fn($u) => $u->toArray(), $users),
+            'message' => 'Users retrieved via UserController@index (MySQL Database Connected)',
+            'total' => $users->count(),
+            'data' => $users->toArray(),
         ]);
     }
 
@@ -42,8 +47,10 @@ class UserController extends Controller
      */
     public function create()
     {
+        $departments = Department::orderBy('name')->get();
+
         if (view()->exists('users.create')) {
-            return view('users.create');
+            return view('users.create', compact('departments'));
         }
 
         return response()->json([
@@ -53,7 +60,7 @@ class UserController extends Controller
     }
 
     /**
-     * Store a newly created user in storage (CREATE - Action).
+     * Store a newly created user in database (CREATE - Action).
      *
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\JsonResponse|\Illuminate\Http\RedirectResponse
@@ -62,26 +69,61 @@ class UserController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|max:255',
+            'email' => 'required|email|max:255|unique:users,email',
             'student_number' => 'nullable|string|max:50',
             'graduation_year' => 'nullable|integer',
+            'department_id' => 'nullable|exists:departments,id',
             'department' => 'nullable|string|max:255',
             'current_company' => 'nullable|string|max:255',
             'current_position' => 'nullable|string|max:255',
             'city' => 'nullable|string|max:255',
+            'phone' => 'nullable|string|max:50',
+            'linkedin_url' => 'nullable|url|max:255',
+            'bio' => 'nullable|string',
         ]);
 
-        $newUser = InMemoryUser::create($validated);
+        // 1. Create Core User
+        $user = User::create([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => Hash::make('password123'),
+        ]);
+
+        // 2. Resolve Department ID
+        $deptId = $validated['department_id'] ?? null;
+        if (!$deptId && !empty($validated['department'])) {
+            $dept = Department::where('name', $validated['department'])
+                ->orWhere('code', $validated['department'])
+                ->first();
+            $deptId = $dept?->id;
+        }
+
+        // 3. Create Associated AlumniProfile
+        $user->alumniProfile()->create([
+            'department_id' => $deptId,
+            'student_number' => $validated['student_number'] ?? null,
+            'graduation_year' => $validated['graduation_year'] ?? null,
+            'current_company' => $validated['current_company'] ?? null,
+            'current_position' => $validated['current_position'] ?? null,
+            'city' => $validated['city'] ?? 'İstanbul',
+            'country' => 'Türkiye',
+            'phone' => $validated['phone'] ?? null,
+            'linkedin_url' => $validated['linkedin_url'] ?? null,
+            'bio' => $validated['bio'] ?? null,
+            'status' => 'approved',
+        ]);
+
+        $user->load('alumniProfile.department');
 
         if ($request->wantsJson()) {
             return response()->json([
                 'status' => 'success',
-                'message' => 'User created successfully via UserController@store',
-                'data' => $newUser->toArray(),
+                'message' => 'User created successfully via UserController@store in MySQL database',
+                'data' => $user->toArray(),
             ], 201);
         }
 
-        return redirect('/users')->with('success', 'Mezun kullanıcı başarıyla kaydedildi!');
+        return redirect('/users')->with('success', "Mezun kullanıcı ({$user->name}) veritabanına başarıyla kaydedildi!");
     }
 
     /**
@@ -92,16 +134,16 @@ class UserController extends Controller
      */
     public function show($id)
     {
-        $user = InMemoryUser::find($id);
+        $user = User::with(['alumniProfile.department', 'experiences', 'jobPostings'])->find($id);
 
         if (!$user) {
             if (request()->wantsJson()) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => "User with ID {$id} not found",
+                    'message' => "User with ID {$id} not found in database",
                 ], 404);
             }
-            return redirect('/users')->with('error', "ID #{$id} olan mezun bulunamadı.");
+            return redirect('/users')->with('error', "ID #{$id} olan kullanıcı bulunamadı.");
         }
 
         if (view()->exists('users.show')) {
@@ -110,7 +152,7 @@ class UserController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'message' => 'User retrieved via UserController@show',
+            'message' => 'User retrieved via UserController@show (MySQL Database Connected)',
             'data' => $user->toArray(),
         ]);
     }
@@ -123,20 +165,22 @@ class UserController extends Controller
      */
     public function edit($id)
     {
-        $user = InMemoryUser::find($id);
+        $user = User::with(['alumniProfile.department'])->find($id);
 
         if (!$user) {
             if (request()->wantsJson()) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => "User with ID {$id} not found",
+                    'message' => "User with ID {$id} not found in database",
                 ], 404);
             }
-            return redirect('/users')->with('error', "ID #{$id} olan mezun bulunamadı.");
+            return redirect('/users')->with('error', "ID #{$id} olan kullanıcı bulunamadı.");
         }
 
+        $departments = Department::orderBy('name')->get();
+
         if (view()->exists('users.edit')) {
-            return view('users.edit', compact('user'));
+            return view('users.edit', compact('user', 'departments'));
         }
 
         return response()->json([
@@ -147,7 +191,7 @@ class UserController extends Controller
     }
 
     /**
-     * Update the specified user in storage (UPDATE - Action).
+     * Update the specified user in database (UPDATE - Action).
      *
      * @param  \Illuminate\Http\Request  $request
      * @param  int|string  $id
@@ -155,69 +199,112 @@ class UserController extends Controller
      */
     public function update(Request $request, $id)
     {
+        $user = User::with('alumniProfile')->find($id);
+
+        if (!$user) {
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => "User with ID {$id} not found in database",
+                ], 404);
+            }
+            return redirect('/users')->with('error', "ID #{$id} olan kullanıcı bulunamadı.");
+        }
+
         $validated = $request->validate([
             'name' => 'sometimes|string|max:255',
-            'email' => 'sometimes|email|max:255',
+            'email' => 'sometimes|email|max:255|unique:users,email,' . $id,
             'student_number' => 'nullable|string|max:50',
             'graduation_year' => 'nullable|integer',
+            'department_id' => 'nullable|exists:departments,id',
             'department' => 'nullable|string|max:255',
             'current_company' => 'nullable|string|max:255',
             'current_position' => 'nullable|string|max:255',
             'city' => 'nullable|string|max:255',
-            'status' => 'nullable|string|in:pending,approved,rejected',
+            'phone' => 'nullable|string|max:50',
+            'linkedin_url' => 'nullable|url|max:255',
+            'bio' => 'nullable|string',
+            'status' => 'nullable|in:pending,approved,rejected',
         ]);
 
-        $updatedUser = InMemoryUser::update($id, $validated);
+        // Update core user
+        $user->update([
+            'name' => $validated['name'] ?? $user->name,
+            'email' => $validated['email'] ?? $user->email,
+        ]);
 
-        if (!$updatedUser) {
-            if ($request->wantsJson()) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => "User with ID {$id} not found",
-                ], 404);
+        // Resolve Department
+        $deptId = $validated['department_id'] ?? $user->alumniProfile?->department_id;
+        if (!empty($validated['department'])) {
+            $dept = Department::where('name', $validated['department'])->first();
+            if ($dept) {
+                $deptId = $dept->id;
             }
-            return redirect('/users')->with('error', "ID #{$id} olan mezun bulunamadı.");
         }
+
+        // Update or create AlumniProfile
+        $profileData = [
+            'department_id' => $deptId,
+            'student_number' => array_key_exists('student_number', $validated) ? $validated['student_number'] : $user->alumniProfile?->student_number,
+            'graduation_year' => array_key_exists('graduation_year', $validated) ? $validated['graduation_year'] : $user->alumniProfile?->graduation_year,
+            'current_company' => array_key_exists('current_company', $validated) ? $validated['current_company'] : $user->alumniProfile?->current_company,
+            'current_position' => array_key_exists('current_position', $validated) ? $validated['current_position'] : $user->alumniProfile?->current_position,
+            'city' => array_key_exists('city', $validated) ? $validated['city'] : ($user->alumniProfile?->city ?? 'İstanbul'),
+            'phone' => array_key_exists('phone', $validated) ? $validated['phone'] : $user->alumniProfile?->phone,
+            'linkedin_url' => array_key_exists('linkedin_url', $validated) ? $validated['linkedin_url'] : $user->alumniProfile?->linkedin_url,
+            'bio' => array_key_exists('bio', $validated) ? $validated['bio'] : $user->alumniProfile?->bio,
+            'status' => $validated['status'] ?? ($user->alumniProfile?->status ?? 'approved'),
+        ];
+
+        if ($user->alumniProfile) {
+            $user->alumniProfile->update($profileData);
+        } else {
+            $user->alumniProfile()->create($profileData);
+        }
+
+        $user->load('alumniProfile.department');
 
         if ($request->wantsJson()) {
             return response()->json([
                 'status' => 'success',
-                'message' => "User with ID {$id} updated successfully via UserController@update",
-                'data' => $updatedUser->toArray(),
+                'message' => "User with ID {$id} updated successfully in MySQL database",
+                'data' => $user->toArray(),
             ]);
         }
 
-        return redirect('/users')->with('success', "Mezun #{$id} ({$updatedUser->name}) bilgileri başarıyla güncellendi!");
+        return redirect('/users')->with('success', "Kullanıcı #{$id} ({$user->name}) bilgileri başarıyla güncellendi!");
     }
 
     /**
-     * Remove the specified user from storage (DELETE - Action).
+     * Remove the specified user from database (DELETE - Action).
      *
      * @param  int|string  $id
      * @return \Illuminate\Http\JsonResponse|\Illuminate\Http\RedirectResponse
      */
     public function destroy($id)
     {
-        $deletedUser = InMemoryUser::delete($id);
+        $user = User::with('alumniProfile')->find($id);
 
-        if (!$deletedUser) {
+        if (!$user) {
             if (request()->wantsJson()) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => "User with ID {$id} not found",
+                    'message' => "User with ID {$id} not found in database",
                 ], 404);
             }
-            return redirect('/users')->with('error', "ID #{$id} olan mezun bulunamadı.");
+            return redirect('/users')->with('error', "ID #{$id} olan kullanıcı bulunamadı.");
         }
+
+        $deletedName = $user->name;
+        $user->delete();
 
         if (request()->wantsJson()) {
             return response()->json([
                 'status' => 'success',
-                'message' => "User with ID {$id} deleted successfully via UserController@destroy",
-                'deleted_user' => $deletedUser->toArray(),
+                'message' => "User with ID {$id} deleted successfully from MySQL database",
             ]);
         }
 
-        return redirect('/users')->with('success', "Mezun #{$id} ({$deletedUser->name}) başarıyla silindi!");
+        return redirect('/users')->with('success', "Kullanıcı #{$id} ({$deletedName}) veritabanından başarıyla silindi!");
     }
 }

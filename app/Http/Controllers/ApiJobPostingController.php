@@ -2,15 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\InMemoryJobPosting;
+use App\Models\JobPosting;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 /**
  * Class ApiJobPostingController
  *
- * RESTful API Controller managing JobPosting JSON endpoints and CRUD operations.
- * Operates without a database connection using the in-memory JobPosting model.
+ * RESTful API Controller managing JobPosting JSON endpoints and CRUD operations
+ * backed directly by the MySQL relational database.
  *
  * @package App\Http\Controllers
  */
@@ -25,21 +26,23 @@ class ApiJobPostingController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
+        $query = JobPosting::with('user');
+
         if ($request->filled('company')) {
-            $jobs = InMemoryJobPosting::byCompany($request->query('company'));
-        } elseif ($request->has('active')) {
-            $jobs = $request->boolean('active')
-                ? InMemoryJobPosting::active()
-                : InMemoryJobPosting::all();
-        } else {
-            $jobs = InMemoryJobPosting::all();
+            $query->where('company_name', 'like', '%' . $request->query('company') . '%');
         }
+
+        if ($request->has('active')) {
+            $query->where('is_active', $request->boolean('active'));
+        }
+
+        $jobs = $query->latest()->get();
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Job postings listed successfully',
-            'total' => count($jobs),
-            'data' => array_map(fn($job) => $job->toArray(), $jobs),
+            'message' => 'Job postings listed successfully from MySQL database',
+            'total' => $jobs->count(),
+            'data' => $jobs->toArray(),
         ], 200);
     }
 
@@ -58,16 +61,22 @@ class ApiJobPostingController extends Controller
             'type' => 'nullable|string|max:100',
             'description' => 'required|string',
             'requirements' => 'nullable|string',
-            'application_deadline' => 'nullable|date_format:Y-m-d',
-            'contact_email' => 'nullable|email|max:150',
+            'application_deadline' => 'nullable|date',
             'is_active' => 'nullable|boolean',
         ]);
 
-        $newJob = InMemoryJobPosting::create($validated);
+        $validated['is_active'] = $request->has('is_active') ? (bool) $request->input('is_active') : true;
+        $validated['type'] = $validated['type'] ?? 'Full-time';
+
+        $userId = auth()->id() ?? User::value('id') ?? User::factory()->create()->id;
+        $validated['user_id'] = $userId;
+
+        $newJob = JobPosting::create($validated);
+        $newJob->load('user');
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Job posting created and saved successfully',
+            'message' => 'Job posting created and saved successfully in MySQL database',
             'data' => $newJob->toArray(),
         ], 201);
     }
@@ -80,12 +89,12 @@ class ApiJobPostingController extends Controller
      */
     public function show($id): JsonResponse
     {
-        $job = InMemoryJobPosting::find($id);
+        $job = JobPosting::with('user')->find($id);
 
         if (!$job) {
             return response()->json([
                 'status' => 'error',
-                'message' => "Job posting with ID {$id} not found",
+                'message' => "Job posting with ID {$id} not found in database",
             ], 404);
         }
 
@@ -104,6 +113,15 @@ class ApiJobPostingController extends Controller
      */
     public function update(Request $request, $id): JsonResponse
     {
+        $job = JobPosting::find($id);
+
+        if (!$job) {
+            return response()->json([
+                'status' => 'error',
+                'message' => "Job posting with ID {$id} not found in database",
+            ], 404);
+        }
+
         $validated = $request->validate([
             'title' => 'sometimes|string|max:255',
             'company_name' => 'sometimes|string|max:255',
@@ -111,24 +129,21 @@ class ApiJobPostingController extends Controller
             'type' => 'nullable|string|max:100',
             'description' => 'sometimes|string',
             'requirements' => 'nullable|string',
-            'application_deadline' => 'nullable|date_format:Y-m-d',
-            'contact_email' => 'nullable|email|max:150',
+            'application_deadline' => 'nullable|date',
             'is_active' => 'nullable|boolean',
         ]);
 
-        $updatedJob = InMemoryJobPosting::update($id, $validated);
-
-        if (!$updatedJob) {
-            return response()->json([
-                'status' => 'error',
-                'message' => "Job posting with ID {$id} not found",
-            ], 404);
+        if ($request->has('is_active')) {
+            $validated['is_active'] = (bool) $request->input('is_active');
         }
+
+        $job->update($validated);
+        $job->load('user');
 
         return response()->json([
             'status' => 'success',
-            'message' => "Job posting with ID {$id} updated successfully",
-            'data' => $updatedJob->toArray(),
+            'message' => "Job posting with ID {$id} updated successfully in MySQL database",
+            'data' => $job->toArray(),
         ], 200);
     }
 
@@ -140,19 +155,20 @@ class ApiJobPostingController extends Controller
      */
     public function destroy($id): JsonResponse
     {
-        $deletedJob = InMemoryJobPosting::delete($id);
+        $job = JobPosting::find($id);
 
-        if (!$deletedJob) {
+        if (!$job) {
             return response()->json([
                 'status' => 'error',
-                'message' => "Job posting with ID {$id} not found",
+                'message' => "Job posting with ID {$id} not found in database",
             ], 404);
         }
 
+        $job->delete();
+
         return response()->json([
             'status' => 'success',
-            'message' => "Job posting with ID {$id} deleted successfully",
-            'deleted_job' => $deletedJob->toArray(),
+            'message' => "Job posting with ID {$id} deleted successfully from MySQL database",
         ], 200);
     }
 }

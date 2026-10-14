@@ -2,15 +2,18 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\InMemoryUser;
+use App\Models\AlumniProfile;
+use App\Models\Department;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 
 /**
  * Class ApiUserController
  *
- * RESTful API Controller managing User JSON endpoints and CRUD operations.
- * Operates with the database-independent InMemoryUser model.
+ * RESTful API Controller managing User JSON endpoints and CRUD operations
+ * backed directly by the MySQL relational database.
  *
  * @package App\Http\Controllers
  */
@@ -23,13 +26,13 @@ class ApiUserController extends Controller
      */
     public function index(): JsonResponse
     {
-        $users = InMemoryUser::all();
+        $users = User::with(['alumniProfile.department', 'experiences'])->latest()->get();
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Users listed successfully',
-            'total' => count($users),
-            'data' => array_map(fn($u) => $u->toArray(), $users),
+            'message' => 'Users listed successfully from MySQL database',
+            'total' => $users->count(),
+            'data' => $users->toArray(),
         ], 200);
     }
 
@@ -43,21 +46,54 @@ class ApiUserController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|max:255',
+            'email' => 'required|email|max:255|unique:users,email',
+            'password' => 'nullable|string|min:6',
             'student_number' => 'nullable|string|max:50',
             'graduation_year' => 'nullable|integer',
+            'department_id' => 'nullable|exists:departments,id',
             'department' => 'nullable|string|max:255',
             'current_company' => 'nullable|string|max:255',
             'current_position' => 'nullable|string|max:255',
             'city' => 'nullable|string|max:255',
+            'phone' => 'nullable|string|max:50',
+            'linkedin_url' => 'nullable|url|max:255',
+            'github_url' => 'nullable|url|max:255',
+            'bio' => 'nullable|string',
         ]);
 
-        $newUser = InMemoryUser::create($validated);
+        $user = User::create([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => Hash::make($validated['password'] ?? 'password123'),
+        ]);
+
+        $deptId = $validated['department_id'] ?? null;
+        if (!$deptId && !empty($validated['department'])) {
+            $dept = Department::where('name', $validated['department'])->orWhere('code', $validated['department'])->first();
+            $deptId = $dept?->id;
+        }
+
+        $user->alumniProfile()->create([
+            'department_id' => $deptId,
+            'student_number' => $validated['student_number'] ?? null,
+            'graduation_year' => $validated['graduation_year'] ?? null,
+            'current_company' => $validated['current_company'] ?? null,
+            'current_position' => $validated['current_position'] ?? null,
+            'city' => $validated['city'] ?? 'İstanbul',
+            'country' => 'Türkiye',
+            'phone' => $validated['phone'] ?? null,
+            'linkedin_url' => $validated['linkedin_url'] ?? null,
+            'github_url' => $validated['github_url'] ?? null,
+            'bio' => $validated['bio'] ?? null,
+            'status' => 'approved',
+        ]);
+
+        $user->load('alumniProfile.department');
 
         return response()->json([
             'status' => 'success',
-            'message' => 'User created and saved successfully',
-            'data' => $newUser->toArray(),
+            'message' => 'User created and saved successfully in MySQL database',
+            'data' => $user->toArray(),
         ], 201);
     }
 
@@ -69,12 +105,12 @@ class ApiUserController extends Controller
      */
     public function show($id): JsonResponse
     {
-        $user = InMemoryUser::find($id);
+        $user = User::with(['alumniProfile.department', 'experiences', 'jobPostings'])->find($id);
 
         if (!$user) {
             return response()->json([
                 'status' => 'error',
-                'message' => "User with ID {$id} not found",
+                'message' => "User with ID {$id} not found in database",
             ], 404);
         }
 
@@ -93,31 +129,60 @@ class ApiUserController extends Controller
      */
     public function update(Request $request, $id): JsonResponse
     {
-        $validated = $request->validate([
-            'name' => 'sometimes|string|max:255',
-            'email' => 'sometimes|email|max:255',
-            'student_number' => 'nullable|string|max:50',
-            'graduation_year' => 'nullable|integer',
-            'department' => 'nullable|string|max:255',
-            'current_company' => 'nullable|string|max:255',
-            'current_position' => 'nullable|string|max:255',
-            'city' => 'nullable|string|max:255',
-            'status' => 'nullable|string|in:pending,approved,rejected',
-        ]);
+        $user = User::with('alumniProfile')->find($id);
 
-        $updatedUser = InMemoryUser::update($id, $validated);
-
-        if (!$updatedUser) {
+        if (!$user) {
             return response()->json([
                 'status' => 'error',
-                'message' => "User with ID {$id} not found",
+                'message' => "User with ID {$id} not found in database",
             ], 404);
         }
 
+        $validated = $request->validate([
+            'name' => 'sometimes|string|max:255',
+            'email' => 'sometimes|email|max:255|unique:users,email,' . $id,
+            'student_number' => 'nullable|string|max:50',
+            'graduation_year' => 'nullable|integer',
+            'department_id' => 'nullable|exists:departments,id',
+            'current_company' => 'nullable|string|max:255',
+            'current_position' => 'nullable|string|max:255',
+            'city' => 'nullable|string|max:255',
+            'phone' => 'nullable|string|max:50',
+            'linkedin_url' => 'nullable|url|max:255',
+            'bio' => 'nullable|string',
+            'status' => 'nullable|in:pending,approved,rejected',
+        ]);
+
+        $user->update([
+            'name' => $validated['name'] ?? $user->name,
+            'email' => $validated['email'] ?? $user->email,
+        ]);
+
+        $profileData = array_filter([
+            'department_id' => $validated['department_id'] ?? $user->alumniProfile?->department_id,
+            'student_number' => $validated['student_number'] ?? $user->alumniProfile?->student_number,
+            'graduation_year' => $validated['graduation_year'] ?? $user->alumniProfile?->graduation_year,
+            'current_company' => $validated['current_company'] ?? $user->alumniProfile?->current_company,
+            'current_position' => $validated['current_position'] ?? $user->alumniProfile?->current_position,
+            'city' => $validated['city'] ?? $user->alumniProfile?->city,
+            'phone' => $validated['phone'] ?? $user->alumniProfile?->phone,
+            'linkedin_url' => $validated['linkedin_url'] ?? $user->alumniProfile?->linkedin_url,
+            'bio' => $validated['bio'] ?? $user->alumniProfile?->bio,
+            'status' => $validated['status'] ?? $user->alumniProfile?->status,
+        ], fn($val) => !is_null($val));
+
+        if ($user->alumniProfile) {
+            $user->alumniProfile->update($profileData);
+        } else {
+            $user->alumniProfile()->create($profileData);
+        }
+
+        $user->load('alumniProfile.department');
+
         return response()->json([
             'status' => 'success',
-            'message' => "User with ID {$id} updated successfully",
-            'data' => $updatedUser->toArray(),
+            'message' => "User with ID {$id} updated successfully in MySQL database",
+            'data' => $user->toArray(),
         ], 200);
     }
 
@@ -129,19 +194,20 @@ class ApiUserController extends Controller
      */
     public function destroy($id): JsonResponse
     {
-        $deletedUser = InMemoryUser::delete($id);
+        $user = User::find($id);
 
-        if (!$deletedUser) {
+        if (!$user) {
             return response()->json([
                 'status' => 'error',
-                'message' => "User with ID {$id} not found",
+                'message' => "User with ID {$id} not found in database",
             ], 404);
         }
 
+        $user->delete();
+
         return response()->json([
             'status' => 'success',
-            'message' => "User with ID {$id} deleted successfully",
-            'deleted_user' => $deletedUser->toArray(),
+            'message' => "User with ID {$id} deleted successfully from MySQL database",
         ], 200);
     }
 }

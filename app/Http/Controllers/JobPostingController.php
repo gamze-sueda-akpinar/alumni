@@ -2,14 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\InMemoryJobPosting;
+use App\Models\JobPosting;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 /**
  * Class JobPostingController
  *
- * Web/Resource Controller handling JobPosting CRUD operations.
- * Operates without a database connection using the in-memory JobPosting model.
+ * Web/Resource Controller handling JobPosting CRUD operations
+ * backed directly by the MySQL relational database.
  *
  * @package App\Http\Controllers
  */
@@ -22,7 +23,7 @@ class JobPostingController extends Controller
      */
     public function index()
     {
-        $jobPostings = InMemoryJobPosting::all();
+        $jobPostings = JobPosting::with('user')->latest()->get();
 
         if (view()->exists('job_postings.index')) {
             return view('job_postings.index', compact('jobPostings'));
@@ -30,9 +31,9 @@ class JobPostingController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Job postings retrieved via JobPostingController@index',
-            'total' => count($jobPostings),
-            'data' => array_map(fn($job) => $job->toArray(), $jobPostings),
+            'message' => 'Job postings retrieved via JobPostingController@index (MySQL Database Connected)',
+            'total' => $jobPostings->count(),
+            'data' => $jobPostings->toArray(),
         ]);
     }
 
@@ -54,7 +55,7 @@ class JobPostingController extends Controller
     }
 
     /**
-     * Store a newly created job posting in storage (CREATE - Action).
+     * Store a newly created job posting in database (CREATE - Action).
      *
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\JsonResponse|\Illuminate\Http\RedirectResponse
@@ -68,24 +69,29 @@ class JobPostingController extends Controller
             'type' => 'nullable|string|max:100',
             'description' => 'required|string',
             'requirements' => 'nullable|string',
-            'application_deadline' => 'nullable|date_format:Y-m-d',
-            'contact_email' => 'nullable|email|max:150',
+            'application_deadline' => 'nullable|date',
             'is_active' => 'nullable|boolean',
         ]);
 
         $validated['is_active'] = $request->has('is_active') ? (bool) $request->input('is_active') : true;
+        $validated['type'] = $validated['type'] ?? 'Full-time';
 
-        $newJob = InMemoryJobPosting::create($validated);
+        // Assign to authenticated user or first available system user
+        $userId = auth()->id() ?? User::value('id') ?? User::factory()->create()->id;
+        $validated['user_id'] = $userId;
+
+        $newJob = JobPosting::create($validated);
+        $newJob->load('user');
 
         if ($request->wantsJson()) {
             return response()->json([
                 'status' => 'success',
-                'message' => 'Job posting created successfully via JobPostingController@store',
+                'message' => 'Job posting created successfully via JobPostingController@store in MySQL database',
                 'data' => $newJob->toArray(),
             ], 201);
         }
 
-        return redirect('/job-postings')->with('success', 'İş ilanı başarıyla yayınlandı ve listeye eklendi!');
+        return redirect('/job-postings')->with('success', 'İş ilanı başarıyla veritabanına kaydedildi ve listeye eklendi!');
     }
 
     /**
@@ -96,13 +102,13 @@ class JobPostingController extends Controller
      */
     public function show($id)
     {
-        $job = InMemoryJobPosting::find($id);
+        $job = JobPosting::with('user')->find($id);
 
         if (!$job) {
             if (request()->wantsJson()) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => "Job posting with ID {$id} not found",
+                    'message' => "Job posting with ID {$id} not found in database",
                 ], 404);
             }
             return redirect('/job-postings')->with('error', "ID #{$id} olan iş ilanı bulunamadı.");
@@ -114,7 +120,7 @@ class JobPostingController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Job posting retrieved via JobPostingController@show',
+            'message' => 'Job posting retrieved via JobPostingController@show (MySQL Database Connected)',
             'data' => $job->toArray(),
         ]);
     }
@@ -127,13 +133,13 @@ class JobPostingController extends Controller
      */
     public function edit($id)
     {
-        $job = InMemoryJobPosting::find($id);
+        $job = JobPosting::find($id);
 
         if (!$job) {
             if (request()->wantsJson()) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => "Job posting with ID {$id} not found",
+                    'message' => "Job posting with ID {$id} not found in database",
                 ], 404);
             }
             return redirect('/job-postings')->with('error', "ID #{$id} olan iş ilanı bulunamadı.");
@@ -151,7 +157,7 @@ class JobPostingController extends Controller
     }
 
     /**
-     * Update the specified job posting in storage (UPDATE - Action).
+     * Update the specified job posting in database (UPDATE - Action).
      *
      * @param  \Illuminate\Http\Request  $request
      * @param  int|string  $id
@@ -159,6 +165,18 @@ class JobPostingController extends Controller
      */
     public function update(Request $request, $id)
     {
+        $job = JobPosting::find($id);
+
+        if (!$job) {
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => "Job posting with ID {$id} not found in database",
+                ], 404);
+            }
+            return redirect('/job-postings')->with('error', "ID #{$id} olan iş ilanı bulunamadı.");
+        }
+
         $validated = $request->validate([
             'title' => 'sometimes|string|max:255',
             'company_name' => 'sometimes|string|max:255',
@@ -166,8 +184,7 @@ class JobPostingController extends Controller
             'type' => 'nullable|string|max:100',
             'description' => 'sometimes|string',
             'requirements' => 'nullable|string',
-            'application_deadline' => 'nullable|date_format:Y-m-d',
-            'contact_email' => 'nullable|email|max:150',
+            'application_deadline' => 'nullable|date',
             'is_active' => 'nullable|boolean',
         ]);
 
@@ -175,57 +192,49 @@ class JobPostingController extends Controller
             $validated['is_active'] = (bool) $request->input('is_active');
         }
 
-        $updatedJob = InMemoryJobPosting::update($id, $validated);
-
-        if (!$updatedJob) {
-            if ($request->wantsJson()) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => "Job posting with ID {$id} not found",
-                ], 404);
-            }
-            return redirect('/job-postings')->with('error', "ID #{$id} olan iş ilanı bulunamadı.");
-        }
+        $job->update($validated);
 
         if ($request->wantsJson()) {
             return response()->json([
                 'status' => 'success',
-                'message' => "Job posting with ID {$id} updated successfully via JobPostingController@update",
-                'data' => $updatedJob->toArray(),
+                'message' => "Job posting with ID {$id} updated successfully in MySQL database",
+                'data' => $job->toArray(),
             ]);
         }
 
-        return redirect('/job-postings')->with('success', "İş ilanı #{$id} bilgileri başarıyla güncellendi!");
+        return redirect('/job-postings')->with('success', "İş ilanı #{$id} ({$job->title}) başarıyla güncellendi!");
     }
 
     /**
-     * Remove the specified job posting from storage (DELETE - Action).
+     * Remove the specified job posting from database (DELETE - Action).
      *
      * @param  int|string  $id
      * @return \Illuminate\Http\JsonResponse|\Illuminate\Http\RedirectResponse
      */
     public function destroy($id)
     {
-        $deletedJob = InMemoryJobPosting::delete($id);
+        $job = JobPosting::find($id);
 
-        if (!$deletedJob) {
+        if (!$job) {
             if (request()->wantsJson()) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => "Job posting with ID {$id} not found",
+                    'message' => "Job posting with ID {$id} not found in database",
                 ], 404);
             }
             return redirect('/job-postings')->with('error', "ID #{$id} olan iş ilanı bulunamadı.");
         }
 
+        $deletedTitle = $job->title;
+        $job->delete();
+
         if (request()->wantsJson()) {
             return response()->json([
                 'status' => 'success',
-                'message' => "Job posting with ID {$id} deleted successfully via JobPostingController@destroy",
-                'deleted_job' => $deletedJob->toArray(),
+                'message' => "Job posting with ID {$id} deleted successfully from MySQL database",
             ]);
         }
 
-        return redirect('/job-postings')->with('success', "İş ilanı #{$id} ({$deletedJob->title}) başarıyla silindi!");
+        return redirect('/job-postings')->with('success', "İş ilanı #{$id} ({$deletedTitle}) veritabanından silindi!");
     }
 }

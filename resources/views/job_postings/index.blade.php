@@ -20,8 +20,8 @@
                 <a href="/main" class="font-bold text-xl tracking-tight text-indigo-900 hover:text-indigo-700 transition">
                     Mezun Takip Sistemi
                 </a>
-                <span class="bg-indigo-100 text-indigo-800 text-xs font-semibold px-2.5 py-0.5 rounded-full border border-indigo-200">
-                    Kariyer & İlan Modülü (In-Memory)
+                <span class="bg-emerald-100 text-emerald-800 text-xs font-semibold px-2.5 py-0.5 rounded-full border border-emerald-200 inline-flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span> MySQL Veritabanı Bağlantılı
                 </span>
             </div>
             <div class="flex items-center space-x-3">
@@ -102,7 +102,7 @@
                 <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
                     <span>✨</span> Hızlı İş İlanı Yayınla (POST /job-postings)
                 </h2>
-                <span class="text-xs text-slate-400">Veritabanı gerektirmeden bellekte (cache) saklanır</span>
+                <span class="text-xs text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">🟢 MySQL (job_postings) tablosuna doğrudan kaydeder</span>
             </div>
 
             <form action="/job-postings" method="POST" class="space-y-4">
