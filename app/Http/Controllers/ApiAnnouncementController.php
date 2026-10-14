@@ -10,7 +10,7 @@ use Illuminate\Http\Request;
  * Class ApiAnnouncementController
  *
  * RESTful API Controller managing Announcement JSON endpoints and CRUD operations.
- * Operates with the database-independent Announcement model.
+ * Interacts directly with the Eloquent Announcement model.
  *
  * @package App\Http\Controllers
  */
@@ -24,19 +24,23 @@ class ApiAnnouncementController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
+        $query = Announcement::query();
+
         if ($request->has('category')) {
-            $announcements = Announcement::byCategory($request->query('category'));
-        } elseif ($request->boolean('pinned')) {
-            $announcements = Announcement::pinned();
-        } else {
-            $announcements = Announcement::all();
+            $query->byCategory($request->query('category'));
         }
+
+        if ($request->boolean('pinned')) {
+            $query->pinned();
+        }
+
+        $announcements = $query->orderBy('is_pinned', 'desc')->latest()->get();
 
         return response()->json([
             'status' => 'success',
             'message' => 'Announcements listed successfully',
-            'total' => count($announcements),
-            'data' => array_map(fn($a) => $a->toArray(), $announcements),
+            'total' => $announcements->count(),
+            'data' => $announcements->toArray(),
         ], 200);
     }
 
@@ -57,6 +61,12 @@ class ApiAnnouncementController extends Controller
             'is_pinned' => 'nullable|boolean',
             'status' => 'nullable|string|in:published,draft,archived',
         ]);
+
+        $validated['category'] = $validated['category'] ?? 'Genel';
+        $validated['author'] = $validated['author'] ?? 'Mezunlar Ofisi';
+        $validated['target_audience'] = $validated['target_audience'] ?? 'Tüm Mezunlar';
+        $validated['status'] = $validated['status'] ?? 'published';
+        $validated['published_at'] = now();
 
         $newAnnouncement = Announcement::create($validated);
 
@@ -99,6 +109,15 @@ class ApiAnnouncementController extends Controller
      */
     public function update(Request $request, $id): JsonResponse
     {
+        $announcement = Announcement::find($id);
+
+        if (!$announcement) {
+            return response()->json([
+                'status' => 'error',
+                'message' => "Announcement with ID {$id} not found",
+            ], 404);
+        }
+
         $validated = $request->validate([
             'title' => 'sometimes|string|max:255',
             'content' => 'sometimes|string',
@@ -109,19 +128,16 @@ class ApiAnnouncementController extends Controller
             'status' => 'nullable|string|in:published,draft,archived',
         ]);
 
-        $updatedAnnouncement = Announcement::update($id, $validated);
-
-        if (!$updatedAnnouncement) {
-            return response()->json([
-                'status' => 'error',
-                'message' => "Announcement with ID {$id} not found",
-            ], 404);
+        if ($request->has('is_pinned')) {
+            $validated['is_pinned'] = (bool) $request->input('is_pinned');
         }
+
+        $announcement->update($validated);
 
         return response()->json([
             'status' => 'success',
             'message' => "Announcement with ID {$id} updated successfully",
-            'data' => $updatedAnnouncement->toArray(),
+            'data' => $announcement->toArray(),
         ], 200);
     }
 
@@ -133,19 +149,22 @@ class ApiAnnouncementController extends Controller
      */
     public function destroy($id): JsonResponse
     {
-        $deletedAnnouncement = Announcement::delete($id);
+        $announcement = Announcement::find($id);
 
-        if (!$deletedAnnouncement) {
+        if (!$announcement) {
             return response()->json([
                 'status' => 'error',
                 'message' => "Announcement with ID {$id} not found",
             ], 404);
         }
 
+        $deletedData = $announcement->toArray();
+        $announcement->delete();
+
         return response()->json([
             'status' => 'success',
             'message' => "Announcement with ID {$id} deleted successfully",
-            'deleted_announcement' => $deletedAnnouncement->toArray(),
+            'deleted_announcement' => $deletedData,
         ], 200);
     }
 }

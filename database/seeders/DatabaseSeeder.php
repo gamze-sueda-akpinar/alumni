@@ -3,8 +3,10 @@
 namespace Database\Seeders;
 
 use App\Models\AlumniProfile;
+use App\Models\Announcement;
 use App\Models\Department;
 use App\Models\Event;
+use App\Models\Experience;
 use App\Models\Faculty;
 use App\Models\JobPosting;
 use App\Models\User;
@@ -83,6 +85,16 @@ class DatabaseSeeder extends Seeder
                 'status' => 'approved',
             ]
         );
+        Experience::firstOrCreate(
+            ['user_id' => $mezun1->id, 'company_name' => 'Trendyol'],
+            [
+                'position' => 'Senior Backend Developer',
+                'employment_type' => 'Full-time',
+                'start_date' => '2022-01-15',
+                'is_current' => true,
+                'description' => 'High-throughput payment gateway & microservices architecture.',
+            ]
+        );
 
         $mezun2 = User::firstOrCreate(
             ['email' => 'elif.kaya@example.com'],
@@ -105,6 +117,16 @@ class DatabaseSeeder extends Seeder
                 'status' => 'approved',
             ]
         );
+        Experience::firstOrCreate(
+            ['user_id' => $mezun2->id, 'company_name' => 'Getir'],
+            [
+                'position' => 'Frontend Developer',
+                'employment_type' => 'Full-time',
+                'start_date' => '2023-06-01',
+                'is_current' => true,
+                'description' => 'User dashboard and customer application development using React & TypeScript.',
+            ]
+        );
 
         $mezun3 = User::firstOrCreate(
             ['email' => 'zeynep.sahin@example.com'],
@@ -123,7 +145,7 @@ class DatabaseSeeder extends Seeder
                 'country' => 'Türkiye',
                 'linkedin_url' => 'https://linkedin.com/in/zeynepsahin',
                 'bio' => 'Finans ve denetim alanında kariyerime devam ediyorum.',
-                'status' => 'pending', // Onay bekleyen mezun örneği
+                'status' => 'pending',
             ]
         );
 
@@ -179,5 +201,29 @@ class DatabaseSeeder extends Seeder
                 'is_active' => true,
             ]
         );
+
+        // 7. Duyurular (AnnouncementSeeder)
+        $this->call(AnnouncementSeeder::class);
+
+        // 8. Model Factories ile Ekstra Gerçekçi Demo Verileri Üretimi
+        // 5 rastgele mezun profili ve iş deneyimi
+        User::factory()->count(5)->create()->each(function (User $user) use ($ceng, $seng, $ie, $econ, $ba) {
+            $dept = fake()->randomElement([$ceng, $seng, $ie, $econ, $ba]);
+            AlumniProfile::factory()->create([
+                'user_id' => $user->id,
+                'department_id' => $dept->id,
+            ]);
+            Experience::factory()->count(fake()->numberBetween(1, 2))->create([
+                'user_id' => $user->id,
+            ]);
+        });
+
+        // 3 ekstra iş ilanı
+        JobPosting::factory()->count(3)->create([
+            'user_id' => $admin->id,
+        ]);
+
+        // 2 ekstra etkinlik
+        Event::factory()->count(2)->create();
     }
 }

@@ -9,7 +9,7 @@ use Illuminate\Http\Request;
  * Class AnnouncementController
  *
  * Web/Resource Controller handling Announcement CRUD operations with Blade views.
- * Operates with the database-independent Announcement model.
+ * Interacts directly with the Eloquent Announcement model.
  *
  * @package App\Http\Controllers
  */
@@ -22,7 +22,7 @@ class AnnouncementController extends Controller
      */
     public function index()
     {
-        $announcements = Announcement::all();
+        $announcements = Announcement::orderBy('is_pinned', 'desc')->latest()->get();
 
         if (view()->exists('announcements.index')) {
             return view('announcements.index', compact('announcements'));
@@ -31,8 +31,8 @@ class AnnouncementController extends Controller
         return response()->json([
             'status' => 'success',
             'message' => 'Announcements retrieved via AnnouncementController@index',
-            'total' => count($announcements),
-            'data' => array_map(fn($a) => $a->toArray(), $announcements),
+            'total' => $announcements->count(),
+            'data' => $announcements->toArray(),
         ]);
     }
 
@@ -72,6 +72,11 @@ class AnnouncementController extends Controller
         ]);
 
         $validated['is_pinned'] = $request->has('is_pinned');
+        $validated['category'] = $validated['category'] ?? 'Genel';
+        $validated['author'] = $validated['author'] ?? 'Mezunlar Ofisi';
+        $validated['target_audience'] = $validated['target_audience'] ?? 'Tüm Mezunlar';
+        $validated['status'] = $validated['status'] ?? 'published';
+        $validated['published_at'] = now();
 
         $newAnnouncement = Announcement::create($validated);
 
@@ -157,6 +162,18 @@ class AnnouncementController extends Controller
      */
     public function update(Request $request, $id)
     {
+        $announcement = Announcement::find($id);
+
+        if (!$announcement) {
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => "Announcement with ID {$id} not found",
+                ], 404);
+            }
+            return redirect('/announcements')->with('error', "ID #{$id} olan duyuru bulunamadı.");
+        }
+
         $validated = $request->validate([
             'title' => 'sometimes|string|max:255',
             'content' => 'sometimes|string',
@@ -171,23 +188,13 @@ class AnnouncementController extends Controller
             $validated['is_pinned'] = (bool) $request->input('is_pinned');
         }
 
-        $updatedAnnouncement = Announcement::update($id, $validated);
-
-        if (!$updatedAnnouncement) {
-            if ($request->wantsJson()) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => "Announcement with ID {$id} not found",
-                ], 404);
-            }
-            return redirect('/announcements')->with('error', "ID #{$id} olan duyuru bulunamadı.");
-        }
+        $announcement->update($validated);
 
         if ($request->wantsJson()) {
             return response()->json([
                 'status' => 'success',
                 'message' => "Announcement with ID {$id} updated successfully via AnnouncementController@update",
-                'data' => $updatedAnnouncement->toArray(),
+                'data' => $announcement->toArray(),
             ]);
         }
 
@@ -202,9 +209,9 @@ class AnnouncementController extends Controller
      */
     public function destroy($id)
     {
-        $deletedAnnouncement = Announcement::delete($id);
+        $announcement = Announcement::find($id);
 
-        if (!$deletedAnnouncement) {
+        if (!$announcement) {
             if (request()->wantsJson()) {
                 return response()->json([
                     'status' => 'error',
@@ -214,14 +221,17 @@ class AnnouncementController extends Controller
             return redirect('/announcements')->with('error', "ID #{$id} olan duyuru bulunamadı.");
         }
 
+        $deletedData = $announcement->toArray();
+        $announcement->delete();
+
         if (request()->wantsJson()) {
             return response()->json([
                 'status' => 'success',
                 'message' => "Announcement with ID {$id} deleted successfully via AnnouncementController@destroy",
-                'deleted_announcement' => $deletedAnnouncement->toArray(),
+                'deleted_announcement' => $deletedData,
             ]);
         }
 
-        return redirect('/announcements')->with('success', "Duyuru #{$id} ({$deletedAnnouncement->title}) başarıyla silindi!");
+        return redirect('/announcements')->with('success', "Duyuru #{$id} ({$deletedData['title']}) başarıyla silindi!");
     }
 }
