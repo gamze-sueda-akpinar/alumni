@@ -1,5 +1,7 @@
+name: alumni
+
 services:
-  # Laravel Application (PHP 8.3 + FPM)
+  # Laravel Application (PHP 8.3-FPM + Composer + Node/NPM)
   app:
     build:
       context: .
@@ -9,10 +11,26 @@ services:
     working_dir: /var/www/html
     volumes:
       - .:/var/www/html
+    env_file:
+      - .env
+    environment:
+      - DB_CONNECTION=mysql
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_DATABASE=${DB_DATABASE:-alumni_db}
+      - DB_USERNAME=${DB_USERNAME:-alumni_user}
+      - DB_PASSWORD=${DB_PASSWORD:-alumni_secret}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - alumni_network
 
-  # Nginx Web Server
+  # Nginx Reverse Proxy / Web Server
   web:
     image: nginx:alpine
     container_name: alumni_web
@@ -28,7 +46,7 @@ services:
     networks:
       - alumni_network
 
-  # MySQL Database
+  # MySQL 8.0 Relational Database
   mysql:
     image: mysql:8.0
     container_name: alumni_mysql
@@ -36,16 +54,40 @@ services:
     ports:
       - "3306:3306"
     environment:
-      MYSQL_DATABASE: alumni_db
-      MYSQL_USER: alumni_user
-      MYSQL_PASSWORD: alumni_secret
-      MYSQL_ROOT_PASSWORD: root_secret
+      MYSQL_DATABASE: ${DB_DATABASE:-alumni_db}
+      MYSQL_USER: ${DB_USERNAME:-alumni_user}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-alumni_secret}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root_secret}
     volumes:
       - alumni_mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD:-root_secret}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
     networks:
       - alumni_network
 
-  # phpMyAdmin (Optional - for visual DB management)
+  # Redis In-Memory Cache, Queue & Session Store
+  redis:
+    image: redis:alpine
+    container_name: alumni_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - alumni_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 3s
+    networks:
+      - alumni_network
+
+  # phpMyAdmin - Visual Database Management Interface
   phpmyadmin:
     image: phpmyadmin/phpmyadmin
     container_name: alumni_pma
@@ -56,14 +98,20 @@ services:
       PMA_HOST: mysql
       PMA_PORT: 3306
     depends_on:
-      - mysql
+      mysql:
+        condition: service_healthy
     networks:
       - alumni_network
 
 networks:
   alumni_network:
+    name: alumni_network
     driver: bridge
 
 volumes:
   alumni_mysql_data:
+    name: alumni_mysql_data
+    driver: local
+  alumni_redis_data:
+    name: alumni_redis_data
     driver: local
