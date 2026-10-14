@@ -340,8 +340,9 @@ erDiagram
 
 ### 4.8 Announcements Entity (`announcements`)
 - **Purpose:** Official notices, scholarships, career calls, and administrative alerts.
+- **Migration:** `2026_10_14_200304_create_announcements_table.php`
 - **Model:** [`app/Models/Announcement.php`](app/Models/Announcement.php) & [`app/Models/InMemoryAnnouncement.php`](app/Models/InMemoryAnnouncement.php)
-- **Storage:** Managed via `Cache::forever('api_announcements_list', ...)` (persistent via MySQL `cache` table).
+- **Storage:** Relational MySQL table `announcements` & in-memory cache abstraction.
 
 | Attribute | Type | Values / Defaults | Description |
 | :--- | :--- | :--- | :--- |
