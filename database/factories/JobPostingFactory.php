@@ -44,6 +44,7 @@ class JobPostingFactory extends Factory
             'description' => fake()->paragraphs(2, true),
             'requirements' => fake()->paragraphs(1, true),
             'application_deadline' => fake()->dateTimeBetween('+1 week', '+3 months')->format('Y-m-d'),
+            'contact_email' => fake()->companyEmail(),
             'is_active' => true,
         ];
     }

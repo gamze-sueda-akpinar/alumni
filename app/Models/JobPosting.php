@@ -19,6 +19,7 @@ class JobPosting extends Model
         'description',
         'requirements',
         'application_deadline',
+        'contact_email',
         'is_active',
     ];
 

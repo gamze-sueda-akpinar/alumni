@@ -163,6 +163,7 @@ erDiagram
         text description
         text requirements
         date application_deadline
+        string contact_email
         boolean is_active
         timestamps timestamps
     }
@@ -296,7 +297,9 @@ erDiagram
 
 ### 4.6 Job Postings (`job_postings`)
 - **Purpose:** Career openings, internships, and job advertisements shared for alumni and students.
-- **Migration:** [`database/migrations/2026_09_23_073258_create_job_postings_table.php`](database/migrations/2026_09_23_073258_create_job_postings_table.php)
+- **Migrations:**
+  - Initial Table: [`database/migrations/2026_09_23_073258_create_job_postings_table.php`](database/migrations/2026_09_23_073258_create_job_postings_table.php)
+  - Schema Extension (`contact_email`): [`database/migrations/2026_10_21_063613_add_contact_email_to_job_postings_table.php`](database/migrations/2026_10_21_063613_add_contact_email_to_job_postings_table.php)
 - **Eloquent Model:** [`app/Models/JobPosting.php`](app/Models/JobPosting.php) (Primary persistence model connected to MySQL)
 - **In-Memory Prototype Model:** [`app/Models/InMemoryJobPosting.php`](app/Models/InMemoryJobPosting.php) (Cached fallback prototype)
 - **Model Factory:** [`database/factories/JobPostingFactory.php`](database/factories/JobPostingFactory.php) (Includes `inactive()` state)
@@ -315,6 +318,7 @@ erDiagram
 | `description` | `TEXT` | `NOT NULL` | *None* | Comprehensive role description, responsibilities, and team context |
 | `requirements` | `TEXT` | `NULLABLE` | `NULL` | Mandatory qualifications, required tech stack, and experience level |
 | `application_deadline` | `DATE` | `NULLABLE` | `NULL` | Deadline date for application submissions (YYYY-MM-DD) |
+| `contact_email` | `VARCHAR(255)` | `NULLABLE` | `NULL` | Direct inquiry & application submission email address |
 | `is_active` | `BOOLEAN` | `NOT NULL` | `TRUE (1)` | Publication visibility flag (`1`: active on job board, `0`: closed) |
 | `created_at` | `TIMESTAMP` | `NULLABLE` | `NULL` | Record creation timestamp |
 | `updated_at` | `TIMESTAMP` | `NULLABLE` | `NULL` | Last modification timestamp |
@@ -326,7 +330,7 @@ erDiagram
 
 #### Eloquent Model Configuration & Casting:
 - **Mass-Assignable Fillable Attributes:**
-  `['user_id', 'title', 'company_name', 'location', 'type', 'description', 'requirements', 'application_deadline', 'is_active']`
+  `['user_id', 'title', 'company_name', 'location', 'type', 'description', 'requirements', 'application_deadline', 'contact_email', 'is_active']`
 - **Attribute Casting:**
   - `'application_deadline' => 'date'`
   - `'is_active' => 'boolean'`

@@ -70,6 +70,7 @@ class JobPostingController extends Controller
             'description' => 'required|string',
             'requirements' => 'nullable|string',
             'application_deadline' => 'nullable|date',
+            'contact_email' => 'nullable|email|max:255',
             'is_active' => 'nullable|boolean',
         ]);
 
@@ -185,6 +186,7 @@ class JobPostingController extends Controller
             'description' => 'sometimes|string',
             'requirements' => 'nullable|string',
             'application_deadline' => 'nullable|date',
+            'contact_email' => 'nullable|email|max:255',
             'is_active' => 'nullable|boolean',
         ]);
 
