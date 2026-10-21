@@ -295,26 +295,62 @@ erDiagram
 ---
 
 ### 4.6 Job Postings (`job_postings`)
-- **Purpose:** Career openings, internships, and job advertisements shared for alumni.
-- **Migration:** `2026_09_23_073258_create_job_postings_table.php`
-- **Eloquent Model:** [`app/Models/JobPosting.php`](app/Models/JobPosting.php)
-- **In-Memory Model:** [`app/Models/InMemoryJobPosting.php`](app/Models/InMemoryJobPosting.php)
+- **Purpose:** Career openings, internships, and job advertisements shared for alumni and students.
+- **Migration:** [`database/migrations/2026_09_23_073258_create_job_postings_table.php`](database/migrations/2026_09_23_073258_create_job_postings_table.php)
+- **Eloquent Model:** [`app/Models/JobPosting.php`](app/Models/JobPosting.php) (Primary persistence model connected to MySQL)
+- **In-Memory Prototype Model:** [`app/Models/InMemoryJobPosting.php`](app/Models/InMemoryJobPosting.php) (Cached fallback prototype)
+- **Model Factory:** [`database/factories/JobPostingFactory.php`](database/factories/JobPostingFactory.php) (Includes `inactive()` state)
+- **Database Seeder:** [`database/seeders/DatabaseSeeder.php`](database/seeders/DatabaseSeeder.php) (Seeds standard enterprise postings + factory records)
 
-| Column | Type | Constraints | Description |
-| :--- | :--- | :--- | :--- |
-| `id` | `BIGINT UNSIGNED` | `PRIMARY KEY`, `AUTO_INCREMENT` | Unique job posting ID |
-| `user_id` | `BIGINT UNSIGNED` | `NULLABLE`, `FK` &rarr; `users.id`, `ON DELETE CASCADE` | Creator/Author of the job posting |
-| `title` | `VARCHAR(255)` | `NOT NULL` | Position title (e.g., Senior Software Engineer) |
-| `company_name` | `VARCHAR(255)` | `NOT NULL` | Hiring company or enterprise |
-| `location` | `VARCHAR(255)` | `NULLABLE` | Work location (e.g., İstanbul, Remote, Hybrid) |
-| `type` | `VARCHAR(255)` | `DEFAULT 'Full-time'` | Work type (Tam Zamanlı, Staj, Yarı Zamanlı) |
-| `description` | `TEXT` | `NOT NULL` | Complete job description and responsibilities |
-| `requirements` | `TEXT` | `NULLABLE` | Mandatory qualifications and skills |
-| `application_deadline` | `DATE` | `NULLABLE` | Final date to submit applications |
-| `contact_email` | `VARCHAR(255)` | `NULLABLE` | Application submission email address |
-| `is_active` | `BOOLEAN` | `DEFAULT TRUE` | Active visibility flag |
-| `created_at` | `TIMESTAMP` | `NULLABLE` | Posting creation timestamp |
-| `updated_at` | `TIMESTAMP` | `NULLABLE` | Posting last update timestamp |
+#### Schema & Column Specifications:
+
+| Column | Type | Constraints | Default | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| `id` | `BIGINT UNSIGNED` | `PRIMARY KEY`, `AUTO_INCREMENT` | *None* | Unique job posting identifier |
+| `user_id` | `BIGINT UNSIGNED` | `NOT NULL`, `FOREIGN KEY` &rarr; `users(id)`, `ON DELETE CASCADE` | *None* | Associated publisher / author user ID |
+| `title` | `VARCHAR(255)` | `NOT NULL` | *None* | Position / Job title (e.g. Senior Laravel Developer) |
+| `company_name` | `VARCHAR(255)` | `NOT NULL` | *None* | Hiring enterprise, startup, or institution |
+| `location` | `VARCHAR(255)` | `NULLABLE` | `NULL` | Work location or modality (e.g. İstanbul, Uzaktan, Hibrit) |
+| `type` | `VARCHAR(255)` | `NOT NULL` | `'Full-time'` | Employment type (`Full-time`, `Part-time`, `Remote`, `Internship`) |
+| `description` | `TEXT` | `NOT NULL` | *None* | Comprehensive role description, responsibilities, and team context |
+| `requirements` | `TEXT` | `NULLABLE` | `NULL` | Mandatory qualifications, required tech stack, and experience level |
+| `application_deadline` | `DATE` | `NULLABLE` | `NULL` | Deadline date for application submissions (YYYY-MM-DD) |
+| `is_active` | `BOOLEAN` | `NOT NULL` | `TRUE (1)` | Publication visibility flag (`1`: active on job board, `0`: closed) |
+| `created_at` | `TIMESTAMP` | `NULLABLE` | `NULL` | Record creation timestamp |
+| `updated_at` | `TIMESTAMP` | `NULLABLE` | `NULL` | Last modification timestamp |
+
+#### Relational Constraints & Foreign Keys:
+- **`job_postings_user_id_foreign`:**
+  - Foreign key constraint referencing `users.id`.
+  - Configured with `ON DELETE CASCADE`. If the publishing user account is deleted, all their posted jobs are automatically purged by MySQL to preserve referential integrity.
+
+#### Eloquent Model Configuration & Casting:
+- **Mass-Assignable Fillable Attributes:**
+  `['user_id', 'title', 'company_name', 'location', 'type', 'description', 'requirements', 'application_deadline', 'is_active']`
+- **Attribute Casting:**
+  - `'application_deadline' => 'date'`
+  - `'is_active' => 'boolean'`
+- **Relationships:**
+  - `user(): BelongsTo` &rarr; Returns the associated `App\Models\User` instance.
+  - Inverse relationship: `User::jobPostings(): HasMany` &rarr; Returns all job postings authored by the user.
+
+#### Routing & Interface Access Matrix:
+- **Web MVC Views (Blade):**
+  - `GET /job-postings` &rarr; `JobPostingController@index` (Catalog view with search & stats)
+  - `GET /job-postings/create` &rarr; `JobPostingController@create` (Job creation form)
+  - `POST /job-postings` &rarr; `JobPostingController@store` (Persists new job to MySQL)
+  - `GET /job-postings/{id}` &rarr; `JobPostingController@show` (Job detail view)
+  - `GET /job-postings/{id}/edit` &rarr; `JobPostingController@edit` (Modification form)
+  - `PUT/PATCH /job-postings/{id}` &rarr; `JobPostingController@update` (Updates job in MySQL)
+  - `DELETE /job-postings/{id}` &rarr; `JobPostingController@destroy` (Deletes job from MySQL)
+- **RESTful API Endpoints (`/api/job-postings`):**
+  - `GET /api/job-postings` &rarr; Lists postings with `?company=...` and `?active=1` filtering.
+  - `POST /api/job-postings` &rarr; Creates posting with JSON payload and assigns `user_id`.
+  - `GET /api/job-postings/{id}` &rarr; Returns single job posting with attached publisher user.
+  - `PUT /api/job-postings/{id}` &rarr; Updates posting in MySQL database.
+  - `DELETE /api/job-postings/{id}` &rarr; Deletes posting from MySQL database.
+- **Filament Admin Panel:**
+  - `/admin/job-postings` &rarr; `App\Filament\Resources\JobPostingResource` (Visual management, badge indicators, filters).
 
 ---
 

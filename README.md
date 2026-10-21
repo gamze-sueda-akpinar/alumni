@@ -10,7 +10,7 @@
 
 A modern, full-featured **Alumni Tracking System** built for universities, faculties, and educational institutions to foster sustainable relationships with graduates, monitor career progression, and cultivate an active alumni community.
 
-> 📊 **Data Design Documentation:** Detailed Entity-Relationship Diagram (ERD), Data Dictionary, and persistence models are documented in [**add.md**](add.md).
+> 📊 **Data Design Documentation:** Detailed Entity-Relationship Diagram (ERD), Data Dictionary, and persistence models are documented in [**ddd.md**](ddd.md) / [**add.md**](add.md).
 
 ---
 
@@ -156,7 +156,7 @@ php artisan serve
 ## 🗄️ Database Schema Overview
 
 > [!IMPORTANT]
-> For the comprehensive Data Dictionary, column-by-column schemas, Mermaid ER Diagram, referential integrity rules, and "The Forgetting Test" persistence proofs, please review the formal **[Data Design Documentation (add.md)](add.md)**.
+> For the comprehensive Data Dictionary, column-by-column schemas, Mermaid ER Diagram, referential integrity rules, and "The Forgetting Test" persistence proofs, please review the formal **[Data Design Documentation (ddd.md / add.md)](ddd.md)**.
 
 The database architecture is structured around key relational entities:
 
@@ -398,7 +398,7 @@ alumni/
 ├── docker-compose.yml                      # Multi-container orchestration (App, Web, MySQL, PMA)
 ├── Dockerfile                              # Custom PHP 8.3-FPM + Composer + Node container
 ├── composer.json                           # PHP packages & autoload mapping
-├── add.md                                  # Complete Data Design Documentation & ER Diagram
+├── ddd.md / add.md                         # Complete Data Design Documentation (DDD) & ER Diagram
 ├── package.json                            # NPM dependencies & front-end scripts
 └── README.md                               # Complete project documentation & guide
 ```
