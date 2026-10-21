@@ -462,7 +462,64 @@ stateDiagram-v2
 
 ---
 
-## 7. 🧪 Persistence Strategy & "The Forgetting Test" Verification
+## 7. 🚦 Direct vs. Nested Routing Architecture
+
+The HTTP routing layer is structured into **Direct (Top-Level)** and **Nested (Scoped/Hierarchical)** routes to support both decoupled catalog queries and relational parent-child data operations:
+
+### 7.1 Direct Routes (Bağımsız Doğrudan Rotalar)
+Direct routes access an entity collection or single record directly by its unique identifier:
+
+| HTTP Method | Route URI | Controller & Action | Resource Description |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/users` | `UserController@index` | HTML view: All users list |
+| `GET` | `/users/{id}` | `UserController@show` | HTML view: Single user detail |
+| `GET` | `/api/users` | `ApiUserController@index` | JSON: All users list |
+| `GET` | `/api/users/{id}` | `ApiUserController@show` | JSON: Single user detail |
+| `GET` | `/job-postings` | `JobPostingController@index` | HTML view: Job catalog |
+| `GET` | `/api/job-postings` | `ApiJobPostingController@index` | JSON: All job postings |
+| `GET` | `/api/job-postings/{id}` | `ApiJobPostingController@show` | JSON: Single job detail |
+| `GET` | `/announcements` | `AnnouncementController@index` | HTML view: Announcements |
+| `GET` | `/api/announcements` | `ApiAnnouncementController@index` | JSON: Announcements list |
+| `GET` | `/api/faculties` | `ApiFacultyController@index` | JSON: All university faculties |
+| `GET` | `/api/faculties/{id}` | `ApiFacultyController@show` | JSON: Single faculty details |
+| `GET` | `/api/departments` | `ApiDepartmentController@index` | JSON: All academic departments |
+| `GET` | `/api/departments/{id}` | `ApiDepartmentController@show` | JSON: Single department details |
+| `GET` | `/api/experiences/{id}` | `ApiExperienceController@show` | JSON: Single experience record |
+| `PUT` | `/api/experiences/{id}` | `ApiExperienceController@update` | JSON: Update experience |
+| `DELETE` | `/api/experiences/{id}` | `ApiExperienceController@destroy` | JSON: Delete experience |
+| `GET` | `/api/events` | `ApiEventController@index` | JSON: All upcoming/past events |
+| `POST` | `/api/events` | `ApiEventController@store` | JSON: Create a new event |
+| `GET` | `/api/events/{id}` | `ApiEventController@show` | JSON: Event details |
+
+---
+
+### 7.2 Nested Routes (İç İçe / Bağımlı Rotalar)
+Nested routes represent child entities scoped strictly under their parent entity identifier:
+
+```mermaid
+graph LR
+    Faculty["/api/faculties/{id}"] -->|"/departments"| FacultyDepts["Departments under Faculty"]
+    Dept["/api/departments/{id}"] -->|"/alumni"| DeptAlumni["Alumni of Department"]
+    User["/api/users/{id}"] -->|"/profile"| UserProfile["1:1 Alumni Profile"]
+    User -->|"/experiences"| UserExp["1:N Career Experiences"]
+    User -->|"/job-postings"| UserJobs["1:N Authored Job Postings"]
+```
+
+| HTTP Method | Route URI | Controller & Action | Relational Scope & Purpose |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/api/faculties/{id}/departments` | `ApiFacultyController@departments` | Lists all departments belonging to the specified faculty |
+| `POST` | `/api/faculties/{id}/departments` | `ApiFacultyController@storeDepartment` | Creates a new department nested under the specified faculty |
+| `GET` | `/api/departments/{id}/alumni` | `ApiDepartmentController@alumni` | Lists all alumni graduates from the specified department |
+| `GET` | `/api/users/{id}/profile` | `ApiUserController@profile` | Returns the 1:1 alumni profile for the specified user |
+| `PUT/PATCH` | `/api/users/{id}/profile` | `ApiUserController@updateProfile` | Updates the 1:1 alumni profile for the specified user |
+| `GET` | `/api/users/{id}/experiences` | `ApiUserController@experiences` | Lists all 1:N career experiences belonging to this user |
+| `POST` | `/api/users/{id}/experiences` | `ApiUserController@storeExperience` | Creates a new career experience scoped to this user |
+| `GET` | `/api/users/{id}/job-postings` | `ApiUserController@jobPostings` | Lists all 1:N job postings authored by this user |
+| `POST` | `/api/users/{id}/job-postings` | `ApiUserController@storeJobPosting` | Creates a new job posting authored by this user |
+
+---
+
+## 8. 🧪 Persistence Strategy & "The Forgetting Test" Verification
 
 A critical concern in containerized cloud native environments is **Data Persistence** across service lifecycles.
 
@@ -495,7 +552,7 @@ The persistence was verified via **"The Forgetting Test"**:
 
 ---
 
-## 8. 🔗 Cross-Reference Navigation
+## 9. 🔗 Cross-Reference Navigation
 
 - 📄 **Main Architecture & Setup:** [README.md](README.md)
 - 📡 **REST API Specification:** [public/openapi.json](public/openapi.json)

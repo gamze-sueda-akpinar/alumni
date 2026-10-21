@@ -2,6 +2,10 @@
 
 use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\ApiAnnouncementController;
+use App\Http\Controllers\ApiDepartmentController;
+use App\Http\Controllers\ApiEventController;
+use App\Http\Controllers\ApiExperienceController;
+use App\Http\Controllers\ApiFacultyController;
 use App\Http\Controllers\ApiJobPostingController;
 use App\Http\Controllers\ApiUserController;
 use App\Http\Controllers\JobPostingController;
@@ -134,6 +138,89 @@ Route::post('/api/job-postings', [ApiJobPostingController::class, 'store'])->nam
 Route::get('/api/job-postings/{id}', [ApiJobPostingController::class, 'show'])->name('api.job-postings.show');
 Route::match(['put', 'patch'], '/api/job-postings/{id}', [ApiJobPostingController::class, 'update'])->name('api.job-postings.update');
 Route::delete('/api/job-postings/{id}', [ApiJobPostingController::class, 'destroy'])->name('api.job-postings.destroy');
+
+// =========================================================================
+// 7. Direct & Nested Routes: Faculties & Departments
+//    Direct:
+//      - GET  /api/faculties                     --> ApiFacultyController@index
+//      - GET  /api/faculties/{id}                --> ApiFacultyController@show
+//      - GET  /api/departments                   --> ApiDepartmentController@index
+//      - GET  /api/departments/{id}              --> ApiDepartmentController@show
+//    Nested:
+//      - GET  /api/faculties/{id}/departments    --> ApiFacultyController@departments
+//      - POST /api/faculties/{id}/departments    --> ApiFacultyController@storeDepartment
+//      - GET  /api/departments/{id}/alumni       --> ApiDepartmentController@alumni
+// =========================================================================
+Route::prefix('api/faculties')->name('api.faculties.')->group(function () {
+    Route::get('/', [ApiFacultyController::class, 'index'])->name('index');
+    Route::get('/{id}', [ApiFacultyController::class, 'show'])->name('show');
+    // Nested: Departments under Faculty
+    Route::get('/{id}/departments', [ApiFacultyController::class, 'departments'])->name('departments');
+    Route::post('/{id}/departments', [ApiFacultyController::class, 'storeDepartment'])->name('departments.store');
+});
+
+Route::prefix('api/departments')->name('api.departments.')->group(function () {
+    Route::get('/', [ApiDepartmentController::class, 'index'])->name('index');
+    Route::get('/{id}', [ApiDepartmentController::class, 'show'])->name('show');
+    // Nested: Alumni under Department
+    Route::get('/{id}/alumni', [ApiDepartmentController::class, 'alumni'])->name('alumni');
+});
+
+// =========================================================================
+// 8. Direct Routes: Experiences
+//    Direct:
+//      - GET    /api/experiences/{id}            --> ApiExperienceController@show
+//      - PUT    /api/experiences/{id}            --> ApiExperienceController@update
+//      - DELETE /api/experiences/{id}            --> ApiExperienceController@destroy
+// =========================================================================
+Route::prefix('api/experiences')->name('api.experiences.')->group(function () {
+    Route::get('/{id}', [ApiExperienceController::class, 'show'])->name('show');
+    Route::match(['put', 'patch'], '/{id}', [ApiExperienceController::class, 'update'])->name('update');
+    Route::delete('/{id}', [ApiExperienceController::class, 'destroy'])->name('destroy');
+});
+
+// =========================================================================
+// 9. Direct Routes: Events
+//    Direct:
+//      - GET    /api/events                      --> ApiEventController@index
+//      - POST   /api/events                      --> ApiEventController@store
+//      - GET    /api/events/{id}                 --> ApiEventController@show
+//      - PUT    /api/events/{id}                 --> ApiEventController@update
+//      - DELETE /api/events/{id}                 --> ApiEventController@destroy
+// =========================================================================
+Route::prefix('api/events')->name('api.events.')->group(function () {
+    Route::get('/', [ApiEventController::class, 'index'])->name('index');
+    Route::post('/', [ApiEventController::class, 'store'])->name('store');
+    Route::get('/{id}', [ApiEventController::class, 'show'])->name('show');
+    Route::match(['put', 'patch'], '/{id}', [ApiEventController::class, 'update'])->name('update');
+    Route::delete('/{id}', [ApiEventController::class, 'destroy'])->name('destroy');
+});
+
+// =========================================================================
+// 10. Nested Routes: User Scoped Child Resources (/api/users/{user}/...)
+//     - Profile (1:1):
+//       - GET        /api/users/{id}/profile      --> ApiUserController@profile
+//       - PUT/PATCH  /api/users/{id}/profile      --> ApiUserController@updateProfile
+//     - Experiences (1:N):
+//       - GET        /api/users/{id}/experiences  --> ApiUserController@experiences
+//       - POST       /api/users/{id}/experiences  --> ApiUserController@storeExperience
+//     - Job Postings (1:N):
+//       - GET        /api/users/{id}/job-postings --> ApiUserController@jobPostings
+//       - POST       /api/users/{id}/job-postings --> ApiUserController@storeJobPosting
+// =========================================================================
+Route::prefix('api/users/{id}')->name('api.users.nested.')->group(function () {
+    // Nested Profile
+    Route::get('/profile', [ApiUserController::class, 'profile'])->name('profile.show');
+    Route::match(['put', 'patch'], '/profile', [ApiUserController::class, 'updateProfile'])->name('profile.update');
+
+    // Nested Experiences
+    Route::get('/experiences', [ApiUserController::class, 'experiences'])->name('experiences.index');
+    Route::post('/experiences', [ApiUserController::class, 'storeExperience'])->name('experiences.store');
+
+    // Nested Job Postings
+    Route::get('/job-postings', [ApiUserController::class, 'jobPostings'])->name('job-postings.index');
+    Route::post('/job-postings', [ApiUserController::class, 'storeJobPosting'])->name('job-postings.store');
+});
 
 // GET /api/swagger - Swagger UI Arayüzü
 Route::get('/api/swagger', function () {

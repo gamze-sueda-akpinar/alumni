@@ -210,4 +210,208 @@ class ApiUserController extends Controller
             'message' => "User with ID {$id} deleted successfully from MySQL database",
         ], 200);
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Nested Resource Endpoints (/api/users/{user}/...)
+    |--------------------------------------------------------------------------
+    */
+
+    /**
+     * Nested Route: Get alumni profile of a specific user (GET /api/users/{user}/profile).
+     */
+    public function profile($id): JsonResponse
+    {
+        $user = User::with('alumniProfile.department.faculty')->find($id);
+
+        if (!$user) {
+            return response()->json([
+                'status' => 'error',
+                'message' => "User with ID {$id} not found",
+            ], 404);
+        }
+
+        if (!$user->alumniProfile) {
+            return response()->json([
+                'status' => 'error',
+                'message' => "Alumni profile not found for user {$id}",
+            ], 404);
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+            ],
+            'profile' => $user->alumniProfile,
+        ], 200);
+    }
+
+    /**
+     * Nested Route: Update alumni profile of a specific user (PUT / PATCH /api/users/{user}/profile).
+     */
+    public function updateProfile(Request $request, $id): JsonResponse
+    {
+        $user = User::with('alumniProfile')->find($id);
+
+        if (!$user) {
+            return response()->json([
+                'status' => 'error',
+                'message' => "User with ID {$id} not found",
+            ], 404);
+        }
+
+        $validated = $request->validate([
+            'department_id' => 'nullable|exists:departments,id',
+            'student_number' => 'nullable|string|max:50',
+            'graduation_year' => 'nullable|integer',
+            'current_company' => 'nullable|string|max:255',
+            'current_position' => 'nullable|string|max:255',
+            'city' => 'nullable|string|max:255',
+            'country' => 'nullable|string|max:255',
+            'phone' => 'nullable|string|max:50',
+            'linkedin_url' => 'nullable|url|max:255',
+            'github_url' => 'nullable|url|max:255',
+            'bio' => 'nullable|string',
+            'status' => 'nullable|in:pending,approved,rejected',
+        ]);
+
+        if ($user->alumniProfile) {
+            $user->alumniProfile->update($validated);
+        } else {
+            $user->alumniProfile()->create($validated);
+        }
+
+        $user->load('alumniProfile.department');
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Profile updated successfully',
+            'data' => $user->alumniProfile,
+        ], 200);
+    }
+
+    /**
+     * Nested Route: List all experiences of a specific user (GET /api/users/{user}/experiences).
+     */
+    public function experiences($id): JsonResponse
+    {
+        $user = User::find($id);
+
+        if (!$user) {
+            return response()->json([
+                'status' => 'error',
+                'message' => "User with ID {$id} not found",
+            ], 404);
+        }
+
+        $experiences = $user->experiences()->latest('start_date')->get();
+
+        return response()->json([
+            'status' => 'success',
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+            ],
+            'total_experiences' => $experiences->count(),
+            'data' => $experiences,
+        ], 200);
+    }
+
+    /**
+     * Nested Route: Create a new experience for a specific user (POST /api/users/{user}/experiences).
+     */
+    public function storeExperience(Request $request, $id): JsonResponse
+    {
+        $user = User::find($id);
+
+        if (!$user) {
+            return response()->json([
+                'status' => 'error',
+                'message' => "User with ID {$id} not found",
+            ], 404);
+        }
+
+        $validated = $request->validate([
+            'company_name' => 'required|string|max:255',
+            'position' => 'required|string|max:255',
+            'employment_type' => 'nullable|string|max:100',
+            'start_date' => 'required|date',
+            'end_date' => 'nullable|date|after_or_equal:start_date',
+            'is_current' => 'nullable|boolean',
+            'description' => 'nullable|string',
+        ]);
+
+        $experience = $user->experiences()->create($validated);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Experience created successfully for user',
+            'data' => $experience,
+        ], 201);
+    }
+
+    /**
+     * Nested Route: List all job postings published by a specific user (GET /api/users/{user}/job-postings).
+     */
+    public function jobPostings($id): JsonResponse
+    {
+        $user = User::find($id);
+
+        if (!$user) {
+            return response()->json([
+                'status' => 'error',
+                'message' => "User with ID {$id} not found",
+            ], 404);
+        }
+
+        $jobPostings = $user->jobPostings()->latest()->get();
+
+        return response()->json([
+            'status' => 'success',
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+            ],
+            'total_job_postings' => $jobPostings->count(),
+            'data' => $jobPostings,
+        ], 200);
+    }
+
+    /**
+     * Nested Route: Create a job posting authored by a specific user (POST /api/users/{user}/job-postings).
+     */
+    public function storeJobPosting(Request $request, $id): JsonResponse
+    {
+        $user = User::find($id);
+
+        if (!$user) {
+            return response()->json([
+                'status' => 'error',
+                'message' => "User with ID {$id} not found",
+            ], 404);
+        }
+
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'company_name' => 'required|string|max:255',
+            'location' => 'nullable|string|max:255',
+            'type' => 'nullable|string|max:100',
+            'description' => 'required|string',
+            'requirements' => 'nullable|string',
+            'application_deadline' => 'nullable|date',
+            'contact_email' => 'nullable|email|max:255',
+            'is_active' => 'nullable|boolean',
+        ]);
+
+        $job = $user->jobPostings()->create($validated);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Job posting authored and created successfully',
+            'data' => $job,
+        ], 201);
+    }
 }
