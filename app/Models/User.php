@@ -61,6 +61,22 @@ class User extends Authenticatable
     }
 
     /**
+     * Get all job applications submitted by this user.
+     */
+    public function applications(): HasMany
+    {
+        return $this->hasMany(JobApplication::class);
+    }
+
+    /**
+     * Alias for applications submitted by this user.
+     */
+    public function jobApplications(): HasMany
+    {
+        return $this->hasMany(JobApplication::class);
+    }
+
+    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>

@@ -18,10 +18,12 @@
    - [4.7 Events (`events`)](#47-events-events)
    - [4.8 Announcements Entity (`announcements`)](#48-announcements-entity-announcements)
    - [4.9 Cache & Session Storage (`cache`, `sessions`)](#49-cache--session-storage-cache-sessions)
+   - [4.10 Job Applications (`job_applications` / `applications`)](#410-job-applications-job_applications--applications)
 5. [Data Integrity & Relationship Constraints](#5-data-integrity--relationship-constraints)
 6. [State Machines & Entity Lifecycles](#6-state-machines--entity-lifecycles)
-7. [Persistence Strategy & "The Forgetting Test" Verification](#7-persistence-strategy--the-forgetting-test-verification)
-8. [Cross-Reference Navigation](#8-cross-reference-navigation)
+7. [Direct vs. Nested Routing Architecture](#7-direct-vs-nested-routing-architecture)
+8. [Persistence Strategy & "The Forgetting Test" Verification](#8-persistence-strategy--the-forgetting-test-verification)
+9. [Cross-Reference Navigation](#9-cross-reference-navigation)
 
 ---
 
@@ -60,6 +62,7 @@ flowchart TD
             DeptsTable[("departments")]
             ExpTable[("experiences")]
             JobsTable[("job_postings")]
+            ApplicationsTable[("job_applications / applications")]
             EventsTable[("events")]
             CacheTable[("cache / cache_locks")]
         end
@@ -93,6 +96,8 @@ erDiagram
     USERS ||--o| ALUMNI_PROFILES : "has one"
     USERS ||--o{ EXPERIENCES : "has many"
     USERS ||--o{ JOB_POSTINGS : "creates"
+    USERS ||--o{ JOB_APPLICATIONS : "submits"
+    JOB_POSTINGS ||--o{ JOB_APPLICATIONS : "receives"
     FACULTIES ||--o{ DEPARTMENTS : "contains"
     DEPARTMENTS ||--o{ ALUMNI_PROFILES : "graduated from"
 
@@ -190,6 +195,18 @@ erDiagram
         boolean is_pinned
         string status
         timestamp published_at
+        timestamps timestamps
+    }
+
+    JOB_APPLICATIONS {
+        bigint id PK
+        bigint job_posting_id FK
+        bigint user_id FK
+        text cover_letter
+        string resume_path
+        string status
+        text notes
+        timestamp applied_at
         timestamps timestamps
     }
 ```
@@ -420,14 +437,55 @@ CREATE TABLE `cache_locks` (
 
 ---
 
+### 4.10 Job Applications (`job_applications` / `applications`)
+- **Purpose:** Tracks employment applications, cover notes, and resumes submitted by alumni and students for active job postings.
+- **Migration:** [`database/migrations/2026_10_21_073000_create_job_applications_table.php`](database/migrations/2026_10_21_073000_create_job_applications_table.php)
+- **Eloquent Models:** [`app/Models/JobApplication.php`](app/Models/JobApplication.php) & [`app/Models/Application.php`](app/Models/Application.php)
+- **Model Factory:** [`database/factories/JobApplicationFactory.php`](database/factories/JobApplicationFactory.php)
+- **Database Compatibility:** Features MySQL native table `job_applications` with an updatable view `applications` for universal query compatibility.
+
+#### Schema & Column Specifications:
+
+| Column | Type | Constraints | Default | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| `id` | `BIGINT UNSIGNED` | `PRIMARY KEY`, `AUTO_INCREMENT` | *None* | Unique job application identifier |
+| `job_posting_id` | `BIGINT UNSIGNED` | `NOT NULL`, `FK` &rarr; `job_postings(id)`, `ON DELETE CASCADE` | *None* | Associated job posting identifier |
+| `user_id` | `BIGINT UNSIGNED` | `NOT NULL`, `FK` &rarr; `users(id)`, `ON DELETE CASCADE` | *None* | Associated applicant user account ID |
+| `cover_letter` | `TEXT` | `NULLABLE` | `NULL` | Candidate statement of interest / cover message |
+| `resume_path` | `VARCHAR(255)` | `NULLABLE` | `NULL` | Uploaded CV document path or link |
+| `status` | `VARCHAR(50)` | `NOT NULL` | `'pending'` | Workflow state (`pending`, `reviewed`, `shortlisted`, `accepted`, `rejected`) |
+| `notes` | `TEXT` | `NULLABLE` | `NULL` | Internal evaluation / recruiter feedback |
+| `applied_at` | `TIMESTAMP` | `NULLABLE` | `NULL` | Submission timestamp |
+| `created_at` | `TIMESTAMP` | `NULLABLE` | `NULL` | Record creation timestamp |
+| `updated_at` | `TIMESTAMP` | `NULLABLE` | `NULL` | Record last update timestamp |
+
+#### Relational Constraints & Composite Keys:
+- **`unique_user_job_application`:** Unique compound index on `(job_posting_id, user_id)` guaranteeing that a user can submit only one application per job posting.
+- **`job_applications_job_posting_id_foreign`:** Cascades on delete (`ON DELETE CASCADE`).
+- **`job_applications_user_id_foreign`:** Cascades on delete (`ON DELETE CASCADE`).
+
+#### Eloquent Model Configuration & Casting:
+- **Mass-Assignable Fillable Attributes:**
+  `['job_posting_id', 'user_id', 'cover_letter', 'resume_path', 'status', 'notes', 'applied_at']`
+- **Attribute Casting:**
+  - `'applied_at' => 'datetime'`
+- **Relationships:**
+  - `jobPosting(): BelongsTo` &rarr; Returns target `App\Models\JobPosting`.
+  - `user(): BelongsTo` &rarr; Returns applicant `App\Models\User`.
+  - `applicant(): BelongsTo` &rarr; Convenient alias for `user()`.
+
+---
+
 ## 5. 🛡️ Data Integrity & Relationship Constraints
 
 The database enforces strict referential integrity rules:
 1. **User Deletion Cascades (`ON DELETE CASCADE`):**
-   - When a record in `users` is deleted, all associated `alumni_profiles`, `experiences`, and `job_postings` are automatically purged by MySQL foreign keys, preventing orphaned data.
-2. **Department Protection (`ON DELETE SET NULL`):**
+   - When a record in `users` is deleted, all associated `alumni_profiles`, `experiences`, `job_postings`, and `job_applications` are automatically purged by MySQL foreign keys, preventing orphaned data.
+2. **Job Posting Deletion Cascades (`ON DELETE CASCADE`):**
+   - When a record in `job_postings` is deleted, all submitted `job_applications` are automatically purged.
+3. **Department Protection (`ON DELETE SET NULL`):**
    - If an academic department is deleted or merged, `alumni_profiles.department_id` is automatically set to `NULL` to preserve the graduate's historical profile and contact details.
-3. **Faculty Deletion Cascades (`ON DELETE CASCADE`):**
+4. **Faculty Deletion Cascades (`ON DELETE CASCADE`):**
    - Deleting a faculty cascades to all departments belonging to that faculty.
 4. **Targeted Performance Indexes:**
    - Indexes are established on frequently filtered columns:
@@ -460,6 +518,19 @@ stateDiagram-v2
     Closed --> [*]: Deleted
 ```
 
+### Job Application Status Workflow
+```mermaid
+stateDiagram-v2
+    [*] --> pending: Alumnus submits application
+    pending --> reviewed: Recruiter/Poster reviews profile & CV
+    reviewed --> shortlisted: Candidate advanced to interview
+    reviewed --> rejected: Not matching requirements
+    shortlisted --> accepted: Candidate offered position
+    shortlisted --> rejected: Not selected
+    accepted --> [*]: Application successful
+    rejected --> [*]: Application closed
+```
+
 ---
 
 ## 7. 🚦 Direct vs. Nested Routing Architecture
@@ -490,6 +561,11 @@ Direct routes access an entity collection or single record directly by its uniqu
 | `GET` | `/api/events` | `ApiEventController@index` | JSON: All upcoming/past events |
 | `POST` | `/api/events` | `ApiEventController@store` | JSON: Create a new event |
 | `GET` | `/api/events/{id}` | `ApiEventController@show` | JSON: Event details |
+| `GET` | `/api/applications` | `ApiJobApplicationController@index` | JSON: All job applications |
+| `POST` | `/api/applications` | `ApiJobApplicationController@store` | JSON: Submit an application |
+| `GET` | `/api/applications/{id}` | `ApiJobApplicationController@show` | JSON: Single application details |
+| `PUT/PATCH` | `/api/applications/{id}` | `ApiJobApplicationController@update` | JSON: Update application status & notes |
+| `DELETE` | `/api/applications/{id}` | `ApiJobApplicationController@destroy` | JSON: Delete / withdraw application |
 
 ---
 
@@ -503,6 +579,8 @@ graph LR
     User["/api/users/{id}"] -->|"/profile"| UserProfile["1:1 Alumni Profile"]
     User -->|"/experiences"| UserExp["1:N Career Experiences"]
     User -->|"/job-postings"| UserJobs["1:N Authored Job Postings"]
+    User -->|"/applications"| UserApps["1:N Submitted Applications"]
+    Job["/api/job-postings/{id}"] -->|"/applications"| JobApps["1:N Received Applications"]
 ```
 
 | HTTP Method | Route URI | Controller & Action | Relational Scope & Purpose |
@@ -516,6 +594,10 @@ graph LR
 | `POST` | `/api/users/{id}/experiences` | `ApiUserController@storeExperience` | Creates a new career experience scoped to this user |
 | `GET` | `/api/users/{id}/job-postings` | `ApiUserController@jobPostings` | Lists all 1:N job postings authored by this user |
 | `POST` | `/api/users/{id}/job-postings` | `ApiUserController@storeJobPosting` | Creates a new job posting authored by this user |
+| `GET` | `/api/users/{id}/applications` | `ApiUserController@applications` | Lists all 1:N job applications submitted by this user |
+| `POST` | `/api/users/{id}/applications` | `ApiUserController@storeApplication` | Submits a new job application on behalf of this user |
+| `GET` | `/api/job-postings/{id}/applications` | `ApiJobApplicationController@forJobPosting` | Lists all candidate applications received for this job posting |
+| `POST` | `/api/job-postings/{id}/applications` | `ApiJobApplicationController@storeForJobPosting` | Submits an application directly to this job posting |
 
 ---
 

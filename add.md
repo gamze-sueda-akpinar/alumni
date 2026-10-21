@@ -1,10 +1,10 @@
-# 📊 Data Design Documentation (`add.md`) — Alumni Tracking System
+﻿# ğŸ“Š Data Design Document (`ddd.md` / `add.md`) â€” Alumni Tracking System
 
-[← Back to Main Documentation (README.md)](README.md) &bull; [Interactive Swagger API UI](resources/views/swagger.blade.php) &bull; [OpenAPI 3.0 Specification](public/openapi.json)
+[â† Back to Main Documentation (README.md)](README.md) &bull; [Interactive Swagger API UI](resources/views/swagger.blade.php) &bull; [OpenAPI 3.0 Specification](public/openapi.json) &bull; [add.md](add.md)
 
 ---
 
-## 📑 Table of Contents
+## ğŸ“‘ Table of Contents
 1. [Overview & Objectives](#1-overview--objectives)
 2. [Dual-Layer Storage Architecture](#2-dual-layer-storage-architecture)
 3. [Entity-Relationship Diagram (ERD)](#3-entity-relationship-diagram-erd)
@@ -18,16 +18,18 @@
    - [4.7 Events (`events`)](#47-events-events)
    - [4.8 Announcements Entity (`announcements`)](#48-announcements-entity-announcements)
    - [4.9 Cache & Session Storage (`cache`, `sessions`)](#49-cache--session-storage-cache-sessions)
+   - [4.10 Job Applications (`job_applications` / `applications`)](#410-job-applications-job_applications--applications)
 5. [Data Integrity & Relationship Constraints](#5-data-integrity--relationship-constraints)
 6. [State Machines & Entity Lifecycles](#6-state-machines--entity-lifecycles)
-7. [Persistence Strategy & "The Forgetting Test" Verification](#7-persistence-strategy--the-forgetting-test-verification)
-8. [Cross-Reference Navigation](#8-cross-reference-navigation)
+7. [Direct vs. Nested Routing Architecture](#7-direct-vs-nested-routing-architecture)
+8. [Persistence Strategy & "The Forgetting Test" Verification](#8-persistence-strategy--the-forgetting-test-verification)
+9. [Cross-Reference Navigation](#9-cross-reference-navigation)
 
 ---
 
-## 1. 🎯 Overview & Objectives
+## 1. ğŸ¯ Overview & Objectives
 
-This document (**`add.md`**) provides the formal, in-depth **Data Design Documentation** for the **Alumni Tracking System**. It defines the logical and physical data schemas, data dictionaries, entity-relationship constraints, and caching strategies.
+This document (**`ddd.md`** / **`add.md`**) provides the formal, in-depth **Data Design Documentation (DDD)** for the **Alumni Tracking System**. It defines the logical and physical data schemas, data dictionaries, entity-relationship constraints, and caching strategies.
 
 ### Core Objectives:
 - **Relational Integrity:** Establish normalized, high-performance database tables for academic entities, profiles, job listings, and institutional events.
@@ -37,13 +39,13 @@ This document (**`add.md`**) provides the formal, in-depth **Data Design Documen
 
 ---
 
-## 2. 🏗️ Dual-Layer Storage Architecture
+## 2. ğŸ—ï¸ Dual-Layer Storage Architecture
 
 The application implements a dual-layer data architecture accommodating both traditional relational database operations and decoupled rapid-prototyping in-memory workflows:
 
 ```mermaid
 flowchart TD
-    Client["👤 Client / Front-End / Swagger UI"]
+    Client["ğŸ‘¤ Client / Front-End / Swagger UI"]
 
     subgraph Controllers["Controller Layer"]
         UserCtrl["UserController / ApiUserController"]
@@ -60,6 +62,7 @@ flowchart TD
             DeptsTable[("departments")]
             ExpTable[("experiences")]
             JobsTable[("job_postings")]
+            ApplicationsTable[("job_applications / applications")]
             EventsTable[("events")]
             CacheTable[("cache / cache_locks")]
         end
@@ -84,7 +87,7 @@ flowchart TD
 
 ---
 
-## 3. 🧩 Entity-Relationship Diagram (ERD)
+## 3. ğŸ§© Entity-Relationship Diagram (ERD)
 
 The relational schema and logical entities are structured around the following entity relationships:
 
@@ -93,6 +96,8 @@ erDiagram
     USERS ||--o| ALUMNI_PROFILES : "has one"
     USERS ||--o{ EXPERIENCES : "has many"
     USERS ||--o{ JOB_POSTINGS : "creates"
+    USERS ||--o{ JOB_APPLICATIONS : "submits"
+    JOB_POSTINGS ||--o{ JOB_APPLICATIONS : "receives"
     FACULTIES ||--o{ DEPARTMENTS : "contains"
     DEPARTMENTS ||--o{ ALUMNI_PROFILES : "graduated from"
 
@@ -192,11 +197,23 @@ erDiagram
         timestamp published_at
         timestamps timestamps
     }
+
+    JOB_APPLICATIONS {
+        bigint id PK
+        bigint job_posting_id FK
+        bigint user_id FK
+        text cover_letter
+        string resume_path
+        string status
+        text notes
+        timestamp applied_at
+        timestamps timestamps
+    }
 ```
 
 ---
 
-## 4. 📖 Data Dictionary & Table Specifications
+## 4. ğŸ“– Data Dictionary & Table Specifications
 
 ### 4.1 Users (`users`)
 - **Purpose:** Core identity, credential, and authentication store for administrators, coordinators, and graduates.
@@ -251,7 +268,7 @@ erDiagram
 | Column | Type | Constraints | Description |
 | :--- | :--- | :--- | :--- |
 | `id` | `BIGINT UNSIGNED` | `PRIMARY KEY`, `AUTO_INCREMENT` | Unique faculty identifier |
-| `name` | `VARCHAR(255)` | `NOT NULL` | Faculty full name (e.g., Mühendislik Fakültesi) |
+| `name` | `VARCHAR(255)` | `NOT NULL` | Faculty full name (e.g., MÃ¼hendislik FakÃ¼ltesi) |
 | `code` | `VARCHAR(255)` | `NULLABLE`, `UNIQUE` | Unique short code (e.g., ENG, FEAS) |
 | `created_at` | `TIMESTAMP` | `NULLABLE` | Record creation timestamp |
 | `updated_at` | `TIMESTAMP` | `NULLABLE` | Record last update timestamp |
@@ -267,7 +284,7 @@ erDiagram
 | :--- | :--- | :--- | :--- |
 | `id` | `BIGINT UNSIGNED` | `PRIMARY KEY`, `AUTO_INCREMENT` | Unique department identifier |
 | `faculty_id` | `BIGINT UNSIGNED` | `NOT NULL`, `FK` &rarr; `faculties.id`, `ON DELETE CASCADE` | Parent faculty |
-| `name` | `VARCHAR(255)` | `NOT NULL` | Department name (e.g., Bilgisayar Mühendisliği) |
+| `name` | `VARCHAR(255)` | `NOT NULL` | Department name (e.g., Bilgisayar MÃ¼hendisliÄŸi) |
 | `code` | `VARCHAR(255)` | `NULLABLE` | Department code (e.g., CENG, IE) |
 | `created_at` | `TIMESTAMP` | `NULLABLE` | Record creation timestamp |
 | `updated_at` | `TIMESTAMP` | `NULLABLE` | Record last update timestamp |
@@ -313,7 +330,7 @@ erDiagram
 | `user_id` | `BIGINT UNSIGNED` | `NOT NULL`, `FOREIGN KEY` &rarr; `users(id)`, `ON DELETE CASCADE` | *None* | Associated publisher / author user ID |
 | `title` | `VARCHAR(255)` | `NOT NULL` | *None* | Position / Job title (e.g. Senior Laravel Developer) |
 | `company_name` | `VARCHAR(255)` | `NOT NULL` | *None* | Hiring enterprise, startup, or institution |
-| `location` | `VARCHAR(255)` | `NULLABLE` | `NULL` | Work location or modality (e.g. İstanbul, Uzaktan, Hibrit) |
+| `location` | `VARCHAR(255)` | `NULLABLE` | `NULL` | Work location or modality (e.g. Ä°stanbul, Uzaktan, Hibrit) |
 | `type` | `VARCHAR(255)` | `NOT NULL` | `'Full-time'` | Employment type (`Full-time`, `Part-time`, `Remote`, `Internship`) |
 | `description` | `TEXT` | `NOT NULL` | *None* | Comprehensive role description, responsibilities, and team context |
 | `requirements` | `TEXT` | `NULLABLE` | `NULL` | Mandatory qualifications, required tech stack, and experience level |
@@ -391,7 +408,7 @@ erDiagram
 | `content` | `STRING` | Required | Comprehensive announcement body text |
 | `category` | `STRING` | `Genel`, `Etkinlik`, `Kariyer`, `Burs & Akademi` | Categorization tag |
 | `author` | `STRING` | Default: `Mezunlar Ofisi` | Publishing entity or coordinator |
-| `target_audience`| `STRING` | Default: `Tüm Mezunlar` | Intended group of recipients |
+| `target_audience`| `STRING` | Default: `TÃ¼m Mezunlar` | Intended group of recipients |
 | `is_pinned` | `BOOLEAN`| Default: `FALSE` | Featured/Sticky notice at top of lists |
 | `status` | `STRING` | `published`, `draft`, `archived` | Publication workflow state |
 | `published_at` | `TIMESTAMP`| ISO 8601 String | Actual publication date |
@@ -420,14 +437,55 @@ CREATE TABLE `cache_locks` (
 
 ---
 
-## 5. 🛡️ Data Integrity & Relationship Constraints
+### 4.10 Job Applications (`job_applications` / `applications`)
+- **Purpose:** Tracks employment applications, cover notes, and resumes submitted by alumni and students for active job postings.
+- **Migration:** [`database/migrations/2026_10_21_073000_create_job_applications_table.php`](database/migrations/2026_10_21_073000_create_job_applications_table.php)
+- **Eloquent Models:** [`app/Models/JobApplication.php`](app/Models/JobApplication.php) & [`app/Models/Application.php`](app/Models/Application.php)
+- **Model Factory:** [`database/factories/JobApplicationFactory.php`](database/factories/JobApplicationFactory.php)
+- **Database Compatibility:** Features MySQL native table `job_applications` with an updatable view `applications` for universal query compatibility.
+
+#### Schema & Column Specifications:
+
+| Column | Type | Constraints | Default | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| `id` | `BIGINT UNSIGNED` | `PRIMARY KEY`, `AUTO_INCREMENT` | *None* | Unique job application identifier |
+| `job_posting_id` | `BIGINT UNSIGNED` | `NOT NULL`, `FK` &rarr; `job_postings(id)`, `ON DELETE CASCADE` | *None* | Associated job posting identifier |
+| `user_id` | `BIGINT UNSIGNED` | `NOT NULL`, `FK` &rarr; `users(id)`, `ON DELETE CASCADE` | *None* | Associated applicant user account ID |
+| `cover_letter` | `TEXT` | `NULLABLE` | `NULL` | Candidate statement of interest / cover message |
+| `resume_path` | `VARCHAR(255)` | `NULLABLE` | `NULL` | Uploaded CV document path or link |
+| `status` | `VARCHAR(50)` | `NOT NULL` | `'pending'` | Workflow state (`pending`, `reviewed`, `shortlisted`, `accepted`, `rejected`) |
+| `notes` | `TEXT` | `NULLABLE` | `NULL` | Internal evaluation / recruiter feedback |
+| `applied_at` | `TIMESTAMP` | `NULLABLE` | `NULL` | Submission timestamp |
+| `created_at` | `TIMESTAMP` | `NULLABLE` | `NULL` | Record creation timestamp |
+| `updated_at` | `TIMESTAMP` | `NULLABLE` | `NULL` | Record last update timestamp |
+
+#### Relational Constraints & Composite Keys:
+- **`unique_user_job_application`:** Unique compound index on `(job_posting_id, user_id)` guaranteeing that a user can submit only one application per job posting.
+- **`job_applications_job_posting_id_foreign`:** Cascades on delete (`ON DELETE CASCADE`).
+- **`job_applications_user_id_foreign`:** Cascades on delete (`ON DELETE CASCADE`).
+
+#### Eloquent Model Configuration & Casting:
+- **Mass-Assignable Fillable Attributes:**
+  `['job_posting_id', 'user_id', 'cover_letter', 'resume_path', 'status', 'notes', 'applied_at']`
+- **Attribute Casting:**
+  - `'applied_at' => 'datetime'`
+- **Relationships:**
+  - `jobPosting(): BelongsTo` &rarr; Returns target `App\Models\JobPosting`.
+  - `user(): BelongsTo` &rarr; Returns applicant `App\Models\User`.
+  - `applicant(): BelongsTo` &rarr; Convenient alias for `user()`.
+
+---
+
+## 5. ğŸ›¡ï¸ Data Integrity & Relationship Constraints
 
 The database enforces strict referential integrity rules:
 1. **User Deletion Cascades (`ON DELETE CASCADE`):**
-   - When a record in `users` is deleted, all associated `alumni_profiles`, `experiences`, and `job_postings` are automatically purged by MySQL foreign keys, preventing orphaned data.
-2. **Department Protection (`ON DELETE SET NULL`):**
+   - When a record in `users` is deleted, all associated `alumni_profiles`, `experiences`, `job_postings`, and `job_applications` are automatically purged by MySQL foreign keys, preventing orphaned data.
+2. **Job Posting Deletion Cascades (`ON DELETE CASCADE`):**
+   - When a record in `job_postings` is deleted, all submitted `job_applications` are automatically purged.
+3. **Department Protection (`ON DELETE SET NULL`):**
    - If an academic department is deleted or merged, `alumni_profiles.department_id` is automatically set to `NULL` to preserve the graduate's historical profile and contact details.
-3. **Faculty Deletion Cascades (`ON DELETE CASCADE`):**
+4. **Faculty Deletion Cascades (`ON DELETE CASCADE`):**
    - Deleting a faculty cascades to all departments belonging to that faculty.
 4. **Targeted Performance Indexes:**
    - Indexes are established on frequently filtered columns:
@@ -438,7 +496,7 @@ The database enforces strict referential integrity rules:
 
 ---
 
-## 6. 🔄 State Machines & Entity Lifecycles
+## 6. ğŸ”„ State Machines & Entity Lifecycles
 
 ### Alumni Profile Status Workflow
 ```mermaid
@@ -460,13 +518,26 @@ stateDiagram-v2
     Closed --> [*]: Deleted
 ```
 
+### Job Application Status Workflow
+```mermaid
+stateDiagram-v2
+    [*] --> pending: Alumnus submits application
+    pending --> reviewed: Recruiter/Poster reviews profile & CV
+    reviewed --> shortlisted: Candidate advanced to interview
+    reviewed --> rejected: Not matching requirements
+    shortlisted --> accepted: Candidate offered position
+    shortlisted --> rejected: Not selected
+    accepted --> [*]: Application successful
+    rejected --> [*]: Application closed
+```
+
 ---
 
-## 7. 🚦 Direct vs. Nested Routing Architecture
+## 7. ğŸš¦ Direct vs. Nested Routing Architecture
 
 The HTTP routing layer is structured into **Direct (Top-Level)** and **Nested (Scoped/Hierarchical)** routes to support both decoupled catalog queries and relational parent-child data operations:
 
-### 7.1 Direct Routes (Bağımsız Doğrudan Rotalar)
+### 7.1 Direct Routes (BaÄŸÄ±msÄ±z DoÄŸrudan Rotalar)
 Direct routes access an entity collection or single record directly by its unique identifier:
 
 | HTTP Method | Route URI | Controller & Action | Resource Description |
@@ -490,10 +561,15 @@ Direct routes access an entity collection or single record directly by its uniqu
 | `GET` | `/api/events` | `ApiEventController@index` | JSON: All upcoming/past events |
 | `POST` | `/api/events` | `ApiEventController@store` | JSON: Create a new event |
 | `GET` | `/api/events/{id}` | `ApiEventController@show` | JSON: Event details |
+| `GET` | `/api/applications` | `ApiJobApplicationController@index` | JSON: All job applications |
+| `POST` | `/api/applications` | `ApiJobApplicationController@store` | JSON: Submit an application |
+| `GET` | `/api/applications/{id}` | `ApiJobApplicationController@show` | JSON: Single application details |
+| `PUT/PATCH` | `/api/applications/{id}` | `ApiJobApplicationController@update` | JSON: Update application status & notes |
+| `DELETE` | `/api/applications/{id}` | `ApiJobApplicationController@destroy` | JSON: Delete / withdraw application |
 
 ---
 
-### 7.2 Nested Routes (İç İçe / Bağımlı Rotalar)
+### 7.2 Nested Routes (Ä°Ã§ Ä°Ã§e / BaÄŸÄ±mlÄ± Rotalar)
 Nested routes represent child entities scoped strictly under their parent entity identifier:
 
 ```mermaid
@@ -503,6 +579,8 @@ graph LR
     User["/api/users/{id}"] -->|"/profile"| UserProfile["1:1 Alumni Profile"]
     User -->|"/experiences"| UserExp["1:N Career Experiences"]
     User -->|"/job-postings"| UserJobs["1:N Authored Job Postings"]
+    User -->|"/applications"| UserApps["1:N Submitted Applications"]
+    Job["/api/job-postings/{id}"] -->|"/applications"| JobApps["1:N Received Applications"]
 ```
 
 | HTTP Method | Route URI | Controller & Action | Relational Scope & Purpose |
@@ -516,10 +594,14 @@ graph LR
 | `POST` | `/api/users/{id}/experiences` | `ApiUserController@storeExperience` | Creates a new career experience scoped to this user |
 | `GET` | `/api/users/{id}/job-postings` | `ApiUserController@jobPostings` | Lists all 1:N job postings authored by this user |
 | `POST` | `/api/users/{id}/job-postings` | `ApiUserController@storeJobPosting` | Creates a new job posting authored by this user |
+| `GET` | `/api/users/{id}/applications` | `ApiUserController@applications` | Lists all 1:N job applications submitted by this user |
+| `POST` | `/api/users/{id}/applications` | `ApiUserController@storeApplication` | Submits a new job application on behalf of this user |
+| `GET` | `/api/job-postings/{id}/applications` | `ApiJobApplicationController@forJobPosting` | Lists all candidate applications received for this job posting |
+| `POST` | `/api/job-postings/{id}/applications` | `ApiJobApplicationController@storeForJobPosting` | Submits an application directly to this job posting |
 
 ---
 
-## 8. 🧪 Persistence Strategy & "The Forgetting Test" Verification
+## 8. ğŸ§ª Persistence Strategy & "The Forgetting Test" Verification
 
 A critical concern in containerized cloud native environments is **Data Persistence** across service lifecycles.
 
@@ -548,14 +630,15 @@ The persistence was verified via **"The Forgetting Test"**:
    AFTER UP -> User: Forgetting Test User - test.forgetting@alumni.edu.tr
    AFTER UP -> Job: Forgetting Test Cloud Architect at Docker Persistence Corp
    ```
-   **Verdict:** **PASSED ✅** — Zero data loss across container teardown.
+   **Verdict:** **PASSED âœ…** â€” Zero data loss across container teardown.
 
 ---
 
-## 9. 🔗 Cross-Reference Navigation
+## 9. ğŸ”— Cross-Reference Navigation
 
-- 📄 **Main Architecture & Setup:** [README.md](README.md)
-- 📡 **REST API Specification:** [public/openapi.json](public/openapi.json)
-- 👁️ **Live Interactive Swagger UI:** [resources/views/swagger.blade.php](resources/views/swagger.blade.php)
-- 🎮 **HTTP Routes Definition:** [routes/web.php](routes/web.php)
-- 🐳 **Docker Multi-Container Spec:** [docker-compose.yml](docker-compose.yml)
+- ğŸ“„ **Main Architecture & Setup:** [README.md](README.md)
+- ğŸ“¡ **REST API Specification:** [public/openapi.json](public/openapi.json)
+- ğŸ‘ï¸ **Live Interactive Swagger UI:** [resources/views/swagger.blade.php](resources/views/swagger.blade.php)
+- ğŸ® **HTTP Routes Definition:** [routes/web.php](routes/web.php)
+- ğŸ³ **Docker Multi-Container Spec:** [docker-compose.yml](docker-compose.yml)
+

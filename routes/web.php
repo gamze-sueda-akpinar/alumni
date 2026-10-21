@@ -6,6 +6,7 @@ use App\Http\Controllers\ApiDepartmentController;
 use App\Http\Controllers\ApiEventController;
 use App\Http\Controllers\ApiExperienceController;
 use App\Http\Controllers\ApiFacultyController;
+use App\Http\Controllers\ApiJobApplicationController;
 use App\Http\Controllers\ApiJobPostingController;
 use App\Http\Controllers\ApiUserController;
 use App\Http\Controllers\JobPostingController;
@@ -133,11 +134,16 @@ Route::delete('/job-postings/{id}', [JobPostingController::class, 'destroy'])->n
 // =========================================================================
 // 6. RESTful API Routes (/api/job-postings -> ApiJobPostingController)
 // =========================================================================
-Route::get('/api/job-postings', [ApiJobPostingController::class, 'index'])->name('api.job-postings.index');
-Route::post('/api/job-postings', [ApiJobPostingController::class, 'store'])->name('api.job-postings.store');
-Route::get('/api/job-postings/{id}', [ApiJobPostingController::class, 'show'])->name('api.job-postings.show');
-Route::match(['put', 'patch'], '/api/job-postings/{id}', [ApiJobPostingController::class, 'update'])->name('api.job-postings.update');
-Route::delete('/api/job-postings/{id}', [ApiJobPostingController::class, 'destroy'])->name('api.job-postings.destroy');
+Route::prefix('api/job-postings')->name('api.job-postings.')->group(function () {
+    Route::get('/', [ApiJobPostingController::class, 'index'])->name('index');
+    Route::post('/', [ApiJobPostingController::class, 'store'])->name('store');
+    Route::get('/{id}', [ApiJobPostingController::class, 'show'])->name('show');
+    Route::match(['put', 'patch'], '/{id}', [ApiJobPostingController::class, 'update'])->name('update');
+    Route::delete('/{id}', [ApiJobPostingController::class, 'destroy'])->name('destroy');
+    // Nested: Applications under Job Posting
+    Route::get('/{id}/applications', [ApiJobApplicationController::class, 'forJobPosting'])->name('applications.index');
+    Route::post('/{id}/applications', [ApiJobApplicationController::class, 'storeForJobPosting'])->name('applications.store');
+});
 
 // =========================================================================
 // 7. Direct & Nested Routes: Faculties & Departments
@@ -220,6 +226,27 @@ Route::prefix('api/users/{id}')->name('api.users.nested.')->group(function () {
     // Nested Job Postings
     Route::get('/job-postings', [ApiUserController::class, 'jobPostings'])->name('job-postings.index');
     Route::post('/job-postings', [ApiUserController::class, 'storeJobPosting'])->name('job-postings.store');
+
+    // Nested Applications
+    Route::get('/applications', [ApiUserController::class, 'applications'])->name('applications.index');
+    Route::post('/applications', [ApiUserController::class, 'storeApplication'])->name('applications.store');
+});
+
+// =========================================================================
+// 11. Direct Routes: Job Applications (/api/applications)
+//     Direct:
+//       - GET    /api/applications             --> ApiJobApplicationController@index
+//       - POST   /api/applications             --> ApiJobApplicationController@store
+//       - GET    /api/applications/{id}        --> ApiJobApplicationController@show
+//       - PUT    /api/applications/{id}        --> ApiJobApplicationController@update
+//       - DELETE /api/applications/{id}        --> ApiJobApplicationController@destroy
+// =========================================================================
+Route::prefix('api/applications')->name('api.applications.')->group(function () {
+    Route::get('/', [ApiJobApplicationController::class, 'index'])->name('index');
+    Route::post('/', [ApiJobApplicationController::class, 'store'])->name('store');
+    Route::get('/{id}', [ApiJobApplicationController::class, 'show'])->name('show');
+    Route::match(['put', 'patch'], '/{id}', [ApiJobApplicationController::class, 'update'])->name('update');
+    Route::delete('/{id}', [ApiJobApplicationController::class, 'destroy'])->name('destroy');
 });
 
 // GET /api/swagger - Swagger UI Arayüzü

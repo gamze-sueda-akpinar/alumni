@@ -414,4 +414,77 @@ class ApiUserController extends Controller
             'data' => $job,
         ], 201);
     }
+
+    /**
+     * Nested Route: List all job applications submitted by a specific user (GET /api/users/{user}/applications).
+     */
+    public function applications($id): JsonResponse
+    {
+        $user = User::find($id);
+
+        if (!$user) {
+            return response()->json([
+                'status' => 'error',
+                'message' => "User with ID {$id} not found",
+            ], 404);
+        }
+
+        $applications = $user->applications()->with('jobPosting')->latest('applied_at')->get();
+
+        return response()->json([
+            'status' => 'success',
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+            ],
+            'total_applications' => $applications->count(),
+            'data' => $applications,
+        ], 200);
+    }
+
+    /**
+     * Nested Route: Submit a job application on behalf of a specific user (POST /api/users/{user}/applications).
+     */
+    public function storeApplication(Request $request, $id): JsonResponse
+    {
+        $user = User::find($id);
+
+        if (!$user) {
+            return response()->json([
+                'status' => 'error',
+                'message' => "User with ID {$id} not found",
+            ], 404);
+        }
+
+        $validated = $request->validate([
+            'job_posting_id' => 'required|exists:job_postings,id',
+            'cover_letter' => 'nullable|string',
+            'resume_path' => 'nullable|string|max:255',
+        ]);
+
+        $exists = $user->applications()->where('job_posting_id', $validated['job_posting_id'])->exists();
+
+        if ($exists) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'User has already submitted an application for this job posting',
+            ], 422);
+        }
+
+        $application = $user->applications()->create([
+            'job_posting_id' => $validated['job_posting_id'],
+            'cover_letter' => $validated['cover_letter'] ?? null,
+            'resume_path' => $validated['resume_path'] ?? null,
+            'status' => 'pending',
+            'applied_at' => now(),
+        ]);
+
+        $application->load('jobPosting');
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Job application submitted successfully',
+            'data' => $application,
+        ], 201);
+    }
 }
