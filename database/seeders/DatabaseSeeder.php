@@ -149,34 +149,8 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        // 5. İş & Staj İlanları
-        JobPosting::firstOrCreate(
-            ['title' => 'Junior Full-Stack Geliştirici (Laravel / Vue.js)'],
-            [
-                'user_id' => $admin->id,
-                'company_name' => 'TeknoPlus Yazılım',
-                'location' => 'İstanbul (Hibrit)',
-                'type' => 'Full-time',
-                'description' => 'Mezun takip ve kurumsal web projelerimizde görev alacak çalışma arkadaşı arıyoruz.',
-                'requirements' => 'PHP, Laravel, MySQL ve Tailwind CSS bilgisi olan, yeni mezun adaylar değerlendirilecektir.',
-                'application_deadline' => '2026-11-30',
-                'is_active' => true,
-            ]
-        );
-
-        JobPosting::firstOrCreate(
-            ['title' => 'Stajyer Veri Analisti (Yaz Dönemi)'],
-            [
-                'user_id' => $admin->id,
-                'company_name' => 'Analytica Insights',
-                'location' => 'Uzaktan (Remote)',
-                'type' => 'Internship',
-                'description' => 'Büyük veri ve iş zekası projelerimizde staj yapacak hevesli öğrenciler ve mezunlar.',
-                'requirements' => 'Python veya R, SQL temeli olan adaylar.',
-                'application_deadline' => '2026-10-31',
-                'is_active' => true,
-            ]
-        );
+        // 5. İş & Staj İlanları (JobPostingSeeder)
+        $this->call(JobPostingSeeder::class);
 
         // 6. Etkinlikler
         Event::firstOrCreate(
@@ -217,11 +191,6 @@ class DatabaseSeeder extends Seeder
                 'user_id' => $user->id,
             ]);
         });
-
-        // 3 ekstra iş ilanı
-        JobPosting::factory()->count(3)->create([
-            'user_id' => $admin->id,
-        ]);
 
         // 2 ekstra etkinlik
         Event::factory()->count(2)->create();
