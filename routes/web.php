@@ -249,6 +249,12 @@ Route::prefix('api/applications')->name('api.applications.')->group(function () 
     Route::delete('/{id}', [ApiJobApplicationController::class, 'destroy'])->name('destroy');
 });
 
+// GET /applications - Web UI Başvurular Sayfası
+Route::get('/applications', function () {
+    $applications = \App\Models\JobApplication::with(['user.alumniProfile.department', 'jobPosting'])->latest('applied_at')->get();
+    return view('applications.index', compact('applications'));
+})->name('applications.web.index');
+
 // GET /api/swagger - Swagger UI Arayüzü
 Route::get('/api/swagger', function () {
     return view('swagger');
