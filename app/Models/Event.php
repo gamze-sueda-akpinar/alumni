@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -19,6 +20,11 @@ class Event extends Model
         'is_active',
     ];
 
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return [
@@ -26,5 +32,21 @@ class Event extends Model
             'is_online' => 'boolean',
             'is_active' => 'boolean',
         ];
+    }
+
+    /**
+     * Scope a query to only include active events.
+     */
+    public function scopeActive(Builder $query): Builder
+    {
+        return $query->where('is_active', true);
+    }
+
+    /**
+     * Scope a query to only include upcoming events.
+     */
+    public function scopeUpcoming(Builder $query): Builder
+    {
+        return $query->where('event_date', '>=', now());
     }
 }

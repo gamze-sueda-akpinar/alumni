@@ -5,6 +5,8 @@ namespace App\Models;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -34,17 +36,26 @@ class User extends Authenticatable
         'status',
     ];
 
-    public function alumniProfile()
+    /**
+     * Get the alumni profile associated with the user.
+     */
+    public function alumniProfile(): HasOne
     {
         return $this->hasOne(AlumniProfile::class);
     }
 
-    public function experiences()
+    /**
+     * Get all professional experiences for the user.
+     */
+    public function experiences(): HasMany
     {
         return $this->hasMany(Experience::class);
     }
 
-    public function jobPostings()
+    /**
+     * Get all job postings authored by the user.
+     */
+    public function jobPostings(): HasMany
     {
         return $this->hasMany(JobPosting::class);
     }
