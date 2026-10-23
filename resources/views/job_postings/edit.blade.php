@@ -23,9 +23,11 @@
             </div>
             <div class="flex items-center space-x-3">
                 <a href="/job-postings/{{ $job->id ?? $job['id'] }}" class="text-sm font-medium text-slate-600 hover:text-indigo-600 transition px-3 py-2">
-                    &larr; İlan Detayına Dön
+                    &larr; İlan Detayı
                 </a>
                 <a href="/job-postings" class="text-sm font-medium text-slate-600 hover:text-indigo-600 transition px-3 py-2">İlanlar Listesi</a>
+                <a href="/applications" class="text-sm font-medium text-slate-600 hover:text-indigo-600 transition px-3 py-2">Başvurular</a>
+                <a href="/main" class="text-sm font-medium text-slate-600 hover:text-indigo-600 transition px-3 py-2">Ana Sayfa</a>
             </div>
         </div>
     </header>

@@ -73,10 +73,17 @@
                 <h3 class="font-bold text-lg text-slate-900 mb-1">Mezun Profilleri</h3>
                 <p class="text-sm text-slate-500">Mezuniyet yılı, bölüm, unvan ve güncel şirket bilgileriyle zenginleştirilmiş mezun rehberi.</p>
             </div>
-            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition">
-                <div class="text-3xl mb-3">💼</div>
-                <h3 class="font-bold text-lg text-slate-900 mb-1">Kariyer & İlanlar</h3>
-                <p class="text-sm text-slate-500">Mezunlar arası iş ve staj fırsatlarını paylaşma, başvuru ve istihdam takibi.</p>
+            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition flex flex-col justify-between">
+                <div>
+                    <div class="text-3xl mb-3">💼</div>
+                    <h3 class="font-bold text-lg text-slate-900 mb-1">Kariyer & İlanlar</h3>
+                    <p class="text-sm text-slate-500 mb-3">Mezunlar arası iş ve staj fırsatları, hızlı başvuru ve aday değerlendirme modülü.</p>
+                </div>
+                <div class="flex items-center gap-2 pt-2 border-t border-slate-100 text-xs font-bold text-indigo-600">
+                    <a href="/job-postings" class="hover:underline">İş İlanları</a>
+                    <span class="text-slate-300">&bull;</span>
+                    <a href="/applications" class="hover:underline">Başvurular &rarr;</a>
+                </div>
             </div>
             <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition">
                 <div class="text-3xl mb-3">📅</div>

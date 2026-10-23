@@ -9,6 +9,7 @@ use App\Http\Controllers\ApiFacultyController;
 use App\Http\Controllers\ApiJobApplicationController;
 use App\Http\Controllers\ApiJobPostingController;
 use App\Http\Controllers\ApiUserController;
+use App\Http\Controllers\JobApplicationController;
 use App\Http\Controllers\JobPostingController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Cache;
@@ -249,11 +250,21 @@ Route::prefix('api/applications')->name('api.applications.')->group(function () 
     Route::delete('/{id}', [ApiJobApplicationController::class, 'destroy'])->name('destroy');
 });
 
-// GET /applications - Web UI Başvurular Sayfası
-Route::get('/applications', function () {
-    $applications = \App\Models\JobApplication::with(['user.alumniProfile.department', 'jobPosting'])->latest('applied_at')->get();
-    return view('applications.index', compact('applications'));
-})->name('applications.web.index');
+// =========================================================================
+// 12. Web Controller Routes with View Layer (/applications -> JobApplicationController)
+//    - [C] GET    /applications/create       --> Renders applications.create form view
+//    - [C] POST   /applications              --> Stores new application
+//    - [R] GET    /applications              --> Listing all applications via index view
+//    - [R] GET    /applications/{id}         --> Single application details via show view
+//    - [U] POST   /applications/{id}/status  --> Updates application status & notes
+//    - [D] DELETE /applications/{id}         --> Deletes / withdraws application
+// =========================================================================
+Route::get('/applications', [JobApplicationController::class, 'index'])->name('applications.index');
+Route::get('/applications/create', [JobApplicationController::class, 'create'])->name('applications.create');
+Route::post('/applications', [JobApplicationController::class, 'store'])->name('applications.store');
+Route::get('/applications/{id}', [JobApplicationController::class, 'show'])->name('applications.show');
+Route::post('/applications/{id}/status', [JobApplicationController::class, 'updateStatus'])->name('applications.status');
+Route::delete('/applications/{id}', [JobApplicationController::class, 'destroy'])->name('applications.destroy');
 
 // GET /api/swagger - Swagger UI Arayüzü
 Route::get('/api/swagger', function () {

@@ -28,6 +28,7 @@
                 <a href="/users" class="text-sm font-medium text-slate-600 hover:text-indigo-600 transition px-3 py-2">Mezunlar</a>
                 <a href="/announcements" class="text-sm font-medium text-slate-600 hover:text-indigo-600 transition px-3 py-2">Duyurular</a>
                 <a href="/job-postings" class="text-sm font-semibold text-indigo-600 transition px-3 py-2">İş İlanları</a>
+                <a href="/applications" class="text-sm font-medium text-slate-600 hover:text-indigo-600 transition px-3 py-2">Başvurular</a>
                 <a href="/api/swagger" class="text-sm font-medium text-slate-600 hover:text-indigo-600 transition px-3 py-2">Swagger UI</a>
                 <a href="/admin" class="text-sm font-medium text-slate-600 hover:text-indigo-600 transition px-3 py-2">Admin Paneli</a>
                 <a href="/job-postings/create" class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition shadow-sm">
@@ -205,6 +206,10 @@
                         </span>
                         @endif
 
+                        <a href="/applications?job_posting_id={{ $jid }}" class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-violet-50 text-violet-700 border border-violet-200 hover:bg-violet-100 transition">
+                            📋 {{ $job->applications_count ?? 0 }} Başvuru
+                        </a>
+
                         <span class="text-xs text-slate-400">
                             ID: #{{ $jid }} &bull; {{ $job->created_at ?? $job['created_at'] }}
                         </span>
@@ -235,6 +240,10 @@
                 </div>
 
                 <div class="flex items-center gap-2 border-t md:border-t-0 pt-4 md:pt-0">
+                    <a href="/applications/create?job_posting_id={{ $jid }}"
+                       class="px-3 py-1.5 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition shadow-xs flex items-center gap-1">
+                        ⚡ Başvur
+                    </a>
                     <a href="/job-postings/{{ $jid }}"
                        class="px-3 py-1.5 text-xs font-semibold bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg transition border border-indigo-200">
                         👁️ İncele
@@ -266,7 +275,7 @@
     <!-- Footer -->
     <footer class="bg-white border-t border-slate-200 py-6 mt-12 text-center text-sm text-slate-500">
         <div class="max-w-7xl mx-auto px-4">
-            Mezun Takip Sistemi &bull; Kariyer Yönetim Katmanı (In-Memory) &bull; &copy; 2026 Gamze Şüeda Akpınar
+            Mezun Takip Sistemi &bull; Kariyer Yönetim Katmanı (MySQL) &bull; &copy; 2026 Gamze Şüeda Akpınar
         </div>
     </footer>
 

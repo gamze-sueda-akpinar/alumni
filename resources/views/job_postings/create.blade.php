@@ -22,9 +22,10 @@
                 </a>
             </div>
             <div class="flex items-center space-x-3">
-                <a href="/job-postings" class="text-sm font-medium text-slate-600 hover:text-indigo-600 transition px-3 py-2">
+                <a href="/job-postings" class="text-sm font-semibold text-indigo-600 transition px-3 py-2">
                     &larr; İlanlar Listesi
                 </a>
+                <a href="/applications" class="text-sm font-medium text-slate-600 hover:text-indigo-600 transition px-3 py-2">Başvurular</a>
                 <a href="/main" class="text-sm font-medium text-slate-600 hover:text-indigo-600 transition px-3 py-2">Ana Sayfa</a>
             </div>
         </div>

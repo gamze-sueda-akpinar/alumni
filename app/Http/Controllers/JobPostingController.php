@@ -23,7 +23,7 @@ class JobPostingController extends Controller
      */
     public function index()
     {
-        $jobPostings = JobPosting::with('user')->latest()->get();
+        $jobPostings = JobPosting::with('user')->withCount('applications')->latest()->get();
 
         if (view()->exists('job_postings.index')) {
             return view('job_postings.index', compact('jobPostings'));
@@ -103,7 +103,7 @@ class JobPostingController extends Controller
      */
     public function show($id)
     {
-        $job = JobPosting::with('user')->find($id);
+        $job = JobPosting::with(['user', 'applications.user.alumniProfile'])->withCount('applications')->find($id);
 
         if (!$job) {
             if (request()->wantsJson()) {
