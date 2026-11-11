@@ -26,8 +26,15 @@ This application is built with the robust **Laravel 11** framework, a high-perfo
   - **Alumni:** Update profiles, manage work experience, browse/post job openings, and network with peers.
 - **🛡️ Alumni Verification Workflow:**
   - Student ID & graduation verification with manual or automatic administrator approval states.
-- **💼 Career & Job Board:**
+- **💼 Career & Job Board & Domain Rules:**
   - Job and internship posting board managed by alumni and institution coordinators, with direct application support.
+  - **Strict Domain Rules:** `title` (required), `company_name` (required), `workplace_type` (mandatory: `hybrid`, `remote`, `in-office`), `salary` (mandatory: non-negative decimal), with optional `city`, `description`, and `benefits`.
+- **🛡️ Middleware Guardians & Observability:**
+  - **Live Terminal & File Logger (`LoggerMiddleware`):** Real-time request logging to terminal (`php://stdout`) formatted as `time method route res.type duration` (e.g. `10:20:30 POST /user 201 18ms`) with dual-destination logging to `logs/requests.log` and `logs/error.logs`.
+  - **404 Guardian (`Guardian404Middleware`):** Intercepts 404 Not Found errors, returning explicit human-readable reasons (JSON for API, custom styled Blade view for web).
+  - **5xx Guardian (`Guardian5xxMiddleware`):** Catches 500 server errors, generates unique tracking reference codes (`ERR-XXXXXXXX`), masks sensitive internal credentials, and logs full context to `logs/error.logs`.
+  - **Generic 404 Page & Fallback Redirects:** Dedicated `/404` route with dynamic reason card and automatic 6-second countdown redirect to `/main`, plus `Route::fallback()` catching unmapped URLs.
+  - **Dedicated Root File Logging (`logs/error.logs`):** Dedicated project root `logs/` directory storing historical errors and request logs for long-term auditing and analysis.
 - **🔍 Advanced Search & Filtering:**
   - Instantly search and filter graduates by graduation year, faculty, department, industry, current company, and location.
 - **📊 Modern Dashboard (Filament v3):**
@@ -182,9 +189,12 @@ This application is engineered using **Laravel 11** adhering to the industry-sta
 flowchart TD
     Client["👤 Client (Browser / Postman / Mobile / Swagger UI)"]
     
-    subgraph Routing["Routing & Middleware Layer"]
-        WebRoute["routes/web.php"]
+    subgraph Routing["Routing & Middleware Layer (bootstrap/app.php)"]
+        LoggerMid["⚡ LoggerMiddleware (Terminal & File Log)"]
+        WebRoute["routes/web.php & Route::fallback"]
         CSRF["CSRF & Request Validation Middleware"]
+        Guardian404["🛡️ 404 Guardian Middleware (Explicit Reason)"]
+        Guardian5xx["🛡️ 5xx Guardian Middleware (Ref ID & Masking)"]
     end
     
     subgraph Controller["🎮 Controller Layer (Logic & Orchestration)"]
@@ -201,12 +211,14 @@ flowchart TD
     
     subgraph View["👁️ View Layer (Presentation & UI)"]
         BladeViews["Blade Templates (resources/views/*)"]
+        ErrorViews["Error Views (errors/404, errors/500)"]
         SwaggerUI["Swagger UI (resources/views/swagger.blade.php)"]
         FilamentUI["Filament Livewire & Tailwind UI"]
         JSONRes["JSON REST API Responses"]
     end
 
-    Client -->|"HTTP Requests (GET, POST, PUT, PATCH, DELETE)"| WebRoute
+    Client -->|"HTTP Requests"| LoggerMid
+    LoggerMid --> WebRoute
     WebRoute --> CSRF
     CSRF --> Controller
     Controller -->|"Query / Update / Validate"| Model
@@ -214,7 +226,12 @@ flowchart TD
     Controller -->|"Renders UI"| BladeViews
     Controller -->|"Renders Admin"| FilamentUI
     Controller -->|"Returns Data"| JSONRes
+    Controller -.->|"404 Not Found"| Guardian404
+    Controller -.->|"5xx Server Error"| Guardian5xx
+    Guardian404 --> ErrorViews
+    Guardian5xx --> ErrorViews
     BladeViews --> Client
+    ErrorViews --> Client
     SwaggerUI --> Client
     FilamentUI --> Client
     JSONRes --> Client
@@ -232,7 +249,10 @@ The **Model** layer encapsulates data schema, database interaction, business rul
 * **[`app/Models/Faculty.php`](app/Models/Faculty.php):** Academic faculties (e.g., Faculty of Engineering). Has a one-to-many relationship with `Department`.
 * **[`app/Models/Department.php`](app/Models/Department.php):** Academic departments (e.g., Computer Engineering, MIS). Belongs to `Faculty` and has many `AlumniProfile` records.
 * **[`app/Models/Experience.php`](app/Models/Experience.php):** Tracks professional career history, internship records, and current employment for graduates.
-* **[`app/Models/JobPosting.php`](app/Models/JobPosting.php):** Career openings, internships, and job advertisements shared for alumni.
+* **[`app/Models/JobPosting.php`](app/Models/JobPosting.php):** Career openings, internships, and job advertisements shared for alumni. Enforces strict domain validation rules:
+  - **Required:** `title`, `company_name`
+  - **Mandatory:** `workplace_type` (strictly `hybrid`, `remote`, or `in-office`), `salary` (numeric >= 0)
+  - **Optional:** `city`, `location`, `description`, `benefits`, `requirements`, `application_deadline`, `contact_email`
 * **[`app/Models/InMemoryJobPosting.php`](app/Models/InMemoryJobPosting.php):** Non-database standalone JobPosting Model with full CRUD operations (`all()`, `find($id)`, `active()`, `byCompany()`, `create()`, `update()`, `delete()`) and mock dataset.
 * **[`app/Models/Event.php`](app/Models/Event.php):** Reunions, seminars, conferences, and networking events for graduates.
 * **`database/migrations/`:** Database blueprint definitions establishing foreign keys, constraints, and table columns in MySQL.
@@ -257,6 +277,8 @@ The **View** layer handles presenting data to users, structuring layouts, and re
   * **[`resources/views/about.blade.php`](resources/views/about.blade.php):** About page presenting the purpose and vision of the Alumni Tracking System.
   * **[`resources/views/swagger.blade.php`](resources/views/swagger.blade.php):** Embedded, interactive **Swagger UI 5.x** interface for live API exploration and testing directly in the browser.
   * **[`resources/views/welcome.blade.php`](resources/views/welcome.blade.php):** Default framework landing template.
+  * **[`resources/views/errors/404.blade.php`](resources/views/errors/404.blade.php):** Generic 404 Not Found error view designed with Tailwind CSS. Features dynamic reason card, quick resource shortcuts, and an interactive 6-second countdown timer that automatically redirects visitors to the home portal (`/main`).
+  * **[`resources/views/errors/500.blade.php`](resources/views/errors/500.blade.php):** Custom 500 Internal Server Error page displaying a unique tracking reference code (`reference_id`), safe human-readable explanation, masked diagnostics, and action buttons to reload or return home.
 * **Filament v3 Admin Panel UI:**
   * Powered by the **TALL stack** (Tailwind CSS, Alpine.js, Laravel, Livewire). Renders reactive administration dashboards, data tables, filter modals, and statistics cards without writing manual HTML.
 
@@ -276,8 +298,127 @@ The **View** layer handles presenting data to users, structuring layouts, and re
   * Serves front-end Blade views (`/`, `/main`, `/about`, `/hello/{name}`).
   * Directs user resource requests to `UserController` (`/users`) and RESTful endpoints to `ApiUserController` (`/api/users`).
   * Directs announcement resource requests to `AnnouncementController` (`/announcements`) and RESTful endpoints to `ApiAnnouncementController` (`/api/announcements`).
+  * Directs job posting resource requests to `JobPostingController` (`/job-postings`) and RESTful endpoints to `ApiJobPostingController` (`/api/job-postings`).
+  * Serves the generic 404 error page (`/404`) and intercepts unmapped URLs via `Route::fallback()` (redirecting web users to `/404?from=...` and returning structured 404 JSON for API consumers).
 * **Filament Admin Resources ([`app/Filament/Resources/`](app/Filament/Resources/)):**
   * High-level CRUD controller classes (`AlumniProfileResource`, `DepartmentResource`, `FacultyResource`, `JobPostingResource`, `EventResource`) managing form schemas, table columns, queries, and permissions.
+
+---
+
+## 🛡️ Middleware Pipeline, Guardians & Observability
+
+The application implements a robust, multi-layer middleware pipeline configured in [`bootstrap/app.php`](bootstrap/app.php). It ensures comprehensive request observability, security masking, structured error handling, and developer-friendly audit logs.
+
+```mermaid
+flowchart LR
+    Req["Incoming HTTP Request"] --> LogMid["⚡ LoggerMiddleware\n(Prepended Global)"]
+    LogMid --> AppPipeline["Application & Routing Pipeline\n(Controllers / Web / API / Filament)"]
+    
+    AppPipeline -->|Success 2xx/3xx| RespOk["HTTP Response OK"]
+    RespOk --> TermLog["Live Terminal (stdout)\n& logs/requests.log"]
+    
+    AppPipeline -->|404 Not Found| G404["🛡️ Guardian404Middleware\n(Explicit Reason & Context)"]
+    G404 --> Err404["JSON {reason} (API)\nOR\nBlade 404 View + 6s Auto-Redirect (Web)"]
+    
+    AppPipeline -->|5xx Server Error| G5xx["🛡️ Guardian5xxMiddleware\n(Ref ID & Security Masking)"]
+    G5xx --> Err5xx["JSON {reference_id, reason} (API)\nOR\nBlade 500 View + Ref ID (Web)"]
+    
+    Err404 --> ErrLog["logs/error.logs\n& storage/logs/laravel.log"]
+    Err5xx --> ErrLog
+    Err404 --> TermLog
+    Err5xx --> TermLog
+```
+
+### 1. ⚡ Live Terminal & Dual-File Logger (`LoggerMiddleware.php`)
+* **File:** [`app/Http/Middleware/LoggerMiddleware.php`](app/Http/Middleware/LoggerMiddleware.php)
+* **Registration:** Pre-pended as the very first global middleware via `$middleware->prepend(...)` in `bootstrap/app.php`.
+* **Live Terminal Logging:** Emits real-time HTTP metrics directly to standard output (`php://stdout`), allowing immediate inspection via Docker CLI or local server console:
+  ```text
+  time method route res.type duration
+  10:20:30 POST /user 201 18ms
+  10:25:12 GET /job-postings 200 24ms
+  10:26:05 GET /api/users/99999 404 12ms
+  ```
+* **Persistent File Logging:**
+  - **`logs/requests.log`:** Automatically records every incoming request, HTTP verb, URL path, response status code, client IP, and execution latency.
+  - **`logs/error.logs`:** Automatically captures requests that yield 4xx or 5xx HTTP response statuses with full diagnostic details.
+* **How to View Live Logs in Docker:**
+  ```powershell
+  # Stream live container logs in PowerShell / Bash
+  docker compose logs -f app
+  # Alternatively:
+  docker logs -f alumni_app
+  ```
+
+### 2. 🛡️ 404 Guardian Middleware (`Guardian404Middleware.php`)
+* **File:** [`app/Http/Middleware/Guardian404Middleware.php`](app/Http/Middleware/Guardian404Middleware.php)
+* **Purpose:** Eliminates opaque "Not Found" errors by dynamically analyzing the HTTP context and returning an explicit, human-readable **reason**.
+* **Dynamic Reason Deduction:**
+  - **Unregistered API Endpoint:** `"The requested API endpoint '/api/xyz' was not found on this server."`
+  - **Missing Resource Record by ID:** `"No resource record was found with ID 99999 for this request."`
+  - **Invalid Web Page:** `"The requested page '/unknown' does not exist or has been moved."`
+* **Structured API Response Format:**
+  ```json
+  {
+    "error": "Not Found",
+    "status": 404,
+    "reason": "The requested API endpoint '/api/not-found-test' was not found on this server.",
+    "path": "/api/not-found-test"
+  }
+  ```
+* **Web View Handling:** Renders the styled generic 404 view ([`resources/views/errors/404.blade.php`](resources/views/errors/404.blade.php)) with the dynamic reason embedded in a prominent explanation card.
+
+### 3. 🛡️ 5xx Guardian Middleware (`Guardian5xxMiddleware.php`)
+* **File:** [`app/Http/Middleware/Guardian5xxMiddleware.php`](app/Http/Middleware/Guardian5xxMiddleware.php)
+* **Purpose:** Catches uncaught runtime exceptions and 5xx internal server errors gracefully without leaking sensitive internals to end users.
+* **Unique Reference Tracking ID (`reference_id`):** Generates a distinct hexadecimal tracking identifier (e.g. `ERR-8F29C4B1`) attached to the response and logged in the server audit files. This allows users to report exact errors to technical support without seeing database credentials or stack frames.
+* **Production Security Masking:**
+  - Automatically obfuscates database connection passwords, file system paths, and internals in production mode (`APP_DEBUG=false`).
+  - In local development mode (`APP_DEBUG=true`), provides a developer-friendly diagnostic summary for rapid debugging.
+* **Structured 5xx API Response:**
+  ```json
+  {
+    "error": "Internal Server Error",
+    "status": 500,
+    "reference_id": "ERR-8F29C4B1",
+    "reason": "A server error occurred while processing your request. Please contact technical support with this reference ID.",
+    "path": "/api/test-500"
+  }
+  ```
+
+### 4. 📁 Dedicated Persistent File Logging (`app/Support/ErrorLogger.php`)
+* **File:** [`app/Support/ErrorLogger.php`](app/Support/ErrorLogger.php)
+* **Dedicated Log Directory:** Located at the root project directory [`logs/`](logs/) (mounted seamlessly between Docker `/var/www/html/logs` and the host machine).
+* **Audit Files:**
+  - **`logs/error.logs`:** Centralized log storing all 4xx client errors, 5xx server exceptions, timestamps, HTTP methods, target URLs, reference IDs, and stack traces. Persists across Docker restarts so administrators and developers can review past incidents at any time.
+  - **`logs/requests.log`:** Comprehensive request tracing log recording complete traffic flow and latency metrics.
+
+### 5. 🧭 Generic 404 Page & Fallback Route
+* **Dedicated Route:** `GET /404` &rarr; [`resources/views/errors/404.blade.php`](resources/views/errors/404.blade.php).
+* **Key User Experience Features:**
+  - **Reason Card:** Clearly presents the dynamic explanation why the requested URL could not be resolved.
+  - **Quick Navigation Hub:** Direct links to Home (`/main`), Users Directory (`/users`), Career Board (`/job-postings`), Announcements (`/announcements`), and Swagger API Docs (`/api/swagger`).
+  - **Interactive 6-Second Auto-Redirect Countdown:** Features a live JavaScript countdown timer automatically redirecting the visitor to the main portal (`/main`) after 6 seconds if no manual link is clicked.
+* **`Route::fallback()` in [`routes/web.php`](routes/web.php):**
+  - Intercepts all unmapped and invalid URIs.
+  - **Web Browsers:** Seamlessly redirects (`302`) to `/404?from={encoded_uri}`.
+  - **API Clients (`/api/*` or `Accept: application/json`):** Returns structured 404 JSON with explicit error reason.
+
+---
+
+## 💼 Job Posting Domain Rules & Transparency Architecture
+
+The **Career & Job Board** entity ([`app/Models/JobPosting.php`](app/Models/JobPosting.php)) enforces strict domain integrity rules across database schemas, Eloquent models, web forms, and REST API controllers:
+
+| Attribute | Requirement | Validation Rule | Database Constraint | Business Logic & Rules |
+| :--- | :--- | :--- | :--- | :--- |
+| **`title`** | **Required (Zorunlu)** | `required\|string\|max:255` | `VARCHAR(255) NOT NULL` | Job/Position title is mandatory. Cannot be null or blank. |
+| **`company_name`** | **Required (Zorunlu)** | `required\|string\|max:255` | `VARCHAR(255) NOT NULL` | Hiring company or institution name is mandatory for attribution. |
+| **`city`** | **Optional (İsteğe Bağlı)** | `nullable\|string\|max:255` | `VARCHAR(255) NULLABLE` | Base city location is optional; can be omitted for remote/distributed roles. |
+| **`description`** | **Optional (İsteğe Bağlı)** | `nullable\|string` | `TEXT NULLABLE` | Role details and task description are optional for quick postings. |
+| **`workplace_type`** | **Mandatory (Zorunlu)** | `required\|in:hybrid,remote,in-office` | `VARCHAR(50) NOT NULL` | Working model is strictly mandatory and restricted to: **`hybrid`**, **`remote`**, or **`in-office`**. |
+| **`salary`** | **Mandatory (Zorunlu)** | `required\|numeric\|min:0` | `DECIMAL(12, 2) NOT NULL` | Compensation transparency: Base salary is mandatory and must be a non-negative number. |
+| **`benefits`** | **Optional (İsteğe Bağlı)** | `nullable\|string` | `TEXT NULLABLE` | Additional perks, bonuses, health insurance, and allowances are optional. |
 
 ---
 
@@ -303,15 +444,22 @@ alumni/
 │   │   └── Widgets/                        # Admin dashboard analytic widgets
 │   │       └── StatsOverview.php           # Quick metrics (total alumni, stats)
 │   ├── Http/                               # HTTP layer
-│   │   └── Controllers/                    # HTTP Controllers (Controller layer)
-│   │       ├── Api/                        # API Controllers namespace
-│   │       │   ├── ApiAnnouncementController.php # Namespaced REST Announcement Controller
-│   │       │   └── ApiUserController.php   # Namespaced REST API Controller
-│   │       ├── AnnouncementController.php  # Web & Resource Announcement CRUD Controller
-│   │       ├── ApiAnnouncementController.php # JSON RESTful API Announcement CRUD Controller
-│   │       ├── ApiUserController.php       # JSON RESTful API CRUD Controller
-│   │       ├── Controller.php              # Base Laravel controller
-│   │       └── UserController.php          # Web & Resource CRUD Controller
+│   │   ├── Controllers/                    # HTTP Controllers (Controller layer)
+│   │   │   ├── Api/                        # API Controllers namespace
+│   │   │   │   ├── ApiAnnouncementController.php # Namespaced REST Announcement Controller
+│   │   │   │   ├── ApiJobPostingController.php   # Namespaced REST Job Posting Controller
+│   │   │   │   └── ApiUserController.php   # Namespaced REST API Controller
+│   │   │   ├── AnnouncementController.php  # Web & Resource Announcement CRUD Controller
+│   │   │   ├── ApiAnnouncementController.php # JSON RESTful API Announcement CRUD Controller
+│   │   │   ├── ApiJobPostingController.php # JSON RESTful API Job Posting Controller
+│   │   │   ├── ApiUserController.php       # JSON RESTful API CRUD Controller
+│   │   │   ├── Controller.php              # Base Laravel controller
+│   │   │   ├── JobPostingController.php    # Web & Resource Job Posting CRUD Controller
+│   │   │   └── UserController.php          # Web & Resource CRUD Controller
+│   │   └── Middleware/                     # Observability & Security Middleware
+│   │       ├── Guardian404Middleware.php   # 404 Interceptor with dynamic reason deduction
+│   │       ├── Guardian5xxMiddleware.php   # 5xx Exception guardian with tracking ref ID
+│   │       └── LoggerMiddleware.php        # Live terminal stdout + dual-file logger
 │   ├── Models/                             # Eloquent ORM & In-Memory Models (Model layer)
 │   │   ├── AlumniProfile.php               # Alumni graduate profile entity
 │   │   ├── Announcement.php                # Non-database Announcement Model with full CRUD
@@ -325,12 +473,14 @@ alumni/
 │   │   ├── JobPosting.php                  # Career opportunity entity
 │   │   ├── User.php                        # Core user authentication entity
 │   │   └── UserModel.php                   # Database-independent User model alias
-│   └── Providers/                          # Service providers
-│       ├── AppServiceProvider.php          # Application bootstrap services
-│       └── Filament/                       # Filament panel providers
-│           └── AdminPanelProvider.php      # Filament dashboard configuration & colors
+│   ├── Providers/                          # Service providers
+│   │   ├── AppServiceProvider.php          # Application bootstrap services
+│   │   └── Filament/                       # Filament panel providers
+│   │       └── AdminPanelProvider.php      # Filament dashboard configuration & colors
+│   └── Support/                            # Utility helpers & support classes
+│       └── ErrorLogger.php                 # Dual file logger for logs/error.logs & requests.log
 ├── bootstrap/                              # Framework initialization
-│   ├── app.php                             # Middleware pipeline, CSRF exemptions (api/*, users, announcements)
+│   ├── app.php                             # Middleware pipeline (Logger, Guardians), CSRF rules
 │   └── providers.php                       # Application service provider registry
 ├── config/                                 # Global application configuration
 │   ├── app.php                             # Timezone, locale, application keys
@@ -355,6 +505,10 @@ alumni/
 │   │   └── default.conf                    # Nginx server block (listening on 80 & 8000)
 │   └── php/                                # PHP service configuration
 │       └── local.ini                       # Custom PHP directives (memory, upload sizes)
+├── logs/                                   # Persistent application log directory (Root)
+│   ├── .gitkeep                            # Git tracking sentinel
+│   ├── error.logs                          # Persistent error trace archive (4xx, 5xx, exceptions)
+│   └── requests.log                        # Complete incoming request audit trail
 ├── public/                                 # Public web server document root
 │   ├── index.php                           # Web server entry point
 │   ├── openapi.json                        # OpenAPI 3.0 specification for Swagger UI
@@ -369,6 +523,9 @@ alumni/
 │       │   ├── edit.blade.php              # Announcement edit form (GET /announcements/{id}/edit -> PUT /announcements/{id})
 │       │   ├── index.blade.php             # Announcements directory & listing (GET /announcements)
 │       │   └── show.blade.php              # Single announcement detail view (GET /announcements/{id})
+│       ├── errors/                         # Custom error views
+│       │   ├── 404.blade.php               # Generic 404 view with reason card & 6s countdown
+│       │   └── 500.blade.php               # Custom 500 view with reference ID & masked diagnostics
 │       ├── job_postings/                   # Job Postings CRUD View Layer
 │       │   ├── create.blade.php            # New job posting form (GET /job-postings/create -> POST /job-postings)
 │       │   ├── edit.blade.php              # Job posting edit form (GET /job-postings/{id}/edit -> PUT /job-postings/{id})
@@ -480,6 +637,13 @@ The application provides a comprehensive RESTful API for alumni management. An i
 | :---: | :--- | :--- | :---: |
 | **`GET`** | `/api/swagger` | Interactive Swagger UI in browser | HTML (`200 OK`) |
 | **`GET`** | `/api/swagger.json` | Download OpenAPI 3.0 JSON specification | JSON (`200 OK`) |
+
+#### 🛡️ Error Handling, Guardians & Fallback Endpoints
+| Method | Endpoint | Handler / Action | Description | Response Type / Code |
+| :---: | :--- | :--- | :--- | :---: |
+| **`GET`** | `/404` | View (`errors.404`) | Generic 404 page with dynamic reason card and interactive 6s auto-redirect countdown to `/main` | HTML View (`404 Not Found`) |
+| **`ANY`** | `/*` *(Unmapped)* | `Route::fallback` | Fallback route: redirects web browsers (`302`) to `/404?from=...` and returns structured JSON for API clients | Redirect (302) / JSON (`404`) |
+| **`GET`** | `/api/test-500` | Diagnostic Closure | Test endpoint triggering a simulated 500 error to verify Guardian masking, `reference_id`, and `logs/error.logs` output | JSON (`500 Server Error`) |
 
 ### 🚀 Accessing Swagger UI
 Simply navigate to:

@@ -285,4 +285,59 @@ Route::get('/api/swagger.json', function () {
     ], 404);
 });
 
+// =========================================================================
+// 8. Generic 404 Page & Invalid Request Redirect Fallback
+// =========================================================================
+
+// GET /404 - Generic 404 Error Page (HTML)
+Route::get('/404', function (\Illuminate\Http\Request $request) {
+    $attempted = session('attempted_url') ?? $request->query('from') ?? $request->path();
+    $method = session('attempted_method') ?? $request->method();
+    $reason = session('reason') ?? "Aradığınız sayfa ('{$attempted}') sunucuda bulunamadı veya taşınmış olabilir.";
+
+    return response()->view('errors.404', [
+        'reason' => $reason,
+        'path' => $attempted,
+        'method' => $method,
+    ], 404);
+})->name('errors.404');
+
+// Fallback Route: Intercepts all invalid / unregistered requests and redirects
+Route::fallback(function (\Illuminate\Http\Request $request) {
+    $routePath = '/' . ltrim($request->path(), '/');
+    $method = strtoupper($request->method());
+    $reason = "The requested route '[{$method}] {$routePath}' was not found on this server.";
+
+    // API / JSON requests: Return structured 404 JSON with explicit reason
+    if ($request->is('api/*') || $request->expectsJson()) {
+        \App\Support\ErrorLogger::log('404 NOT FOUND', $reason, [
+            'method' => $method,
+            'path' => $routePath,
+            'ip' => $request->ip(),
+        ]);
+
+        return response()->json([
+            'status' => 404,
+            'error' => 'Not Found',
+            'reason' => $reason,
+            'path' => $routePath,
+            'method' => $method,
+            'timestamp' => now()->toIso8601String(),
+        ], 404, [], JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
+    }
+
+    // Record the invalid request redirect in logs/error.logs
+    \App\Support\ErrorLogger::log('404 INVALID REQUEST REDIRECT', "Redirecting invalid request '[{$method}] {$routePath}' to generic 404 page", [
+        'method' => $method,
+        'path' => $routePath,
+        'ip' => $request->ip(),
+    ]);
+
+    // Web browser requests: Redirect invalid request to the generic 404 page
+    return redirect('/404?from=' . urlencode($routePath))
+        ->with('attempted_url', $routePath)
+        ->with('attempted_method', $method)
+        ->with('reason', "Geçersiz istek: '{$routePath}' adresi sistemde bulunamadı veya taşınmış olabilir.");
+});
+
 

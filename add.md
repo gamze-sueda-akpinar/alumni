@@ -1,10 +1,10 @@
-﻿# ğŸ“Š Data Design Document (`ddd.md` / `add.md`) â€” Alumni Tracking System
+# 📊 Data Design Document (`ddd.md` / `add.md`) — Alumni Tracking System
 
-[â† Back to Main Documentation (README.md)](README.md) &bull; [Interactive Swagger API UI](resources/views/swagger.blade.php) &bull; [OpenAPI 3.0 Specification](public/openapi.json) &bull; [add.md](add.md)
+[← Back to Main Documentation (README.md)](README.md) &bull; [Interactive Swagger API UI](resources/views/swagger.blade.php) &bull; [OpenAPI 3.0 Specification](public/openapi.json) &bull; [add.md](add.md)
 
 ---
 
-## ğŸ“‘ Table of Contents
+## 📑 Table of Contents
 1. [Overview & Objectives](#1-overview--objectives)
 2. [Dual-Layer Storage Architecture](#2-dual-layer-storage-architecture)
 3. [Entity-Relationship Diagram (ERD)](#3-entity-relationship-diagram-erd)
@@ -27,7 +27,7 @@
 
 ---
 
-## 1. ğŸ¯ Overview & Objectives
+## 1. 🎯 Overview & Objectives
 
 This document (**`ddd.md`** / **`add.md`**) provides the formal, in-depth **Data Design Documentation (DDD)** for the **Alumni Tracking System**. It defines the logical and physical data schemas, data dictionaries, entity-relationship constraints, and caching strategies.
 
@@ -39,13 +39,13 @@ This document (**`ddd.md`** / **`add.md`**) provides the formal, in-depth **Data
 
 ---
 
-## 2. ğŸ—ï¸ Dual-Layer Storage Architecture
+## 2. 🏗️ Dual-Layer Storage Architecture
 
 The application implements a dual-layer data architecture accommodating both traditional relational database operations and decoupled rapid-prototyping in-memory workflows:
 
 ```mermaid
 flowchart TD
-    Client["ğŸ‘¤ Client / Front-End / Swagger UI"]
+    Client["👤 Client / Front-End / Swagger UI"]
 
     subgraph Controllers["Controller Layer"]
         UserCtrl["UserController / ApiUserController"]
@@ -87,7 +87,7 @@ flowchart TD
 
 ---
 
-## 3. ğŸ§© Entity-Relationship Diagram (ERD)
+## 3. 🧩 Entity-Relationship Diagram (ERD)
 
 The relational schema and logical entities are structured around the following entity relationships:
 
@@ -161,14 +161,18 @@ erDiagram
     JOB_POSTINGS {
         bigint id PK
         bigint user_id FK
-        string title
-        string company_name
-        string location
-        string type
-        text description
-        text requirements
-        date application_deadline
-        string contact_email
+        string title "Required"
+        string company_name "Required"
+        string city "Optional"
+        string location "Optional"
+        string workplace_type "Mandatory (hybrid, remote, in-office)"
+        string type "Employment type"
+        text description "Optional"
+        decimal salary "Mandatory"
+        text benefits "Optional"
+        text requirements "Optional"
+        date application_deadline "Optional"
+        string contact_email "Optional"
         boolean is_active
         timestamps timestamps
     }
@@ -213,7 +217,7 @@ erDiagram
 
 ---
 
-## 4. ğŸ“– Data Dictionary & Table Specifications
+## 4. 📖 Data Dictionary & Table Specifications
 
 ### 4.1 Users (`users`)
 - **Purpose:** Core identity, credential, and authentication store for administrators, coordinators, and graduates.
@@ -268,7 +272,7 @@ erDiagram
 | Column | Type | Constraints | Description |
 | :--- | :--- | :--- | :--- |
 | `id` | `BIGINT UNSIGNED` | `PRIMARY KEY`, `AUTO_INCREMENT` | Unique faculty identifier |
-| `name` | `VARCHAR(255)` | `NOT NULL` | Faculty full name (e.g., MÃ¼hendislik FakÃ¼ltesi) |
+| `name` | `VARCHAR(255)` | `NOT NULL` | Faculty full name (e.g., Mühendislik Fakültesi) |
 | `code` | `VARCHAR(255)` | `NULLABLE`, `UNIQUE` | Unique short code (e.g., ENG, FEAS) |
 | `created_at` | `TIMESTAMP` | `NULLABLE` | Record creation timestamp |
 | `updated_at` | `TIMESTAMP` | `NULLABLE` | Record last update timestamp |
@@ -284,7 +288,7 @@ erDiagram
 | :--- | :--- | :--- | :--- |
 | `id` | `BIGINT UNSIGNED` | `PRIMARY KEY`, `AUTO_INCREMENT` | Unique department identifier |
 | `faculty_id` | `BIGINT UNSIGNED` | `NOT NULL`, `FK` &rarr; `faculties.id`, `ON DELETE CASCADE` | Parent faculty |
-| `name` | `VARCHAR(255)` | `NOT NULL` | Department name (e.g., Bilgisayar MÃ¼hendisliÄŸi) |
+| `name` | `VARCHAR(255)` | `NOT NULL` | Department name (e.g., Bilgisayar Mühendisliği) |
 | `code` | `VARCHAR(255)` | `NULLABLE` | Department code (e.g., CENG, IE) |
 | `created_at` | `TIMESTAMP` | `NULLABLE` | Record creation timestamp |
 | `updated_at` | `TIMESTAMP` | `NULLABLE` | Record last update timestamp |
@@ -328,27 +332,49 @@ erDiagram
 | :--- | :--- | :--- | :--- | :--- |
 | `id` | `BIGINT UNSIGNED` | `PRIMARY KEY`, `AUTO_INCREMENT` | *None* | Unique job posting identifier |
 | `user_id` | `BIGINT UNSIGNED` | `NOT NULL`, `FOREIGN KEY` &rarr; `users(id)`, `ON DELETE CASCADE` | *None* | Associated publisher / author user ID |
-| `title` | `VARCHAR(255)` | `NOT NULL` | *None* | Position / Job title (e.g. Senior Laravel Developer) |
-| `company_name` | `VARCHAR(255)` | `NOT NULL` | *None* | Hiring enterprise, startup, or institution |
-| `location` | `VARCHAR(255)` | `NULLABLE` | `NULL` | Work location or modality (e.g. Ä°stanbul, Uzaktan, Hibrit) |
-| `type` | `VARCHAR(255)` | `NOT NULL` | `'Full-time'` | Employment type (`Full-time`, `Part-time`, `Remote`, `Internship`) |
-| `description` | `TEXT` | `NOT NULL` | *None* | Comprehensive role description, responsibilities, and team context |
-| `requirements` | `TEXT` | `NULLABLE` | `NULL` | Mandatory qualifications, required tech stack, and experience level |
+| `title` | `VARCHAR(255)` | `NOT NULL` (**Required**) | *None* | Position / Job title (e.g. Senior Backend Engineer) |
+| `company_name` | `VARCHAR(255)` | `NOT NULL` (**Required**) | *None* | Hiring enterprise, startup, or partner institution |
+| `city` | `VARCHAR(255)` | `NULLABLE` (**Optional**) | `NULL` | Base city of the role (e.g. İstanbul, Ankara, London) |
+| `location` | `VARCHAR(255)` | `NULLABLE` (**Optional**) | `NULL` | General physical location or campus address |
+| `workplace_type` | `VARCHAR(50)` | `NOT NULL` (**Mandatory: `hybrid`, `remote`, `in-office`**) | *None* | Work arrangement model: `hybrid`, `remote`, or `in-office` |
+| `type` | `VARCHAR(255)` | `NULLABLE` | `'Full-time'` | Employment schedule (`Full-time`, `Part-time`, `Contract`, `Internship`) |
+| `description` | `TEXT` | `NULLABLE` (**Optional**) | `NULL` | Comprehensive role description, responsibilities, and team context |
+| `salary` | `DECIMAL(12, 2)` | `NOT NULL` (**Mandatory**) | *None* | Base compensation / salary figure (transparency requirement) |
+| `benefits` | `TEXT` | `NULLABLE` (**Optional**) | `NULL` | Additional employee perks, health insurance, bonus, meal allowances |
+| `requirements` | `TEXT` | `NULLABLE` | `NULL` | Technical qualifications, stack, and required experience level |
 | `application_deadline` | `DATE` | `NULLABLE` | `NULL` | Deadline date for application submissions (YYYY-MM-DD) |
 | `contact_email` | `VARCHAR(255)` | `NULLABLE` | `NULL` | Direct inquiry & application submission email address |
 | `is_active` | `BOOLEAN` | `NOT NULL` | `TRUE (1)` | Publication visibility flag (`1`: active on job board, `0`: closed) |
 | `created_at` | `TIMESTAMP` | `NULLABLE` | `NULL` | Record creation timestamp |
 | `updated_at` | `TIMESTAMP` | `NULLABLE` | `NULL` | Last modification timestamp |
 
+#### 💼 Business & Validation Rules (İş ve Doğrulama Kuralları):
+
+The `job_postings` entity enforces explicit domain validation rules across Web Forms, REST API payloads, and Database integrity checks:
+
+| Attribute | Requirement | Validation Rule (Laravel) | Database Constraint | Business Logic & Rules |
+| :--- | :--- | :--- | :--- | :--- |
+| **`title`** | **Required (Zorunlu)** | `required\|string\|max:255` | `VARCHAR(255) NOT NULL` | Job/Position title is mandatory. Cannot be null, empty, or whitespace-only. |
+| **`company_name`** | **Required (Zorunlu)** | `required\|string\|max:255` | `VARCHAR(255) NOT NULL` | Hiring company or institution name is mandatory for organizational attribution. |
+| **`city`** | **Optional (İsteğe Bağlı)** | `nullable\|string\|max:255` | `VARCHAR(255) NULLABLE DEFAULT NULL` | Target city location is optional; can be omitted for distributed/remote roles. |
+| **`description`** | **Optional (İsteğe Bağlı)** | `nullable\|string` | `TEXT NULLABLE DEFAULT NULL` | Role details and task description are optional; supports quick-posting when summary fields suffice. |
+| **`workplace_type`** | **Mandatory (Zorunlu)** | `required\|in:hybrid,remote,in-office` | `VARCHAR(50) NOT NULL` (`CHECK in (...)`) | Working arrangement is strictly mandatory and restricted to one of: **`hybrid`**, **`remote`**, or **`in-office`**. |
+| **`salary`** | **Mandatory (Zorunlu)** | `required\|numeric\|min:0` | `DECIMAL(12, 2) NOT NULL` | Compensation transparency: Salary is strictly mandatory and must be a non-negative numeric value. |
+| **`benefits`** | **Optional (İsteğe Bağlı)** | `nullable\|string` | `TEXT NULLABLE DEFAULT NULL` | Additional perks, bonuses, private health insurance, and allowances are optional. |
+
 #### Relational Constraints & Foreign Keys:
 - **`job_postings_user_id_foreign`:**
   - Foreign key constraint referencing `users.id`.
   - Configured with `ON DELETE CASCADE`. If the publishing user account is deleted, all their posted jobs are automatically purged by MySQL to preserve referential integrity.
+- **Domain Check Constraints:**
+  - `workplace_type` must be in `('hybrid', 'remote', 'in-office')`.
+  - `salary` must be `>= 0.00`.
 
 #### Eloquent Model Configuration & Casting:
 - **Mass-Assignable Fillable Attributes:**
-  `['user_id', 'title', 'company_name', 'location', 'type', 'description', 'requirements', 'application_deadline', 'contact_email', 'is_active']`
+  `['user_id', 'title', 'company_name', 'city', 'location', 'workplace_type', 'type', 'description', 'salary', 'benefits', 'requirements', 'application_deadline', 'contact_email', 'is_active']`
 - **Attribute Casting:**
+  - `'salary' => 'decimal:2'`
   - `'application_deadline' => 'date'`
   - `'is_active' => 'boolean'`
 - **Relationships:**
@@ -408,7 +434,7 @@ erDiagram
 | `content` | `STRING` | Required | Comprehensive announcement body text |
 | `category` | `STRING` | `Genel`, `Etkinlik`, `Kariyer`, `Burs & Akademi` | Categorization tag |
 | `author` | `STRING` | Default: `Mezunlar Ofisi` | Publishing entity or coordinator |
-| `target_audience`| `STRING` | Default: `TÃ¼m Mezunlar` | Intended group of recipients |
+| `target_audience`| `STRING` | Default: `Tüm Mezunlar` | Intended group of recipients |
 | `is_pinned` | `BOOLEAN`| Default: `FALSE` | Featured/Sticky notice at top of lists |
 | `status` | `STRING` | `published`, `draft`, `archived` | Publication workflow state |
 | `published_at` | `TIMESTAMP`| ISO 8601 String | Actual publication date |
@@ -476,7 +502,7 @@ CREATE TABLE `cache_locks` (
 
 ---
 
-## 5. ğŸ›¡ï¸ Data Integrity & Relationship Constraints
+## 5. 🛡️ Data Integrity & Relationship Constraints
 
 The database enforces strict referential integrity rules:
 1. **User Deletion Cascades (`ON DELETE CASCADE`):**
@@ -487,16 +513,23 @@ The database enforces strict referential integrity rules:
    - If an academic department is deleted or merged, `alumni_profiles.department_id` is automatically set to `NULL` to preserve the graduate's historical profile and contact details.
 4. **Faculty Deletion Cascades (`ON DELETE CASCADE`):**
    - Deleting a faculty cascades to all departments belonging to that faculty.
-4. **Targeted Performance Indexes:**
+5. **Targeted Performance Indexes:**
    - Indexes are established on frequently filtered columns:
      - `alumni_profiles.graduation_year`
      - `alumni_profiles.current_company`
      - `alumni_profiles.city`
      - `alumni_profiles.status`
+     - `job_postings.workplace_type`
+     - `job_postings.city`
+6. **Job Posting Domain Integrity & Rules:**
+   - **Mandatory Fields:** `title`, `company_name`, `workplace_type`, and `salary` are enforced as `NOT NULL`.
+   - **Workplace Type Domain Check:** `workplace_type` is restricted strictly to `hybrid`, `remote`, or `in-office`.
+   - **Compensation Constraint:** `salary` must be a non-negative decimal value (`salary >= 0`).
+   - **Optional Fields:** `city`, `description`, and `benefits` are explicitly configured as `NULLABLE` allowing flexible, rapid job submissions.
 
 ---
 
-## 6. ğŸ”„ State Machines & Entity Lifecycles
+## 6. 🔄 State Machines & Entity Lifecycles
 
 ### Alumni Profile Status Workflow
 ```mermaid
@@ -533,11 +566,11 @@ stateDiagram-v2
 
 ---
 
-## 7. ğŸš¦ Direct vs. Nested Routing Architecture
+## 7. 🚦 Direct vs. Nested Routing Architecture
 
 The HTTP routing layer is structured into **Direct (Top-Level)** and **Nested (Scoped/Hierarchical)** routes to support both decoupled catalog queries and relational parent-child data operations:
 
-### 7.1 Direct Routes (BaÄŸÄ±msÄ±z DoÄŸrudan Rotalar)
+### 7.1 Direct Routes (Bağımsız Doğrudan Rotalar)
 Direct routes access an entity collection or single record directly by its unique identifier:
 
 | HTTP Method | Route URI | Controller & Action | Resource Description |
@@ -566,10 +599,12 @@ Direct routes access an entity collection or single record directly by its uniqu
 | `GET` | `/api/applications/{id}` | `ApiJobApplicationController@show` | JSON: Single application details |
 | `PUT/PATCH` | `/api/applications/{id}` | `ApiJobApplicationController@update` | JSON: Update application status & notes |
 | `DELETE` | `/api/applications/{id}` | `ApiJobApplicationController@destroy` | JSON: Delete / withdraw application |
+| `GET` | `/404` | `errors.404` (View) | HTML view: Generic 404 page with dynamic reason card & 6s auto-redirect to `/main` |
+| `ANY` | `/*` (Fallback) | `Route::fallback` | Fallback route redirecting browser to `/404?from=...` (302) and returning 404 JSON for API |
 
 ---
 
-### 7.2 Nested Routes (Ä°Ã§ Ä°Ã§e / BaÄŸÄ±mlÄ± Rotalar)
+### 7.2 Nested Routes (İç İçe / Bağımlı Rotalar)
 Nested routes represent child entities scoped strictly under their parent entity identifier:
 
 ```mermaid
@@ -601,7 +636,7 @@ graph LR
 
 ---
 
-## 8. ğŸ§ª Persistence Strategy & "The Forgetting Test" Verification
+## 8. 🧪 Persistence Strategy & "The Forgetting Test" Verification
 
 A critical concern in containerized cloud native environments is **Data Persistence** across service lifecycles.
 
@@ -630,15 +665,14 @@ The persistence was verified via **"The Forgetting Test"**:
    AFTER UP -> User: Forgetting Test User - test.forgetting@alumni.edu.tr
    AFTER UP -> Job: Forgetting Test Cloud Architect at Docker Persistence Corp
    ```
-   **Verdict:** **PASSED âœ…** â€” Zero data loss across container teardown.
+   **Verdict:** **PASSED ✅** — Zero data loss across container teardown.
 
 ---
 
-## 9. ğŸ”— Cross-Reference Navigation
+## 9. 🔗 Cross-Reference Navigation
 
-- ğŸ“„ **Main Architecture & Setup:** [README.md](README.md)
-- ğŸ“¡ **REST API Specification:** [public/openapi.json](public/openapi.json)
-- ğŸ‘ï¸ **Live Interactive Swagger UI:** [resources/views/swagger.blade.php](resources/views/swagger.blade.php)
-- ğŸ® **HTTP Routes Definition:** [routes/web.php](routes/web.php)
-- ğŸ³ **Docker Multi-Container Spec:** [docker-compose.yml](docker-compose.yml)
-
+- 📄 **Main Architecture & Setup:** [README.md](README.md)
+- 📡 **REST API Specification:** [public/openapi.json](public/openapi.json)
+- 👁️ **Live Interactive Swagger UI:** [resources/views/swagger.blade.php](resources/views/swagger.blade.php)
+- 🎮 **HTTP Routes Definition:** [routes/web.php](routes/web.php)
+- 🐳 **Docker Multi-Container Spec:** [docker-compose.yml](docker-compose.yml)

@@ -161,14 +161,18 @@ erDiagram
     JOB_POSTINGS {
         bigint id PK
         bigint user_id FK
-        string title
-        string company_name
-        string location
-        string type
-        text description
-        text requirements
-        date application_deadline
-        string contact_email
+        string title "Required"
+        string company_name "Required"
+        string city "Optional"
+        string location "Optional"
+        string workplace_type "Mandatory (hybrid, remote, in-office)"
+        string type "Employment type"
+        text description "Optional"
+        decimal salary "Mandatory"
+        text benefits "Optional"
+        text requirements "Optional"
+        date application_deadline "Optional"
+        string contact_email "Optional"
         boolean is_active
         timestamps timestamps
     }
@@ -328,27 +332,49 @@ erDiagram
 | :--- | :--- | :--- | :--- | :--- |
 | `id` | `BIGINT UNSIGNED` | `PRIMARY KEY`, `AUTO_INCREMENT` | *None* | Unique job posting identifier |
 | `user_id` | `BIGINT UNSIGNED` | `NOT NULL`, `FOREIGN KEY` &rarr; `users(id)`, `ON DELETE CASCADE` | *None* | Associated publisher / author user ID |
-| `title` | `VARCHAR(255)` | `NOT NULL` | *None* | Position / Job title (e.g. Senior Laravel Developer) |
-| `company_name` | `VARCHAR(255)` | `NOT NULL` | *None* | Hiring enterprise, startup, or institution |
-| `location` | `VARCHAR(255)` | `NULLABLE` | `NULL` | Work location or modality (e.g. İstanbul, Uzaktan, Hibrit) |
-| `type` | `VARCHAR(255)` | `NOT NULL` | `'Full-time'` | Employment type (`Full-time`, `Part-time`, `Remote`, `Internship`) |
-| `description` | `TEXT` | `NOT NULL` | *None* | Comprehensive role description, responsibilities, and team context |
-| `requirements` | `TEXT` | `NULLABLE` | `NULL` | Mandatory qualifications, required tech stack, and experience level |
+| `title` | `VARCHAR(255)` | `NOT NULL` (**Required**) | *None* | Position / Job title (e.g. Senior Backend Engineer) |
+| `company_name` | `VARCHAR(255)` | `NOT NULL` (**Required**) | *None* | Hiring enterprise, startup, or partner institution |
+| `city` | `VARCHAR(255)` | `NULLABLE` (**Optional**) | `NULL` | Base city of the role (e.g. İstanbul, Ankara, London) |
+| `location` | `VARCHAR(255)` | `NULLABLE` (**Optional**) | `NULL` | General physical location or campus address |
+| `workplace_type` | `VARCHAR(50)` | `NOT NULL` (**Mandatory: `hybrid`, `remote`, `in-office`**) | *None* | Work arrangement model: `hybrid`, `remote`, or `in-office` |
+| `type` | `VARCHAR(255)` | `NULLABLE` | `'Full-time'` | Employment schedule (`Full-time`, `Part-time`, `Contract`, `Internship`) |
+| `description` | `TEXT` | `NULLABLE` (**Optional**) | `NULL` | Comprehensive role description, responsibilities, and team context |
+| `salary` | `DECIMAL(12, 2)` | `NOT NULL` (**Mandatory**) | *None* | Base compensation / salary figure (transparency requirement) |
+| `benefits` | `TEXT` | `NULLABLE` (**Optional**) | `NULL` | Additional employee perks, health insurance, bonus, meal allowances |
+| `requirements` | `TEXT` | `NULLABLE` | `NULL` | Technical qualifications, stack, and required experience level |
 | `application_deadline` | `DATE` | `NULLABLE` | `NULL` | Deadline date for application submissions (YYYY-MM-DD) |
 | `contact_email` | `VARCHAR(255)` | `NULLABLE` | `NULL` | Direct inquiry & application submission email address |
 | `is_active` | `BOOLEAN` | `NOT NULL` | `TRUE (1)` | Publication visibility flag (`1`: active on job board, `0`: closed) |
 | `created_at` | `TIMESTAMP` | `NULLABLE` | `NULL` | Record creation timestamp |
 | `updated_at` | `TIMESTAMP` | `NULLABLE` | `NULL` | Last modification timestamp |
 
+#### 💼 Business & Validation Rules (İş ve Doğrulama Kuralları):
+
+The `job_postings` entity enforces explicit domain validation rules across Web Forms, REST API payloads, and Database integrity checks:
+
+| Attribute | Requirement | Validation Rule (Laravel) | Database Constraint | Business Logic & Rules |
+| :--- | :--- | :--- | :--- | :--- |
+| **`title`** | **Required (Zorunlu)** | `required\|string\|max:255` | `VARCHAR(255) NOT NULL` | Job/Position title is mandatory. Cannot be null, empty, or whitespace-only. |
+| **`company_name`** | **Required (Zorunlu)** | `required\|string\|max:255` | `VARCHAR(255) NOT NULL` | Hiring company or institution name is mandatory for organizational attribution. |
+| **`city`** | **Optional (İsteğe Bağlı)** | `nullable\|string\|max:255` | `VARCHAR(255) NULLABLE DEFAULT NULL` | Target city location is optional; can be omitted for distributed/remote roles. |
+| **`description`** | **Optional (İsteğe Bağlı)** | `nullable\|string` | `TEXT NULLABLE DEFAULT NULL` | Role details and task description are optional; supports quick-posting when summary fields suffice. |
+| **`workplace_type`** | **Mandatory (Zorunlu)** | `required\|in:hybrid,remote,in-office` | `VARCHAR(50) NOT NULL` (`CHECK in (...)`) | Working arrangement is strictly mandatory and restricted to one of: **`hybrid`**, **`remote`**, or **`in-office`**. |
+| **`salary`** | **Mandatory (Zorunlu)** | `required\|numeric\|min:0` | `DECIMAL(12, 2) NOT NULL` | Compensation transparency: Salary is strictly mandatory and must be a non-negative numeric value. |
+| **`benefits`** | **Optional (İsteğe Bağlı)** | `nullable\|string` | `TEXT NULLABLE DEFAULT NULL` | Additional perks, bonuses, private health insurance, and allowances are optional. |
+
 #### Relational Constraints & Foreign Keys:
 - **`job_postings_user_id_foreign`:**
   - Foreign key constraint referencing `users.id`.
   - Configured with `ON DELETE CASCADE`. If the publishing user account is deleted, all their posted jobs are automatically purged by MySQL to preserve referential integrity.
+- **Domain Check Constraints:**
+  - `workplace_type` must be in `('hybrid', 'remote', 'in-office')`.
+  - `salary` must be `>= 0.00`.
 
 #### Eloquent Model Configuration & Casting:
 - **Mass-Assignable Fillable Attributes:**
-  `['user_id', 'title', 'company_name', 'location', 'type', 'description', 'requirements', 'application_deadline', 'contact_email', 'is_active']`
+  `['user_id', 'title', 'company_name', 'city', 'location', 'workplace_type', 'type', 'description', 'salary', 'benefits', 'requirements', 'application_deadline', 'contact_email', 'is_active']`
 - **Attribute Casting:**
+  - `'salary' => 'decimal:2'`
   - `'application_deadline' => 'date'`
   - `'is_active' => 'boolean'`
 - **Relationships:**
@@ -487,12 +513,19 @@ The database enforces strict referential integrity rules:
    - If an academic department is deleted or merged, `alumni_profiles.department_id` is automatically set to `NULL` to preserve the graduate's historical profile and contact details.
 4. **Faculty Deletion Cascades (`ON DELETE CASCADE`):**
    - Deleting a faculty cascades to all departments belonging to that faculty.
-4. **Targeted Performance Indexes:**
+5. **Targeted Performance Indexes:**
    - Indexes are established on frequently filtered columns:
      - `alumni_profiles.graduation_year`
      - `alumni_profiles.current_company`
      - `alumni_profiles.city`
      - `alumni_profiles.status`
+     - `job_postings.workplace_type`
+     - `job_postings.city`
+6. **Job Posting Domain Integrity & Rules:**
+   - **Mandatory Fields:** `title`, `company_name`, `workplace_type`, and `salary` are enforced as `NOT NULL`.
+   - **Workplace Type Domain Check:** `workplace_type` is restricted strictly to `hybrid`, `remote`, or `in-office`.
+   - **Compensation Constraint:** `salary` must be a non-negative decimal value (`salary >= 0`).
+   - **Optional Fields:** `city`, `description`, and `benefits` are explicitly configured as `NULLABLE` allowing flexible, rapid job submissions.
 
 ---
 
@@ -566,6 +599,8 @@ Direct routes access an entity collection or single record directly by its uniqu
 | `GET` | `/api/applications/{id}` | `ApiJobApplicationController@show` | JSON: Single application details |
 | `PUT/PATCH` | `/api/applications/{id}` | `ApiJobApplicationController@update` | JSON: Update application status & notes |
 | `DELETE` | `/api/applications/{id}` | `ApiJobApplicationController@destroy` | JSON: Delete / withdraw application |
+| `GET` | `/404` | `errors.404` (View) | HTML view: Generic 404 page with dynamic reason card & 6s auto-redirect to `/main` |
+| `ANY` | `/*` (Fallback) | `Route::fallback` | Fallback route redirecting browser to `/404?from=...` (302) and returning 404 JSON for API |
 
 ---
 
