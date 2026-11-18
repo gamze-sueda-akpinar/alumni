@@ -1,6 +1,6 @@
 # 📊 Data Design Document (`ddd.md` / `add.md`) — Alumni Tracking System
 
-[← Back to Main Documentation (README.md)](README.md) &bull; [Interactive Swagger API UI](resources/views/swagger.blade.php) &bull; [OpenAPI 3.0 Specification](public/openapi.json) &bull; [add.md](add.md)
+[← Back to Main Documentation (README.md)](README.md) &bull; [Brand Guidelines (brand.md)](brand.md) &bull; [Visual Design System (DESIGN.md)](DESIGN.md) &bull; [Interactive Swagger API UI](resources/views/swagger.blade.php) &bull; [OpenAPI 3.0 Specification](public/openapi.json) &bull; [add.md](add.md)
 
 ---
 
@@ -672,6 +672,7 @@ The persistence was verified via **"The Forgetting Test"**:
 ## 9. 🔗 Cross-Reference Navigation
 
 - 📄 **Main Architecture & Setup:** [README.md](README.md)
+- 🎨 **Brand Identity & Design System:** [brand.md](brand.md)
 - 📡 **REST API Specification:** [public/openapi.json](public/openapi.json)
 - 👁️ **Live Interactive Swagger UI:** [resources/views/swagger.blade.php](resources/views/swagger.blade.php)
 - 🎮 **HTTP Routes Definition:** [routes/web.php](routes/web.php)

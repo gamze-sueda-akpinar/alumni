@@ -1,68 +1,98 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="tr" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ $job->title ?? $job['title'] }} - İş İlanı Detayı</title>
+    <title>{{ $job->title ?? $job['title'] }} | İş İlanı Detayı</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            200: '#c7d2fe',
+                            300: '#a5b4fc',
+                            400: '#818cf8',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            800: '#3730a3',
+                            900: '#312e81',
+                            950: '#1e1b4b',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                        serif: ['"Playfair Display"', 'Georgia', 'serif'],
+                        mono: ['"JetBrains Mono"', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #faf9f6; }
+        .font-serif-editorial { font-family: 'Playfair Display', Georgia, serif; }
+        .hairline-border { border: 1px solid rgba(226, 232, 240, 0.85); }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col justify-between">
-
-    <!-- Header / Navbar -->
-    <header class="bg-white border-b border-slate-200 sticky top-0 z-40">
-        <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-            <div class="flex items-center space-x-3">
-                <span class="text-2xl">💼</span>
-                <a href="/main" class="font-bold text-xl tracking-tight text-indigo-900 hover:text-indigo-700 transition">
-                    Mezun Takip Sistemi
-                </a>
-            </div>
-            <div class="flex items-center space-x-3">
-                <a href="/job-postings" class="text-sm font-semibold text-indigo-600 transition px-3 py-2">
-                    &larr; İlanlar Listesi
-                </a>
-                <a href="/applications" class="text-sm font-medium text-slate-600 hover:text-indigo-600 transition px-3 py-2">
-                    Başvurular ({{ count($job->applications ?? []) }})
-                </a>
-                <a href="/main" class="text-sm font-medium text-slate-600 hover:text-indigo-600 transition px-3 py-2">Ana Sayfa</a>
-            </div>
-        </div>
-    </header>
+<body class="text-slate-800 antialiased selection:bg-brand-500 selection:text-white min-h-screen flex flex-col justify-between">
 
     @php 
         $jid = $job->id ?? $job['id'];
-        $title = $job->title ?? $job['title'];
-        $company = $job->company_name ?? $job['company_name'];
-        $location = $job->location ?? $job['location'] ?? 'İstanbul';
-        $type = $job->type ?? $job['type'] ?? 'Tam Zamanlı';
-        $description = $job->description ?? $job['description'];
-        $requirements = $job->requirements ?? $job['requirements'] ?? null;
-        $email = $job->contact_email ?? $job['contact_email'] ?? '—';
-        $deadline = $job->application_deadline ?? $job['application_deadline'] ?? 'Belirtilmedi';
-        $isActive = ($job->is_active ?? $job['is_active']) ?? true;
-        $createdAt = $job->created_at ?? $job['created_at'] ?? '—';
-        $updatedAt = $job->updated_at ?? $job['updated_at'] ?? 'Henüz güncellenmedi';
+        $jtitle = $job->title ?? $job['title'];
+        $jcompany = $job->company_name ?? $job['company_name'];
+        $wtype = strtolower($job->workplace_type ?? $job['workplace_type'] ?? 'remote');
+        $jsalary = $job->salary ?? $job['salary'] ?? null;
+        $jcity = $job->city ?? $job['city'] ?? $job->location ?? $job['location'] ?? 'İstanbul';
+        $jdesc = $job->description ?? $job['description'] ?? 'Detaylı görev açıklaması ilanda belirtilmemiştir.';
+        $jbenefits = $job->benefits ?? $job['benefits'] ?? null;
+        $jreqs = $job->requirements ?? $job['requirements'] ?? null;
+        $jcreated = $job->created_at ?? $job['created_at'] ?? 'Bugün';
         $applications = $job->applications ?? collect([]);
 
-        $statusColors = [
-            'pending' => ['bg' => 'bg-amber-100', 'text' => 'text-amber-800', 'label' => 'Beklemede'],
-            'reviewed' => ['bg' => 'bg-blue-100', 'text' => 'text-blue-800', 'label' => 'İncelendi'],
-            'shortlisted' => ['bg' => 'bg-purple-100', 'text' => 'text-purple-800', 'label' => 'Mülakat'],
-            'accepted' => ['bg' => 'bg-emerald-100', 'text' => 'text-emerald-800', 'label' => 'Kabul'],
-            'rejected' => ['bg' => 'bg-rose-100', 'text' => 'text-rose-800', 'label' => 'Reddedildi'],
-        ];
+        $typeBadge = match($wtype) {
+            'remote' => ['label' => '🟢 Uzaktan / Remote', 'class' => 'bg-emerald-50 text-emerald-700 border-emerald-200'],
+            'hybrid' => ['label' => '🟠 Hibrit / Hybrid', 'class' => 'bg-amber-50 text-amber-700 border-amber-200'],
+            'in-office' => ['label' => '🔵 Ofiste / In-Office', 'class' => 'bg-blue-50 text-blue-700 border-blue-200'],
+            default => ['label' => '🟢 ' . ucfirst($wtype), 'class' => 'bg-emerald-50 text-emerald-700 border-emerald-200'],
+        };
     @endphp
+
+    <!-- Header / Navbar -->
+    <header class="bg-white/90 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 h-20 flex items-center justify-between">
+            <a href="/main" class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-2xl bg-emerald-600 flex items-center justify-center text-white text-xl">
+                    💼
+                </div>
+                <span class="font-bold text-lg text-slate-900">Mezun Takip Sistemi</span>
+            </a>
+
+            <div class="flex items-center gap-3">
+                <a href="/job-postings" class="text-xs font-bold text-slate-600 hover:text-brand-600 px-3.5 py-2 rounded-full border border-slate-200 transition">
+                    &larr; Tüm İlanlar
+                </a>
+                <a href="/job-postings/{{ $jid }}/edit" class="text-xs font-bold text-amber-800 bg-amber-50 border border-amber-200 hover:bg-amber-100 px-3.5 py-2 rounded-full transition">
+                    ✏️ Düzenle
+                </a>
+            </div>
+        </div>
+    </header>
 
     <!-- Main Content -->
     <main class="max-w-6xl mx-auto px-4 sm:px-6 py-10 flex-1 w-full">
 
         <!-- Flash Messages -->
         @if(session('success'))
-        <div class="mb-6 p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 flex items-center justify-between shadow-sm">
+        <div class="mb-6 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 flex items-center justify-between shadow-sm">
             <div class="flex items-center gap-3">
                 <span class="text-xl">✅</span>
                 <span class="font-medium text-sm">{{ session('success') }}</span>
@@ -71,209 +101,187 @@
         </div>
         @endif
 
-        @if(session('error'))
-        <div class="mb-6 p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 flex items-center justify-between shadow-sm">
-            <div class="flex items-center gap-3">
-                <span class="text-xl">❌</span>
-                <span class="font-medium text-sm">{{ session('error') }}</span>
-            </div>
-            <button onclick="this.parentElement.remove()" class="text-rose-600 hover:text-rose-900 font-bold">&times;</button>
-        </div>
-        @endif
-
-        <!-- Action Header -->
-        <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-700 text-xs font-semibold mb-2">
-                    <span>🔍</span>
-                    <span>İş İlanı #{{ $jid }} &bull; {{ count($applications) }} Kayıtlı Başvuru</span>
-                </div>
-                <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">{{ $title }}</h1>
-            </div>
-            <div class="flex items-center gap-2">
-                <a href="/applications/create?job_posting_id={{ $jid }}"
-                   class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-sm text-sm font-bold transition flex items-center gap-1.5">
-                    <span>⚡</span> Hemen Başvur
-                </a>
-                <a href="/job-postings/{{ $jid }}/edit"
-                   class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl shadow-sm text-sm font-semibold transition flex items-center gap-1.5">
-                    <span>✏️</span> Düzenle
-                </a>
-                <form action="/job-postings/{{ $jid }}" method="POST" onsubmit="return confirm('Bu iş ilanını silmek istediğinize emin misiniz?');">
-                    @csrf
-                    @method('DELETE')
-                    <button type="submit"
-                            class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl shadow-sm text-sm font-semibold transition flex items-center gap-1.5">
-                        <span>🗑️</span> Sil
-                    </button>
-                </form>
-            </div>
-        </div>
-
-        <!-- Job Detail Card -->
-        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-8">
-            <div class="bg-gradient-to-r from-slate-900 via-indigo-950 to-indigo-900 px-8 py-6 text-white flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <!-- Job Hero Banner -->
+        <div class="bg-gradient-to-br from-slate-900 via-indigo-950 to-brand-950 text-white rounded-3xl p-8 sm:p-10 hairline-border shadow-xl mb-8 relative overflow-hidden">
+            <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
-                    <div class="flex items-center gap-2 mb-2">
-                        <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-400 text-amber-950 flex items-center gap-1">
-                            <span>🏢</span> {{ $company }}
+                    <div class="flex items-center gap-2 mb-3 flex-wrap">
+                        <span class="px-3 py-1 rounded-full text-xs font-bold border {{ $typeBadge['class'] }}">
+                            {{ $typeBadge['label'] }}
                         </span>
-                        <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-400/20 text-indigo-200 border border-indigo-400/30">
-                            {{ $type }}
+
+                        @if($jsalary)
+                        <span class="font-mono text-xs font-bold bg-[#8ed462] text-slate-950 px-3 py-1 rounded-full shadow-sm">
+                            ₺{{ number_format((float)$jsalary, 0, ',', '.') }} / ay
                         </span>
-                        <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-400/20 text-indigo-200 border border-indigo-400/30">
-                            📍 {{ $location }}
-                        </span>
+                        @endif
+
+                        <span class="text-xs text-slate-400 font-mono">İlan No: #{{ $jid }}</span>
                     </div>
-                    <h2 class="text-2xl font-bold leading-tight">{{ $title }}</h2>
-                    <p class="text-indigo-200 text-sm mt-1">İlan No: <span class="font-semibold text-white">#{{ $jid }}</span></p>
+
+                    <h1 class="font-serif-editorial text-2xl sm:text-4xl font-bold tracking-tight text-white mb-2">
+                        {{ $jtitle }}
+                    </h1>
+                    
+                    <p class="text-brand-200 text-sm sm:text-base font-medium flex items-center gap-2">
+                        <span>🏢 {{ $jcompany }}</span>
+                        <span>&bull;</span>
+                        <span>📍 {{ $jcity }}</span>
+                        <span>&bull;</span>
+                        <span>📅 {{ $jcreated }}</span>
+                    </p>
                 </div>
-                <div class="flex flex-col sm:items-end gap-2">
-                    <span class="px-3 py-1 rounded-full text-xs font-semibold {{ $isActive ? 'bg-emerald-500/20 text-emerald-200 border border-emerald-400/30' : 'bg-slate-500/20 text-slate-300 border border-slate-400/30' }}">
-                        {{ $isActive ? '● Aktif Başvuruya Açık' : '○ Başvuruya Kapalı' }}
-                    </span>
-                    <a href="/applications?job_posting_id={{ $jid }}" class="text-xs text-indigo-200 hover:text-white underline">
-                        {{ count($applications) }} Başvuruyu Listede Filtrele &rarr;
+
+                <div>
+                    <a href="#applyCard" class="px-7 py-3.5 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-extrabold rounded-2xl text-xs transition shadow-lg flex items-center justify-center gap-2">
+                        <span>🚀</span> Pozisyona Başvur
                     </a>
                 </div>
             </div>
+        </div>
 
-            <!-- Metadata Info Grid -->
-            <div class="p-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-sm border-b border-slate-100 bg-slate-50/50">
-                <div class="bg-white p-4 rounded-xl border border-slate-100 shadow-xs">
-                    <span class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Şirket</span>
-                    <span class="text-base font-bold text-slate-800">{{ $company }}</span>
-                </div>
+        <!-- 2-Column Job Layout -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-                <div class="bg-white p-4 rounded-xl border border-slate-100 shadow-xs">
-                    <span class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Başvuru E-Postası</span>
-                    <span class="text-sm font-bold text-indigo-600">{{ $email }}</span>
-                </div>
-
-                <div class="bg-white p-4 rounded-xl border border-slate-100 shadow-xs">
-                    <span class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Son Başvuru Tarihi</span>
-                    <span class="text-sm font-semibold text-slate-700">{{ $deadline }}</span>
-                </div>
-
-                <div class="bg-white p-4 rounded-xl border border-slate-100 shadow-xs">
-                    <span class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Toplam Başvuru</span>
-                    <span class="text-base font-bold text-indigo-700">{{ count($applications) }} Aday</span>
-                </div>
-            </div>
-
-            <!-- Content Area -->
-            <div class="p-8 space-y-6">
-                <div>
-                    <h3 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">İş Tanımı & Sorumluluklar</h3>
-                    <div class="prose max-w-none text-slate-700 leading-relaxed text-base whitespace-pre-line bg-slate-50/60 p-6 rounded-xl border border-slate-100">
-                        {{ $description }}
+            <!-- Main Job Details & Application Form (2 Cols) -->
+            <div class="lg:col-span-2 space-y-6">
+                
+                <!-- Description Card -->
+                <div class="bg-white rounded-3xl p-7 hairline-border shadow-sm">
+                    <h3 class="font-bold text-slate-900 text-base mb-4 flex items-center gap-2">
+                        <span>📋</span> Pozisyon Tanımı &amp; Sorumluluklar
+                    </h3>
+                    <div class="text-xs sm:text-sm text-slate-600 leading-relaxed space-y-3">
+                        <p>{{ $jdesc }}</p>
                     </div>
                 </div>
 
-                @if(!empty($requirements))
-                <div>
-                    <h3 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">Aranan Nitelikler</h3>
-                    <div class="prose max-w-none text-slate-700 leading-relaxed text-base whitespace-pre-line bg-slate-50/60 p-6 rounded-xl border border-slate-100">
-                        {{ $requirements }}
+                @if($jreqs)
+                <div class="bg-white rounded-3xl p-7 hairline-border shadow-sm">
+                    <h3 class="font-bold text-slate-900 text-base mb-4 flex items-center gap-2">
+                        <span>🎯</span> Aranan Beceriler &amp; Nitelikler
+                    </h3>
+                    <div class="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                        <p>{{ $jreqs }}</p>
                     </div>
                 </div>
                 @endif
-            </div>
 
-            <!-- Footer bar -->
-            <div class="px-8 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400">
-                <span>Son Güncelleme: {{ $updatedAt }}</span>
-                <a href="/job-postings" class="text-indigo-600 hover:text-indigo-800 font-semibold">&larr; İlanlar Listesine Dön</a>
-            </div>
-        </div>
-
-        <!-- Received Applications Section -->
-        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mb-8">
-            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-                <div>
-                    <h2 class="text-xl font-bold text-slate-900 flex items-center gap-2">
-                        <span>📋</span> Bu İlana Yapılan Başvurular ({{ count($applications) }})
-                    </h2>
-                    <p class="text-xs text-slate-500 mt-1">İlana mezunlarımız tarafından gönderilen başvurular ve anlık durumları.</p>
+                @if($jbenefits)
+                <div class="bg-white rounded-3xl p-7 hairline-border shadow-sm">
+                    <h3 class="font-bold text-slate-900 text-base mb-4 flex items-center gap-2">
+                        <span>🎁</span> Sunulan Avantajlar &amp; Yan Haklar (Benefits)
+                    </h3>
+                    <div class="text-xs sm:text-sm text-emerald-800 bg-emerald-50/60 p-4 rounded-2xl hairline-border leading-relaxed">
+                        <p>{{ $jbenefits }}</p>
+                    </div>
                 </div>
-                <div class="flex items-center gap-2">
-                    <a href="/applications/create?job_posting_id={{ $jid }}"
-                       class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-xs text-xs font-bold transition flex items-center gap-1.5">
-                        <span>+</span> Yeni Aday Başvurusu Ekle
+                @endif
+
+                <!-- Application Submission Card -->
+                <div id="applyCard" class="bg-white rounded-3xl p-7 hairline-border shadow-sm">
+                    <div class="flex items-center justify-between pb-4 mb-4 border-b border-slate-100">
+                        <h3 class="font-bold text-slate-900 text-base flex items-center gap-2">
+                            <span>🚀</span> Hızlı İş Başvurusu
+                        </h3>
+                        <span class="text-xs text-brand-700 bg-brand-50 px-2.5 py-0.5 rounded-full border border-brand-200">
+                            Doğrudan İlan Sahibine İletilir
+                        </span>
+                    </div>
+
+                    <form action="/applications" method="POST" class="space-y-4">
+                        @csrf
+                        <input type="hidden" name="job_posting_id" value="{{ $jid }}">
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Adınız ve Soyadınız *</label>
+                            <input type="text" name="applicant_name" required placeholder="Örn: Mehmet Can"
+                                   class="w-full px-4 py-3 text-xs bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">E-Posta Adresiniz *</label>
+                            <input type="email" name="applicant_email" required placeholder="mehmet@example.com"
+                                   class="w-full px-4 py-3 text-xs bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Özgeçmiş / LinkedIn / GitHub Bağlantısı</label>
+                            <input type="url" name="resume_url" placeholder="https://linkedin.com/in/... veya CV linki"
+                                   class="w-full px-4 py-3 text-xs bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Ön Yazı / Motivasyon Notu</label>
+                            <textarea name="cover_letter" rows="3" placeholder="Bu pozisyon için neden uygun olduğunuzu kısaca açıklayınız..."
+                                      class="w-full px-4 py-3 text-xs bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition"></textarea>
+                        </div>
+
+                        <button type="submit" class="w-full py-3.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-2xl text-xs transition shadow-md flex items-center justify-center gap-2">
+                            <span>📤</span> Başvurumu Gönder
+                        </button>
+                    </form>
+                </div>
+
+            </div>
+
+            <!-- Sidebar: Job Metadata & Applications (1 Col) -->
+            <div class="space-y-6">
+                <!-- Meta Info Card -->
+                <div class="bg-white rounded-3xl p-6 hairline-border shadow-sm">
+                    <h3 class="font-bold text-slate-900 text-xs uppercase tracking-wider mb-4 flex items-center gap-2">
+                        <span>ℹ️</span> İlan Bilgileri
+                    </h3>
+                    <div class="space-y-3 text-xs">
+                        <div class="p-3 bg-slate-50 rounded-2xl hairline-border">
+                            <span class="text-slate-400 block mb-0.5">Şirket</span>
+                            <span class="font-bold text-slate-800 text-sm">{{ $jcompany }}</span>
+                        </div>
+                        <div class="p-3 bg-slate-50 rounded-2xl hairline-border">
+                            <span class="text-slate-400 block mb-0.5">Çalışma Şekli</span>
+                            <span class="font-bold text-slate-800">{{ $typeBadge['label'] }}</span>
+                        </div>
+                        @if($jsalary)
+                        <div class="p-3 bg-slate-50 rounded-2xl hairline-border">
+                            <span class="text-slate-400 block mb-0.5">Taban Ücret</span>
+                            <span class="font-bold text-emerald-700 font-mono text-sm">₺{{ number_format((float)$jsalary, 0, ',', '.') }} / ay</span>
+                        </div>
+                        @endif
+                        <div class="p-3 bg-slate-50 rounded-2xl hairline-border">
+                            <span class="text-slate-400 block mb-0.5">Konum</span>
+                            <span class="font-bold text-slate-800">📍 {{ $jcity }}</span>
+                        </div>
+                        <div class="p-3 bg-slate-50 rounded-2xl hairline-border">
+                            <span class="text-slate-400 block mb-0.5">Yayın Tarihi</span>
+                            <span class="font-bold text-slate-800">{{ $jcreated }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Applications Count Card -->
+                <div class="bg-white rounded-3xl p-6 hairline-border shadow-sm">
+                    <h3 class="font-bold text-slate-900 text-xs uppercase tracking-wider mb-3 flex items-center justify-between">
+                        <span>📋 Başvurular</span>
+                        <span class="font-mono text-brand-600">{{ count($applications) }} Kayıt</span>
+                    </h3>
+                    <p class="text-xs text-slate-500 mb-4">
+                        Bu pozisyona sistem üzerinden gönderilen tüm başvurular incelenmektedir.
+                    </p>
+                    <a href="/applications?job_posting_id={{ $jid }}" class="block text-center py-2.5 bg-slate-100 hover:bg-slate-200 rounded-xl text-xs font-bold text-slate-800 transition">
+                        Başvuru Havuzunu Yönet &rarr;
                     </a>
                 </div>
             </div>
 
-            @if(count($applications) > 0)
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse text-sm">
-                    <thead>
-                        <tr class="border-b border-slate-200 bg-slate-50/70 text-slate-600 text-xs uppercase tracking-wider">
-                            <th class="py-3 px-4 font-bold">Aday Bilgisi</th>
-                            <th class="py-3 px-4 font-bold">Bölüm / Mezuniyet</th>
-                            <th class="py-3 px-4 font-bold">Başvuru Tarihi</th>
-                            <th class="py-3 px-4 font-bold">Ön Yazı</th>
-                            <th class="py-3 px-4 font-bold">Durum</th>
-                            <th class="py-3 px-4 font-bold text-right">İşlemler</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-100">
-                        @foreach($applications as $app)
-                        @php
-                            $u = $app->user;
-                            $prof = $u->alumniProfile ?? null;
-                            $stBadge = $statusColors[$app->status] ?? ['bg' => 'bg-slate-100', 'text' => 'text-slate-700', 'label' => $app->status];
-                        @endphp
-                        <tr class="hover:bg-slate-50/60 transition">
-                            <td class="py-3.5 px-4">
-                                <div class="font-bold text-slate-900">{{ $u->name ?? 'Aday #' . $app->user_id }}</div>
-                                <div class="text-xs text-slate-500">{{ $u->email ?? '' }}</div>
-                            </td>
-                            <td class="py-3.5 px-4 text-xs">
-                                <div class="font-semibold text-slate-700">{{ $prof->department->name ?? '—' }}</div>
-                                <div class="text-slate-400">Mezuniyet: {{ $prof->graduation_year ?? '—' }}</div>
-                            </td>
-                            <td class="py-3.5 px-4 text-xs text-slate-600">
-                                {{ $app->applied_at ? \Carbon\Carbon::parse($app->applied_at)->format('d.m.Y H:i') : '—' }}
-                            </td>
-                            <td class="py-3.5 px-4 text-xs text-slate-600 max-w-xs truncate">
-                                {{ $app->cover_letter ? Str::limit($app->cover_letter, 50) : '—' }}
-                            </td>
-                            <td class="py-3.5 px-4">
-                                <span class="px-2.5 py-0.5 rounded-full text-xs font-bold {{ $stBadge['bg'] }} {{ $stBadge['text'] }}">
-                                    {{ $stBadge['label'] }}
-                                </span>
-                            </td>
-                            <td class="py-3.5 px-4 text-right">
-                                <a href="/applications/{{ $app->id }}"
-                                   class="px-3 py-1.5 text-xs font-semibold bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg transition border border-indigo-200 inline-flex items-center gap-1">
-                                    <span>👁️</span> İncele
-                                </a>
-                            </td>
-                        </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-            @else
-            <div class="p-8 rounded-xl bg-slate-50 border border-dashed border-slate-200 text-center text-sm text-slate-500">
-                <span class="text-3xl block mb-2">📭</span>
-                Bu iş ilanı için henüz kayıtlı başvuru bulunmamaktadır.
-                <div class="mt-3">
-                    <a href="/applications/create?job_posting_id={{ $jid }}" class="inline-flex items-center gap-1 text-xs font-bold text-emerald-600 hover:text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200">
-                        ⚡ İlk Başvuruyu Şimdi Gönder &rarr;
-                    </a>
-                </div>
-            </div>
-            @endif
         </div>
 
     </main>
 
     <!-- Footer -->
-    <footer class="bg-white border-t border-slate-200 py-6 text-center text-sm text-slate-500">
-        <div class="max-w-6xl mx-auto px-4">
-            Mezun Takip Sistemi &bull; Kariyer Yönetim Katmanı (MySQL) &bull; &copy; 2026 Gamze Şüeda Akpınar
+    <footer class="bg-white border-t border-slate-200 py-6 text-xs text-slate-500">
+        <div class="max-w-6xl mx-auto px-4 flex items-center justify-between">
+            <p>&copy; 2026 Mezun Takip Sistemi &bull; İş İlanı Detayı</p>
+            <a href="/job-postings" class="text-brand-600 font-semibold hover:underline">&larr; İlanlar Listesine Dön</a>
         </div>
     </footer>
 

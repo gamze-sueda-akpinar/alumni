@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="tr" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>İstanbul Üniversitesi | Mezun Takip Sistemi</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        cream: {
+                            50: '#FDFBF7',
+                            100: '#FAF6EF',
+                            200: '#F4ECE0',
+                            300: '#EADFCF',
+                            400: '#D5C4AF',
+                        },
+                        forest: {
+                            900: '#062B21',
+                            800: '#0B382C',
+                            700: '#114D3D',
+                            600: '#1A6753',
+                        },
+                        sticker: {
+                            yellow: '#FFDE37',
+                            green: '#8ED462',
+                            coral: '#FF5C38',
+                            violet: '#8A53FF',
+                            sky: '#C2E2FA',
+                            blush: '#FFE9CE',
+                        },
+                        ink: {
+                            black: '#121214',
+                            charcoal: '#282726',
+                            muted: '#63615E',
+                        }
+                    },
+                    fontFamily: {
+                        serif: ['"Fraunces"', 'Georgia', 'serif'],
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                        mono: ['"JetBrains Mono"', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts: Fraunces (Literary Editorial Serif) + Plus Jakarta Sans + JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..900;1,9..144,400..900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #FAF6EF;
+            color: #121214;
+        }
+        .font-editorial {
+            font-family: 'Fraunces', Georgia, serif;
+        }
+        /* Refero Neo-Brutalist & Zine Box Shadows */
+        .retro-card {
+            background-color: #FFFDF9;
+            border: 2px solid #121214;
+            box-shadow: 4px 4px 0px #121214;
+            border-radius: 28px;
+        }
+        .retro-card-sm {
+            background-color: #FFFDF9;
+            border: 1.5px solid #121214;
+            box-shadow: 3px 3px 0px #121214;
+            border-radius: 20px;
+        }
+        .retro-btn {
+            border: 2px solid #121214;
+            box-shadow: 3px 3px 0px #121214;
+            transition: all 0.15s ease;
+        }
+        .retro-btn:hover {
+            transform: translate(-1px, -1px);
+            box-shadow: 4px 4px 0px #121214;
+        }
+        .retro-btn:active {
+            transform: translate(2px, 2px);
+            box-shadow: 1px 1px 0px #121214;
+        }
+        .sticker-pill {
+            border: 1.5px solid #121214;
+            box-shadow: 2px 2px 0px #121214;
+            font-weight: 800;
+        }
+        /* Marquee Continuous Animation */
+        @keyframes marquee {
+            0% { transform: translateX(0%); }
+            100% { transform: translateX(-50%); }
+        }
+        .animate-marquee {
+            display: flex;
+            width: 200%;
+            animation: marquee 22s linear infinite;
+        }
+        .page-view { display: none; }
+        .page-view.active-page { display: block; }
+    </style>
+</head>
+<body class="selection:bg-sticker-yellow selection:text-ink-black min-h-screen flex flex-col justify-between">
+
+    <!-- 1. Top Simulator Bar (Page Switcher) -->
+    <div class="bg-ink-black text-white px-4 py-3 sticky top-0 z-50 border-b-2 border-black">
+        <div class="max-w-7xl mx-auto flex flex-col lg:flex-row items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+                <img src="/istanbul_university_logo.svg" alt="İstanbul Üniversitesi Logosu" class="w-8 h-8 rounded-full bg-white p-0.5 border border-sticker-yellow shadow-sm">
+                <div>
+                    <span class="font-editorial text-sm font-bold tracking-wide text-white block leading-tight">İstanbul Üniversitesi</span>
+                    <span class="text-[10px] text-sticker-yellow font-mono uppercase tracking-widest block">Mezun Takip Sistemi &bull; 1453</span>
+                </div>
+            </div>
+
+            <!-- Page Buttons -->
+            <div class="flex items-center gap-1.5 flex-wrap justify-center text-xs">
+                <button onclick="showPage('homepage')" id="btn-homepage" class="tab-btn px-3 py-1.5 rounded-full font-bold bg-sticker-yellow text-ink-black shadow-[2px_2px_0px_#fff] transition">
+                    🏠 Ana Sayfa
+                </button>
+                <button onclick="showPage('alumni')" id="btn-alumni" class="tab-btn px-3 py-1.5 rounded-full font-semibold text-cream-200 hover:text-white hover:bg-white/10 transition">
+                    👥 Mezunlar Rehberi
+                </button>
+                <button onclick="showPage('profile')" id="btn-profile" class="tab-btn px-3 py-1.5 rounded-full font-semibold text-cream-200 hover:text-white hover:bg-white/10 transition">
+                    👤 Mezun Profili
+                </button>
+                <button onclick="showPage('jobs')" id="btn-jobs" class="tab-btn px-3 py-1.5 rounded-full font-semibold text-cream-200 hover:text-white hover:bg-white/10 transition">
+                    💼 Kariyer &amp; İlanlar
+                </button>
+                <button onclick="showPage('job-detail')" id="btn-job-detail" class="tab-btn px-3 py-1.5 rounded-full font-semibold text-cream-200 hover:text-white hover:bg-white/10 transition">
+                    📄 İlan Detay &amp; Başvuru
+                </button>
+                <button onclick="showPage('announcements')" id="btn-announcements" class="tab-btn px-3 py-1.5 rounded-full font-semibold text-cream-200 hover:text-white hover:bg-white/10 transition">
+                    📢 Duyurular
+                </button>
+                <button onclick="showPage('applications')" id="btn-applications" class="tab-btn px-3 py-1.5 rounded-full font-semibold text-cream-200 hover:text-white hover:bg-white/10 transition">
+                    📋 Başvurular
+                </button>
+                <button onclick="showPage('about')" id="btn-about" class="tab-btn px-3 py-1.5 rounded-full font-semibold text-cream-200 hover:text-white hover:bg-white/10 transition">
+                    ℹ️ Hakkımızda
+                </button>
+                <button onclick="showPage('error404')" id="btn-error404" class="tab-btn px-3 py-1.5 rounded-full font-semibold text-sticker-coral hover:bg-sticker-coral/20 transition">
+                    🔍 404 Guardian
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. TOMO Style Analog Zine Running Marquee Ticker -->
+    <div class="bg-sticker-yellow border-b-2 border-ink-black overflow-hidden py-2 text-ink-black select-none">
+        <div class="animate-marquee whitespace-nowrap flex items-center gap-6 font-mono text-xs font-bold uppercase tracking-wider">
+            <span>★ 2026 MEZUNLAR GÜNÜ BAHAR BULUŞMASI BAŞVURULARI BAŞLADI</span>
+            <span>&bull;</span>
+            <span>★ ŞEFFAF MAAŞ VE ÇALIŞMA MODELİ GARANTİLİ 480+ AÇIK POZİSYON</span>
+            <span>&bull;</span>
+            <span>★ 14.850+ DOĞRULANMIŞ AKADEMİK MEZUN PROFİLİ</span>
+            <span>&bull;</span>
+            <span>★ T.C. İSTANBUL ÜNİVERSİTESİ REKTÖRLÜĞÜ &bull; 1453 ★</span>
+            <span>&bull;</span>
+            <span>★ DİPLOMADAN SONRA ÖMÜR BOYU DAYANIŞMA VE MENTÖRLÜK AĞI</span>
+            <span>&bull;</span>
+            <span>★ 2026 MEZUNLAR GÜNÜ BAHAR BULUŞMASI BAŞVURULARI BAŞLADI</span>
+            <span>&bull;</span>
+            <span>★ ŞEFFAF MAAŞ VE ÇALIŞMA MODELİ GARANTİLİ 480+ AÇIK POZİSYON</span>
+        </div>
+    </div>
+
+    <!-- 3. Family & Fable Warm Capsule Navigation Bar -->
+    <header class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-4 w-full">
+        <div class="bg-white border-2 border-ink-black rounded-full px-5 py-3 shadow-[3px_3px_0px_#121214] flex items-center justify-between">
+            <!-- Brand Logo Monogram with Istanbul University Official Logo -->
+            <a href="javascript:void(0)" onclick="showPage('homepage')" class="flex items-center gap-3 group">
+                <div class="w-12 h-12 rounded-full bg-white border-2 border-ink-black p-1 shadow-[2px_2px_0px_#121214] flex items-center justify-center group-hover:scale-105 transition-transform overflow-hidden">
+                    <img src="/istanbul_university_logo.svg" alt="İstanbul Üniversitesi Logo" class="w-full h-full object-contain">
+                </div>
+                <div>
+                    <span class="font-editorial text-lg sm:text-xl font-bold tracking-tight text-ink-black block leading-none">
+                        İstanbul Üniversitesi
+                    </span>
+                    <span class="text-[10px] font-bold text-forest-700 uppercase tracking-widest block mt-1">
+                        Mezun Takip Sistemi &bull; 1453
+                    </span>
+                </div>
+            </a>
+
+            <!-- Nav Links -->
+            <nav class="hidden md:flex items-center gap-2 text-xs font-bold">
+                <button onclick="showPage('homepage')" class="px-3.5 py-1.5 rounded-full hover:bg-cream-200 transition">Ana Sayfa</button>
+                <button onclick="showPage('alumni')" class="px-3.5 py-1.5 rounded-full hover:bg-cream-200 transition">Mezunlar</button>
+                <button onclick="showPage('jobs')" class="px-3.5 py-1.5 rounded-full hover:bg-cream-200 transition">Kariyer &amp; İlanlar</button>
+                <button onclick="showPage('announcements')" class="px-3.5 py-1.5 rounded-full hover:bg-cream-200 transition">Duyurular</button>
+                <button onclick="showPage('applications')" class="px-3.5 py-1.5 rounded-full hover:bg-cream-200 transition">Başvurular</button>
+                <button onclick="showPage('about')" class="px-3.5 py-1.5 rounded-full hover:bg-cream-200 transition">Hakkımızda</button>
+            </nav>
+
+            <!-- Action Button -->
+            <div class="flex items-center gap-2">
+                <button onclick="showPage('alumni')" class="retro-btn px-4 py-2 bg-ink-black text-white text-xs font-bold rounded-full flex items-center gap-1.5">
+                    <span>Rehbere Katıl</span>
+                    <span>&rarr;</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- ========================================================================= -->
+    <!-- PAGE 1: HOMEPAGE (Refero Fable + Fictional + MindMarket + SuperHi Merge) -->
+    <!-- ========================================================================= -->
+    <div id="page-homepage" class="page-view active-page">
+        
+        <!-- Hero Section on Warm Paper -->
+        <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-16 text-center relative">
+            
+            <!-- Sticker Decal 1: Rotated -2deg -->
+            <div class="inline-block transform -rotate-2 hover:rotate-0 transition-transform mb-4">
+                <span class="sticker-pill bg-sticker-yellow text-ink-black px-4 py-1.5 rounded-full text-xs uppercase tracking-wider inline-flex items-center gap-2">
+                    <img src="/istanbul_university_logo.svg" alt="İÜ" class="w-4 h-4 rounded-full">
+                    <span>★ T.C. İstanbul Üniversitesi Mezunlar Portalı &bull; 1453 ★</span>
+                </span>
+            </div>
+
+            <!-- Big Literary Serif Headline -->
+            <h1 class="font-editorial text-4xl sm:text-6xl lg:text-7xl font-bold tracking-tight text-ink-black leading-[1.05] max-w-5xl mx-auto mb-6">
+                İstanbul Üniversitesi <br class="hidden sm:inline">
+                <em class="font-serif italic font-normal text-forest-700">diplomanız bir son değil;</em> ömür boyu <br class="hidden sm:inline">
+                süren bir akademik dayanışmadır.
+            </h1>
+
+            <p class="text-sm sm:text-base text-ink-charcoal max-w-2xl mx-auto mb-10 leading-relaxed font-normal">
+                Fakültelerimizden mezun olan binlerce araştırmacıyı, mühendisi ve lideri tek çatı altında buluşturuyoruz. 
+                Doğrulanmış profilleri keşfedin, şeffaf maaşlı iş ilanlarına başvurun.
+            </p>
+
+            <!-- Tactile Search Box (SuperHi & TOMO Card) -->
+            <div class="max-w-3xl mx-auto retro-card p-4 sm:p-5 mb-12 text-left">
+                <div class="flex items-center gap-2 mb-3">
+                    <span class="sticker-pill bg-sticker-green text-ink-black px-3 py-1 rounded-full text-xs">
+                        🔍 Canlı Dizin
+                    </span>
+                    <span class="text-xs font-mono text-ink-muted">14.850 kayıt içinden filtreleyin</span>
+                </div>
+                <div class="flex flex-col sm:flex-row gap-2.5">
+                    <input type="text" placeholder="İsim, unvan, şirket, bölüm (örn: Bilgisayar Mühendisliği)..." 
+                           class="flex-1 px-4 py-3 bg-cream-50 border-2 border-ink-black rounded-2xl text-xs sm:text-sm font-medium focus:outline-none focus:bg-white">
+                    <button onclick="showPage('alumni')" class="retro-btn px-6 py-3 bg-sticker-yellow text-ink-black font-extrabold rounded-2xl text-xs sm:text-sm flex items-center justify-center gap-2">
+                        <span>Arama Yap</span>
+                        <span>&rarr;</span>
+                    </button>
+                </div>
+                <!-- Quick Tags -->
+                <div class="mt-3 flex items-center gap-2 flex-wrap text-xs">
+                    <span class="font-bold text-ink-muted">Öne Çıkanlar:</span>
+                    <button onclick="showPage('jobs')" class="sticker-pill bg-cream-100 hover:bg-sticker-blush px-2.5 py-1 rounded-full transition text-[11px]">🟢 Uzaktan (Remote)</button>
+                    <button onclick="showPage('jobs')" class="sticker-pill bg-cream-100 hover:bg-sticker-blush px-2.5 py-1 rounded-full transition text-[11px]">🟠 Hibrit Pozisyonlar</button>
+                    <button onclick="showPage('alumni')" class="sticker-pill bg-cream-100 hover:bg-sticker-blush px-2.5 py-1 rounded-full transition text-[11px]">🎓 2024 Mezunları</button>
+                    <button onclick="showPage('alumni')" class="sticker-pill bg-cream-100 hover:bg-sticker-blush px-2.5 py-1 rounded-full transition text-[11px]">📍 İstanbul</button>
+                </div>
+            </div>
+
+            <!-- 4 Storybook Metric Decals (Fictional + MindMarket) -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-5xl mx-auto">
+                <div class="retro-card-sm p-5 bg-[#FFE9CE] transform -rotate-1 hover:rotate-0 transition-transform">
+                    <div class="font-editorial text-3xl sm:text-4xl font-bold text-ink-black font-mono">14.850+</div>
+                    <div class="text-xs font-bold text-ink-charcoal uppercase tracking-wider mt-1">Doğrulanmış Mezun</div>
+                </div>
+                <div class="retro-card-sm p-5 bg-[#E1EDFF] transform rotate-1 hover:rotate-0 transition-transform">
+                    <div class="font-editorial text-3xl sm:text-4xl font-bold text-ink-black font-mono">480+</div>
+                    <div class="text-xs font-bold text-ink-charcoal uppercase tracking-wider mt-1">Açık Kariyer İlanı</div>
+                </div>
+                <div class="retro-card-sm p-5 bg-[#D5F5C5] transform -rotate-1 hover:rotate-0 transition-transform">
+                    <div class="font-editorial text-3xl sm:text-4xl font-bold text-ink-black font-mono">%94.2</div>
+                    <div class="text-xs font-bold text-ink-charcoal uppercase tracking-wider mt-1">İstihdam Başarısı</div>
+                </div>
+                <div class="retro-card-sm p-5 bg-[#FDE2FF] transform rotate-2 hover:rotate-0 transition-transform">
+                    <div class="font-editorial text-3xl sm:text-4xl font-bold text-ink-black font-mono">42 Ülke</div>
+                    <div class="text-xs font-bold text-ink-charcoal uppercase tracking-wider mt-1">Küresel Ağ</div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- The Botanical Forest Section (Fable Reference) -->
+        <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+            <div class="bg-forest-800 text-cream-50 rounded-[40px] p-8 sm:p-14 border-2 border-ink-black shadow-[6px_6px_0px_#121214] relative overflow-hidden">
+                <div class="max-w-2xl">
+                    <span class="sticker-pill bg-sticker-yellow text-ink-black px-3.5 py-1 rounded-full text-xs uppercase tracking-wider inline-block mb-4">
+                        Fable Editorial &bull; Sayfa Düzeni
+                    </span>
+                    <h2 class="font-editorial text-3xl sm:text-5xl font-bold text-white mb-4 leading-tight">
+                        Özgür, şeffaf ve <br>
+                        <em class="font-serif italic text-sticker-yellow">bağımsız</em> mezun topluluğu.
+                    </h2>
+                    <p class="text-xs sm:text-sm text-cream-200 leading-relaxed mb-8">
+                        Kariyer ilanlarında net maaş açıklamayı zorunlu kılan, mezun profillerini kurumsal diploma veritabanıyla doğrulayan Türkiye'nin ilk açık akademik mezunlar ağı.
+                    </p>
+                    <div class="flex flex-wrap gap-3">
+                        <button onclick="showPage('alumni')" class="retro-btn px-6 py-3 bg-sticker-yellow text-ink-black font-extrabold text-xs rounded-full">
+                            Rehberi Keşfet &rarr;
+                        </button>
+                        <button onclick="showPage('jobs')" class="retro-btn px-6 py-3 bg-white text-ink-black font-extrabold text-xs rounded-full">
+                            Açık Pozisyonları İncele &rarr;
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Featured Job Cards with Die-Cut Stickers (Fictional + MindMarket) -->
+        <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
+                <div>
+                    <span class="sticker-pill bg-sticker-green text-ink-black px-3 py-1 rounded-full text-xs uppercase tracking-wider">
+                        Kariyer Vitrini
+                    </span>
+                    <h2 class="font-editorial text-3xl font-bold text-ink-black mt-2">Güncel Açık Pozisyonlar</h2>
+                    <p class="text-xs text-ink-muted mt-1">Zorunlu maaş şeffaflığı ve açık çalışma modeli garantisi.</p>
+                </div>
+                <button onclick="showPage('jobs')" class="retro-btn px-5 py-2.5 bg-ink-black text-white text-xs font-bold rounded-full">
+                    Tüm İlanları Gör &rarr;
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Job Card 1 -->
+                <div class="retro-card p-7 flex flex-col justify-between hover:translate-y-[-2px] transition-transform">
+                    <div>
+                        <div class="flex items-center justify-between gap-2 mb-4 flex-wrap">
+                            <span class="sticker-pill bg-[#C2E2FA] text-ink-black px-3 py-1 rounded-full text-xs">
+                                🟢 UZAKTAN / REMOTE
+                            </span>
+                            <span class="sticker-pill bg-sticker-green text-ink-black font-mono text-xs px-3 py-1 rounded-full">
+                                ₺75.000 / AY NET
+                            </span>
+                        </div>
+                        <h3 class="font-editorial text-2xl font-bold text-ink-black mb-1">
+                            Senior Backend Developer (PHP &amp; Laravel)
+                        </h3>
+                        <p class="text-xs font-bold text-forest-700 mb-3">🏢 Algoritmik Bilişim A.Ş. &bull; 📍 İstanbul / Dağıtık</p>
+                        <p class="text-xs text-ink-charcoal leading-relaxed mb-4">
+                            Büyük ölçekli mezun ve öğrenci veri yönetimi projemizde mikroservis mimarisini tasarlayacak kıdemli yazılım mühendisi arıyoruz.
+                        </p>
+                    </div>
+                    <div class="pt-4 border-t-2 border-cream-200 flex items-center justify-between text-xs">
+                        <span class="font-mono text-ink-muted">2 gün önce</span>
+                        <button onclick="showPage('job-detail')" class="retro-btn px-4 py-2 bg-sticker-yellow text-ink-black font-bold rounded-full text-xs">
+                            İncele &amp; Başvur &rarr;
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Job Card 2 -->
+                <div class="retro-card p-7 flex flex-col justify-between hover:translate-y-[-2px] transition-transform">
+                    <div>
+                        <div class="flex items-center justify-between gap-2 mb-4 flex-wrap">
+                            <span class="sticker-pill bg-[#FFE9CE] text-ink-black px-3 py-1 rounded-full text-xs">
+                                🟠 HİBRİT / HYBRID
+                            </span>
+                            <span class="sticker-pill bg-sticker-green text-ink-black font-mono text-xs px-3 py-1 rounded-full">
+                                ₺55.000 / AY NET
+                            </span>
+                        </div>
+                        <h3 class="font-editorial text-2xl font-bold text-ink-black mb-1">
+                            Frontend Engineer (Vue.js / Tailwind CSS)
+                        </h3>
+                        <p class="text-xs font-bold text-forest-700 mb-3">🏢 NextGen FinTech Labs &bull; 📍 Maslak, İstanbul</p>
+                        <p class="text-xs text-ink-charcoal leading-relaxed mb-4">
+                            Finansal analitik dashboard panellerimizin kullanıcı deneyimini modern web standartlarına taşıyacak arayüz geliştirici arayışımız bulunmaktadır.
+                        </p>
+                    </div>
+                    <div class="pt-4 border-t-2 border-cream-200 flex items-center justify-between text-xs">
+                        <span class="font-mono text-ink-muted">Dün</span>
+                        <button onclick="showPage('job-detail')" class="retro-btn px-4 py-2 bg-sticker-yellow text-ink-black font-bold rounded-full text-xs">
+                            İncele &amp; Başvur &rarr;
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- PAGE 2: ALUMNI DIRECTORY (Family Storybook + SuperHi Capsule Grid) -->
+    <!-- ========================================================================= -->
+    <div id="page-alumni" class="page-view max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full">
+        <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
+            <div>
+                <span class="sticker-pill bg-sticker-yellow text-ink-black px-3 py-1 rounded-full text-xs uppercase tracking-wider">
+                    Akademik Rehber &bull; DIRECTORY
+                </span>
+                <h1 class="font-editorial text-3xl sm:text-5xl font-bold text-ink-black mt-2">
+                    Kayıtlı Mezunlar &amp; Profesyoneller
+                </h1>
+                <p class="text-xs text-ink-muted mt-1">Öğrenci işleri veritabanıyla doğrulanmış tüm mezunlarımızın güncel listesi.</p>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="sticker-pill bg-white px-3.5 py-1.5 rounded-full text-xs font-mono">14.850 Kayıt</span>
+            </div>
+        </div>
+
+        <!-- Filter Bar -->
+        <div class="retro-card p-4 mb-8 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <input type="text" placeholder="İsim, unvan, şirket veya bölüm filtrele..." 
+                   class="w-full sm:flex-1 px-4 py-2.5 bg-cream-50 border-2 border-ink-black rounded-xl text-xs font-medium focus:outline-none">
+            <div class="flex items-center gap-2 w-full sm:w-auto">
+                <button class="retro-btn px-4 py-2 bg-sticker-yellow text-xs font-bold rounded-xl whitespace-nowrap">Filtrele</button>
+                <button onclick="showPage('profile')" class="retro-btn px-4 py-2 bg-ink-black text-white text-xs font-bold rounded-xl whitespace-nowrap">Örnek Profil &rarr;</button>
+            </div>
+        </div>
+
+        <!-- Alumni Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Card 1 -->
+            <div class="retro-card p-6 flex flex-col justify-between hover:translate-y-[-2px] transition-transform">
+                <div>
+                    <div class="flex items-center justify-between gap-2 mb-4">
+                        <div class="w-12 h-12 rounded-full bg-sticker-yellow border-2 border-ink-black flex items-center justify-center font-editorial font-bold text-lg shadow-[2px_2px_0px_#121214]">
+                            GS
+                        </div>
+                        <span class="sticker-pill bg-sticker-green text-ink-black text-[10px] px-2.5 py-0.5 rounded-full">
+                            ✓ DOĞRULANDI
+                        </span>
+                    </div>
+                    <h3 class="font-editorial text-xl font-bold text-ink-black mb-0.5">Gamze Şüeda</h3>
+                    <p class="text-xs font-bold text-forest-700 mb-3">Bilgisayar Mühendisliği &bull; 2024</p>
+                    <div class="bg-cream-100 p-3 rounded-2xl border-2 border-ink-black text-xs space-y-1 mb-4">
+                        <div>Şirket: <strong class="text-ink-black">TechCorp Global</strong></div>
+                        <div>Unvan: <strong class="text-ink-black">Senior Software Dev</strong></div>
+                        <div>Model: <strong class="text-forest-700">🟢 Uzaktan (Remote)</strong></div>
+                    </div>
+                </div>
+                <button onclick="showPage('profile')" class="retro-btn w-full py-2.5 bg-white text-ink-black font-extrabold text-xs rounded-xl">
+                    Profili İncele &rarr;
+                </button>
+            </div>
+
+            <!-- Card 2 -->
+            <div class="retro-card p-6 flex flex-col justify-between hover:translate-y-[-2px] transition-transform">
+                <div>
+                    <div class="flex items-center justify-between gap-2 mb-4">
+                        <div class="w-12 h-12 rounded-full bg-sticker-blush border-2 border-ink-black flex items-center justify-center font-editorial font-bold text-lg shadow-[2px_2px_0px_#121214]">
+                            AE
+                        </div>
+                        <span class="sticker-pill bg-sticker-green text-ink-black text-[10px] px-2.5 py-0.5 rounded-full">
+                            ✓ DOĞRULANDI
+                        </span>
+                    </div>
+                    <h3 class="font-editorial text-xl font-bold text-ink-black mb-0.5">Ahmet Erdem</h3>
+                    <p class="text-xs font-bold text-forest-700 mb-3">Endüstri Mühendisliği &bull; 2021</p>
+                    <div class="bg-cream-100 p-3 rounded-2xl border-2 border-ink-black text-xs space-y-1 mb-4">
+                        <div>Şirket: <strong class="text-ink-black">Trendyol Group</strong></div>
+                        <div>Unvan: <strong class="text-ink-black">Product Manager</strong></div>
+                        <div>Model: <strong class="text-amber-700">🟠 Hibrit (Hybrid)</strong></div>
+                    </div>
+                </div>
+                <button onclick="showPage('profile')" class="retro-btn w-full py-2.5 bg-white text-ink-black font-extrabold text-xs rounded-xl">
+                    Profili İncele &rarr;
+                </button>
+            </div>
+
+            <!-- Card 3 -->
+            <div class="retro-card p-6 flex flex-col justify-between hover:translate-y-[-2px] transition-transform">
+                <div>
+                    <div class="flex items-center justify-between gap-2 mb-4">
+                        <div class="w-12 h-12 rounded-full bg-sticker-sky border-2 border-ink-black flex items-center justify-center font-editorial font-bold text-lg shadow-[2px_2px_0px_#121214]">
+                            ZY
+                        </div>
+                        <span class="sticker-pill bg-sticker-green text-ink-black text-[10px] px-2.5 py-0.5 rounded-full">
+                            ✓ DOĞRULANDI
+                        </span>
+                    </div>
+                    <h3 class="font-editorial text-xl font-bold text-ink-black mb-0.5">Zeynep Yılmaz</h3>
+                    <p class="text-xs font-bold text-forest-700 mb-3">İşletme Fakültesi &bull; 2020</p>
+                    <div class="bg-cream-100 p-3 rounded-2xl border-2 border-ink-black text-xs space-y-1 mb-4">
+                        <div>Şirket: <strong class="text-ink-black">Finansbank HQ</strong></div>
+                        <div>Unvan: <strong class="text-ink-black">Kıdemli Finans Uzmanı</strong></div>
+                        <div>Model: <strong class="text-blue-700">🔵 Ofiste (In-Office)</strong></div>
+                    </div>
+                </div>
+                <button onclick="showPage('profile')" class="retro-btn w-full py-2.5 bg-white text-ink-black font-extrabold text-xs rounded-xl">
+                    Profili İncele &rarr;
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- PAGE 3: ALUMNI PROFILE DETAIL (Literary Storybook Spread) -->
+    <!-- ========================================================================= -->
+    <div id="page-profile" class="page-view max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full">
+        <!-- Header Banner with Stickers -->
+        <div class="bg-forest-800 text-cream-50 rounded-[36px] p-8 sm:p-12 border-2 border-ink-black shadow-[6px_6px_0px_#121214] mb-8 relative">
+            <div class="flex flex-col sm:flex-row items-center gap-6">
+                <div class="w-24 h-24 rounded-full bg-sticker-yellow border-3 border-ink-black flex items-center justify-center font-editorial font-bold text-3xl text-ink-black shadow-[3px_3px_0px_#121214]">
+                    GS
+                </div>
+                <div class="text-center sm:text-left">
+                    <div class="flex items-center justify-center sm:justify-start gap-2 mb-2 flex-wrap">
+                        <span class="sticker-pill bg-sticker-green text-ink-black text-xs px-3 py-0.5 rounded-full">
+                            ✓ DOĞRULANMIŞ MEZUN
+                        </span>
+                        <span class="sticker-pill bg-white text-ink-black text-xs px-3 py-0.5 rounded-full font-mono">
+                            🎓 2024 Mezunu
+                        </span>
+                        <span class="text-xs font-mono text-cream-300">#1</span>
+                    </div>
+                    <h1 class="font-editorial text-3xl sm:text-5xl font-bold text-white mb-1">Gamze Şüeda</h1>
+                    <p class="text-sm text-cream-200">Senior Software Engineer &bull; <strong class="text-sticker-yellow">TechCorp Global</strong></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="retro-card p-6 space-y-4 text-xs">
+                <h4 class="font-editorial text-base font-bold text-ink-black border-b-2 border-cream-200 pb-2">Akademik Bilgiler</h4>
+                <div>Bölüm: <strong class="text-ink-black block mt-0.5">Bilgisayar Mühendisliği</strong></div>
+                <div>Öğrenci No: <strong class="text-ink-black font-mono block mt-0.5">202011045</strong></div>
+                <div>İkamet: <strong class="text-ink-black block mt-0.5">📍 İstanbul, Türkiye</strong></div>
+                <div>E-Posta: <strong class="text-forest-700 block mt-0.5">gamze@example.com</strong></div>
+            </div>
+            <div class="lg:col-span-2 retro-card p-7 space-y-4">
+                <h4 class="font-editorial text-xl font-bold text-ink-black">Kariyer &amp; Deneyim Geçmişi</h4>
+                <div class="bg-cream-100 p-5 rounded-2xl border-2 border-ink-black text-xs space-y-2">
+                    <div class="flex justify-between items-center">
+                        <span class="font-bold text-sm text-ink-black">Senior Software Engineer</span>
+                        <span class="font-mono text-ink-muted">2024 — Günümüz</span>
+                    </div>
+                    <p class="font-bold text-forest-700">TechCorp Global &bull; 🟢 Uzaktan (Remote)</p>
+                    <p class="text-ink-charcoal leading-relaxed">
+                        Yüksek ölçekli web uygulamaları, mikroservis mimarileri ve Laravel altyapısı üzerinde teknik liderlik.
+                    </p>
+                </div>
+                <div class="bg-cream-100 p-5 rounded-2xl border-2 border-ink-black text-xs space-y-2">
+                    <div class="flex justify-between items-center">
+                        <span class="font-bold text-sm text-ink-black">Software Engineering Intern</span>
+                        <span class="font-mono text-ink-muted">2023 — 2024</span>
+                    </div>
+                    <p class="font-bold text-forest-700">Trendyol Group &bull; 🟠 Hibrit</p>
+                    <p class="text-ink-charcoal leading-relaxed">
+                        Veri akışları ve arama indeksleri optimizasyonu.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- PAGE 4: JOB BOARD (Fictional + MindMarket Die-Cut Cards) -->
+    <!-- ========================================================================= -->
+    <div id="page-jobs" class="page-view max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full">
+        <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
+            <div>
+                <span class="sticker-pill bg-sticker-green text-ink-black px-3 py-1 rounded-full text-xs uppercase tracking-wider">
+                    Şeffaf Kariyer Portalı
+                </span>
+                <h1 class="font-editorial text-3xl sm:text-5xl font-bold text-ink-black mt-2">
+                    Kariyer Fırsatları &amp; İlanlar
+                </h1>
+                <p class="text-xs text-ink-muted mt-1">Zorunlu net taban maaş ve açık çalışma modeli garantisi.</p>
+            </div>
+            <button onclick="showPage('job-detail')" class="retro-btn px-5 py-2.5 bg-sticker-yellow text-ink-black text-xs font-bold rounded-full">
+                Örnek İlanı İncele &rarr;
+            </button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Job 1 -->
+            <div class="retro-card p-7 flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between gap-2 mb-3 flex-wrap">
+                        <span class="sticker-pill bg-[#C2E2FA] text-ink-black px-3 py-1 rounded-full text-xs">
+                            🟢 UZAKTAN / REMOTE
+                        </span>
+                        <span class="sticker-pill bg-sticker-green text-ink-black font-mono text-xs px-3 py-1 rounded-full">
+                            ₺75.000 / AY NET
+                        </span>
+                    </div>
+                    <h3 class="font-editorial text-2xl font-bold text-ink-black mb-1">Senior Backend Developer (PHP &amp; Laravel)</h3>
+                    <p class="text-xs font-bold text-forest-700 mb-3">🏢 Algoritmik Bilişim A.Ş. &bull; 📍 İstanbul</p>
+                    <p class="text-xs text-ink-charcoal leading-relaxed mb-4">
+                        Mikroservis mimarisini tasarlayacak kıdemli yazılım mühendisi arıyoruz.
+                    </p>
+                    <div class="bg-cream-100 p-2.5 rounded-xl border border-ink-black text-[11px] mb-4">
+                        🎁 <strong class="text-ink-black">Yan Haklar:</strong> Özel sağlık sigortası, yemek kartı, eğitim bütçesi.
+                    </div>
+                </div>
+                <button onclick="showPage('job-detail')" class="retro-btn w-full py-2.5 bg-ink-black text-white font-extrabold text-xs rounded-xl">
+                    Detayları Gör &amp; Hemen Başvur &rarr;
+                </button>
+            </div>
+
+            <!-- Job 2 -->
+            <div class="retro-card p-7 flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between gap-2 mb-3 flex-wrap">
+                        <span class="sticker-pill bg-[#FFE9CE] text-ink-black px-3 py-1 rounded-full text-xs">
+                            🟠 HİBRİT / HYBRID
+                        </span>
+                        <span class="sticker-pill bg-sticker-green text-ink-black font-mono text-xs px-3 py-1 rounded-full">
+                            ₺55.000 / AY NET
+                        </span>
+                    </div>
+                    <h3 class="font-editorial text-2xl font-bold text-ink-black mb-1">Frontend Engineer (Vue.js / Tailwind CSS)</h3>
+                    <p class="text-xs font-bold text-forest-700 mb-3">🏢 NextGen FinTech Labs &bull; 📍 Maslak, İstanbul</p>
+                    <p class="text-xs text-ink-charcoal leading-relaxed mb-4">
+                        Analitik dashboard kullanıcı deneyimini modern web standartlarına taşıyacak geliştirici.
+                    </p>
+                    <div class="bg-cream-100 p-2.5 rounded-xl border border-ink-black text-[11px] mb-4">
+                        🎁 <strong class="text-ink-black">Yan Haklar:</strong> Yol/yemek desteği, spor salonu üyeliği, mentorluk.
+                    </div>
+                </div>
+                <button onclick="showPage('job-detail')" class="retro-btn w-full py-2.5 bg-ink-black text-white font-extrabold text-xs rounded-xl">
+                    Detayları Gör &amp; Hemen Başvur &rarr;
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- PAGE 5: JOB DETAIL & FAST APPLICATION -->
+    <!-- ========================================================================= -->
+    <div id="page-job-detail" class="page-view max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full">
+        <div class="bg-forest-800 text-cream-50 rounded-[36px] p-8 sm:p-12 border-2 border-ink-black shadow-[6px_6px_0px_#121214] mb-8">
+            <div class="flex items-center gap-2 mb-3 flex-wrap">
+                <span class="sticker-pill bg-[#C2E2FA] text-ink-black text-xs px-3 py-1 rounded-full">
+                    🟢 UZAKTAN / REMOTE
+                </span>
+                <span class="sticker-pill bg-sticker-green text-ink-black text-xs font-mono px-3 py-1 rounded-full">
+                    ₺75.000 / AY NET TABAN
+                </span>
+            </div>
+            <h1 class="font-editorial text-3xl sm:text-5xl font-bold text-white mb-2">Senior Backend Developer (PHP &amp; Laravel)</h1>
+            <p class="text-xs sm:text-sm text-cream-200">🏢 Algoritmik Bilişim A.Ş. &bull; 📍 İstanbul &bull; 📅 Bugün Yayınlandı</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-2 retro-card p-8 space-y-6">
+                <div>
+                    <h3 class="font-editorial text-xl font-bold text-ink-black mb-3">Rol Hakkında &amp; Beklentiler</h3>
+                    <p class="text-xs sm:text-sm text-ink-charcoal leading-relaxed">
+                        Üniversitemiz mezun ağı altyapısını güçlendirecek, mikroservis mimarisini tasarlayacak ve yüksek trafikli REST API servislerini optimize edecek kıdemli yazılım mühendisi arıyoruz.
+                    </p>
+                </div>
+
+                <!-- Application Form -->
+                <div class="pt-6 border-t-2 border-cream-200">
+                    <h4 class="font-editorial text-lg font-bold text-ink-black mb-3">Bu Pozisyona Hızlı Başvuru</h4>
+                    <div class="space-y-3 text-xs">
+                        <input type="text" placeholder="Adınız Soyadınız *" class="w-full p-3 bg-cream-50 border-2 border-ink-black rounded-xl font-medium focus:outline-none">
+                        <input type="email" placeholder="E-Posta Adresiniz *" class="w-full p-3 bg-cream-50 border-2 border-ink-black rounded-xl font-medium focus:outline-none">
+                        <input type="url" placeholder="LinkedIn / GitHub / CV Linki *" class="w-full p-3 bg-cream-50 border-2 border-ink-black rounded-xl font-medium focus:outline-none">
+                        <textarea rows="3" placeholder="Ön Yazınız / Motivasyon Notu" class="w-full p-3 bg-cream-50 border-2 border-ink-black rounded-xl font-medium focus:outline-none"></textarea>
+                        <button onclick="alert('Başvuru başarıyla iletildi!');" class="retro-btn w-full py-3 bg-sticker-yellow text-ink-black font-extrabold rounded-xl text-xs sm:text-sm">
+                            Başvurumu İlet &rarr;
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="retro-card p-6 space-y-3 text-xs">
+                <h4 class="font-editorial text-base font-bold text-ink-black border-b-2 border-cream-200 pb-2">İlan Bilgileri</h4>
+                <div>Şirket: <strong class="text-ink-black block">Algoritmik Bilişim A.Ş.</strong></div>
+                <div>Model: <strong class="text-forest-700 block">🟢 Uzaktan (Remote)</strong></div>
+                <div>Net Maaş: <strong class="text-ink-black font-mono block">₺75.000 / Ay</strong></div>
+                <div>Yan Haklar: <span class="text-ink-muted block">Özel sigorta, yemek, eğitim</span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- PAGE 6: ANNOUNCEMENTS (Zine Ticker + Postcards) -->
+    <!-- ========================================================================= -->
+    <div id="page-announcements" class="page-view max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full">
+        <div class="mb-8">
+            <span class="sticker-pill bg-sticker-yellow text-ink-black px-3 py-1 rounded-full text-xs uppercase tracking-wider">
+                Haberler &bull; ETKİNLİKLER
+            </span>
+            <h1 class="font-editorial text-3xl sm:text-5xl font-bold text-ink-black mt-2">
+                Duyurular &amp; Kampüs Etkinlikleri
+            </h1>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div class="retro-card p-6 bg-[#FFF9E6] flex flex-col justify-between">
+                <div>
+                    <span class="sticker-pill bg-sticker-yellow text-ink-black text-[10px] px-2.5 py-0.5 rounded-full mb-3 inline-block">
+                        📌 SABİTLENEN DUYURU
+                    </span>
+                    <h3 class="font-editorial text-xl font-bold text-ink-black mb-2">2026 Mezunlar Günü Geleneksel Buluşması</h3>
+                    <p class="text-xs text-ink-charcoal leading-relaxed mb-4">
+                        Üniversitemiz ana kampüsünde gerçekleşecek geleneksel mezunlar günü buluşmamıza tüm mezunlarımız ve aileleri davetlidir.
+                    </p>
+                </div>
+                <div class="font-mono text-[11px] text-ink-muted pt-3 border-t-2 border-cream-200">
+                    📅 15 Mayıs 2026 &bull; Rektörlük Bahçesi
+                </div>
+            </div>
+
+            <div class="retro-card p-6 flex flex-col justify-between">
+                <div>
+                    <span class="sticker-pill bg-[#E1EDFF] text-ink-black text-[10px] px-2.5 py-0.5 rounded-full mb-3 inline-block">
+                        KARİYER &amp; ZİRVE
+                    </span>
+                    <h3 class="font-editorial text-xl font-bold text-ink-black mb-2">Yapay Zeka ve Yazılım Kariyer Zirvesi</h3>
+                    <p class="text-xs text-ink-charcoal leading-relaxed mb-4">
+                        Sektör lideri kıdemli mezunlarımızın katılımıyla yeni nesil teknolojiler paneli.
+                    </p>
+                </div>
+                <div class="font-mono text-[11px] text-ink-muted pt-3 border-t-2 border-cream-200">
+                    📅 22 Nisan 2026 &bull; Online Webinar
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- PAGE 7: APPLICATIONS (ATS Tracker Table) -->
+    <!-- ========================================================================= -->
+    <div id="page-applications" class="page-view max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full">
+        <div class="mb-8">
+            <span class="sticker-pill bg-[#E1EDFF] text-ink-black px-3 py-1 rounded-full text-xs uppercase tracking-wider">
+                Aday Takip Portalı
+            </span>
+            <h1 class="font-editorial text-3xl sm:text-5xl font-bold text-ink-black mt-2">
+                Kariyer &amp; Staj Başvuruları
+            </h1>
+        </div>
+
+        <div class="retro-card overflow-hidden">
+            <table class="w-full text-left text-xs">
+                <thead class="bg-cream-100 border-b-2 border-ink-black font-editorial font-bold text-ink-black text-sm">
+                    <tr>
+                        <th class="p-4"># ID</th>
+                        <th class="p-4">Aday</th>
+                        <th class="p-4">Pozisyon &amp; Şirket</th>
+                        <th class="p-4">Durum</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y-2 divide-cream-200">
+                    <tr>
+                        <td class="p-4 font-mono font-bold">#101</td>
+                        <td class="p-4"><strong class="text-ink-black block">Ali Vural</strong><span class="text-ink-muted">ali@example.com</span></td>
+                        <td class="p-4"><span class="font-bold">Senior Backend Dev</span> &bull; Algoritmik Bilişim</td>
+                        <td class="p-4"><span class="sticker-pill bg-sticker-green text-ink-black px-2.5 py-0.5 rounded-full text-[10px]">Kabul Edildi</span></td>
+                    </tr>
+                    <tr>
+                        <td class="p-4 font-mono font-bold">#102</td>
+                        <td class="p-4"><strong class="text-ink-black block">Ceren Kaya</strong><span class="text-ink-muted">ceren@example.com</span></td>
+                        <td class="p-4"><span class="font-bold">Frontend Engineer</span> &bull; NextGen Labs</td>
+                        <td class="p-4"><span class="sticker-pill bg-sticker-yellow text-ink-black px-2.5 py-0.5 rounded-full text-[10px]">Mülakata Alındı</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- PAGE 8: ABOUT US (Literary Manifesto) -->
+    <!-- ========================================================================= -->
+    <div id="page-about" class="page-view max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 w-full">
+        <div class="text-center max-w-2xl mx-auto mb-12">
+            <span class="sticker-pill bg-sticker-yellow text-ink-black px-3.5 py-1 rounded-full text-xs uppercase tracking-wider">
+                Manifesto &bull; Değerler
+            </span>
+            <h1 class="font-editorial text-4xl sm:text-6xl font-bold text-ink-black mt-3 mb-3">
+                Diplomadan Sonra Başlayan Yol Arkadaşlığı
+            </h1>
+            <p class="text-xs sm:text-sm text-ink-charcoal leading-relaxed">
+                Mezunlarımızın kariyer basamaklarını destekleyen, doğrulanmış ve şeffaf kurumsal platform.
+            </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="retro-card p-8">
+                <div class="w-12 h-12 rounded-full bg-sticker-yellow border-2 border-ink-black flex items-center justify-center text-2xl mb-4 shadow-[2px_2px_0px_#121214]">🛡️</div>
+                <h3 class="font-editorial text-xl font-bold text-ink-black mb-2">1. Doğruluk ve Güven</h3>
+                <p class="text-xs text-ink-charcoal leading-relaxed">Öğrenci işleri veritabanıyla entegre doğrulanmış mezun profilleri.</p>
+            </div>
+            <div class="retro-card p-8">
+                <div class="w-12 h-12 rounded-full bg-sticker-green border-2 border-ink-black flex items-center justify-center text-2xl mb-4 shadow-[2px_2px_0px_#121214]">💎</div>
+                <h3 class="font-editorial text-xl font-bold text-ink-black mb-2">2. Şeffaflık İlkesi</h3>
+                <p class="text-xs text-ink-charcoal leading-relaxed">Zorunlu taban maaş bilgisi ve açık çalışma modelleri (Remote, Hybrid, In-Office).</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- PAGE 9: 404 GUARDIAN (Retro Decal Style) -->
+    <!-- ========================================================================= -->
+    <div id="page-error404" class="page-view max-w-2xl mx-auto px-4 py-16 text-center w-full">
+        <div class="w-20 h-20 rounded-full bg-sticker-coral border-3 border-ink-black text-white text-3xl flex items-center justify-center mx-auto mb-4 shadow-[3px_3px_0px_#121214]">🔍</div>
+        <span class="sticker-pill bg-sticker-coral text-white text-xs px-3 py-1 rounded-full mb-3 inline-block">404 GUARDIAN</span>
+        <h2 class="font-editorial text-4xl font-bold text-ink-black mb-2">Sayfa Bulunamadı</h2>
+        <p class="text-xs text-ink-muted mb-6">Talep ettiğiniz adres sistemde kayıtlı değil. Güvenlik servisi isteği logladı.</p>
+        <button onclick="showPage('homepage')" class="retro-btn px-6 py-3 bg-sticker-yellow text-ink-black font-extrabold text-xs rounded-full">
+            🏠 Ana Sayfaya Dön &rarr;
+        </button>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-ink-black text-white py-12 mt-16 border-t-2 border-black">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-xs text-cream-300">
+            <div class="flex items-center justify-center gap-3 mb-3">
+                <img src="/istanbul_university_logo.svg" alt="İstanbul Üniversitesi Logo" class="w-8 h-8 rounded-full bg-white p-0.5">
+                <span class="font-editorial text-lg text-sticker-yellow">T.C. İstanbul Üniversitesi &bull; Mezun Takip Sistemi</span>
+            </div>
+            <p>&copy; 2026 İstanbul Üniversitesi Rektörlüğü &bull; Mezunlar Koordinatörlüğü. Tüm hakları saklıdır.</p>
+        </div>
+    </footer>
+
+    <!-- Interactive Page Switcher Script -->
+    <script>
+        function showPage(pageId) {
+            document.querySelectorAll('.page-view').forEach(p => p.classList.remove('active-page'));
+            document.querySelectorAll('.tab-btn').forEach(b => {
+                b.className = 'tab-btn px-3 py-1.5 rounded-full font-semibold text-cream-200 hover:text-white hover:bg-white/10 transition';
+            });
+
+            const target = document.getElementById('page-' + pageId);
+            if (target) target.classList.add('active-page');
+
+            const btn = document.getElementById('btn-' + pageId);
+            if (btn) btn.className = 'tab-btn px-3 py-1.5 rounded-full font-bold bg-sticker-yellow text-ink-black shadow-[2px_2px_0px_#fff] transition';
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>

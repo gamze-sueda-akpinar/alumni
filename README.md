@@ -10,7 +10,20 @@
 
 A modern, full-featured **Alumni Tracking System** built for universities, faculties, and educational institutions to foster sustainable relationships with graduates, monitor career progression, and cultivate an active alumni community.
 
-> 📊 **Data Design Documentation:** Detailed Entity-Relationship Diagram (ERD), Data Dictionary, and persistence models are documented in [**ddd.md**](ddd.md) / [**add.md**](add.md).
+> 📊 **Data Design Documentation:** Detailed Entity-Relationship Diagram (ERD), Data Dictionary, and persistence models are documented in [**ddd.md**](ddd.md) / [**add.md**](add.md).  
+> 🎨 **Brand Identity & Design System:** Official color palette, typography hierarchy, UI tokens, and badge guidelines are documented in [**brand.md**](brand.md) &bull; Visual architecture & Refero design references in [**DESIGN.md**](DESIGN.md).
+
+---
+
+## 📑 Documentation Quick Links & Anchors
+
+| Document | Description | Direct Anchor |
+| :--- | :--- | :---: |
+| 🎨 **Brand Guidelines** | Official institutional color palette, Plus Jakarta Sans font scale, workplace badges, UI tokens & usage rules | [**`brand.md` →**](brand.md) |
+| 📐 **Visual Design System** | Refero Design references (Fictional, Family, Fable, SuperHi, TOMO, MindMarket), paper-cut layouts, card blueprints | [**`DESIGN.md` →**](DESIGN.md) |
+| 🗄️ **Data Design Document** | Complete Entity-Relationship (ER) model, database tables, data dictionary & field constraints | [**`ddd.md` →**](ddd.md) \| [**`add.md` →**](add.md) |
+| 📡 **API & Swagger Docs** | Interactive OpenAPI 3.0 REST API documentation, endpoints, test payloads | [**Jump to API Section ↓**](#-restful-api--interactive-swagger-documentation) |
+| 🎨 **Brand Section (Summary)** | Quick overview of design rules, semantic badges, and visual tokens within README | [**Jump to Brand Section ↓**](#-brand-identity--design-system-guidelines) |
 
 ---
 
@@ -55,7 +68,7 @@ This application is built with the robust **Laravel 11** framework, a high-perfo
 | **Backend** | PHP 8.2+ & Laravel 11.x | Modern MVC architecture, RESTful API, Eloquent ORM |
 | **Admin Panel** | Filament v3 | TALL stack powered (Tailwind, Alpine.js, Laravel, Livewire) admin UI |
 | **Database** | MySQL 8.x | High-performance relational database model |
-| **Styling & UI** | Tailwind CSS & Livewire | Clean, responsive, and reactive front-end interface |
+| **Styling & UI** | Tailwind CSS & Livewire | Clean, responsive, and reactive front-end interface (See [**brand.md**](brand.md) & [**DESIGN.md**](DESIGN.md)) |
 | **Authorization** | Spatie Laravel-Permission / Filament Shield | Granular role and permission management |
 
 ---
@@ -273,6 +286,8 @@ The **View** layer handles presenting data to users, structuring layouts, and re
   * **[`resources/views/job_postings/show.blade.php`](resources/views/job_postings/show.blade.php):** Detailed single job posting view (`GET /job-postings/{id}` — Read Single) with responsibilities, qualifications, and deadline.
   * **[`resources/views/job_postings/edit.blade.php`](resources/views/job_postings/edit.blade.php):** Job posting editing form view (`GET /job-postings/{id}/edit` — Update Form) with `@method('PUT')`.
   * **[`resources/views/job_postings/create.blade.php`](resources/views/job_postings/create.blade.php):** Standalone job posting publication form view (`GET /job-postings/create` — Create Form).
+  * **[`resources/views/applications/index.blade.php`](resources/views/applications/index.blade.php):** Job applications tracker (ATS) interface (`GET /applications` — Read) with stage metrics (Pending, Reviewed, Interview, Accepted, Rejected), candidate contact info, cover letter previews, and resume links.
+  * **[`public/app_preview.html`](public/app_preview.html):** Zero-dependency, interactive multi-page design preview simulator enabling instant browser testing of every redesigned page without a running server.
   * **[`resources/views/main.blade.php`](resources/views/main.blade.php):** Responsive, modern landing and home page designed with Tailwind CSS, featuring alumni success highlights and navigation.
   * **[`resources/views/about.blade.php`](resources/views/about.blade.php):** About page presenting the purpose and vision of the Alumni Tracking System.
   * **[`resources/views/swagger.blade.php`](resources/views/swagger.blade.php):** Embedded, interactive **Swagger UI 5.x** interface for live API exploration and testing directly in the browser.
@@ -422,6 +437,47 @@ The **Career & Job Board** entity ([`app/Models/JobPosting.php`](app/Models/JobP
 
 ---
 
+## 🎨 Brand Identity & Design System Guidelines
+
+The Alumni Tracking System adheres to a formal institutional visual identity and an editorial Refero-inspired design system documented across two foundational guides:
+
+| Guide File | Focus & Scope | Direct Anchor |
+| :--- | :--- | :---: |
+| 🏷️ [**`brand.md`**](brand.md) | Official institutional identity, color palette, Plus Jakarta Sans font tokens, semantic badges, and component rules | [**Open brand.md →**](brand.md) |
+| 📐 [**`DESIGN.md`**](DESIGN.md) | Visual architecture synthesizing 6 Refero design systems (Fictional, Family, Fable, SuperHi, TOMO, MindMarket) | [**Open DESIGN.md →**](DESIGN.md) |
+
+---
+
+### 🏷️ 1. Brand Guidelines ([`brand.md`](brand.md))
+The institutional design foundation providing strict rules for UI styling, typography, and status badges:
+* **Primary Typeface:** [Plus Jakarta Sans](brand.md#51-primary-typeface-plus-jakarta-sans) (Google Fonts) with weights 400 (Regular) to 800 (ExtraBold).
+* **Brand Colors & Tokens:**
+  * **Primary (Indigo Spectrum):** `#4F46E5` (`indigo-600` / Primary CTA), `#312E81` (`indigo-900` / Dark Accents), `#EEF2FF` (`indigo-50` / Tinted Surfaces).
+  * **Workplace & Semantic Badges:**
+    * 🟢 **Uzaktan / Remote:** `#10B981` (`emerald-500` / `bg-emerald-50` / `text-emerald-700`)
+    * 🟠 **Hibrit / Hybrid:** `#F59E0B` (`amber-500` / `bg-amber-50` / `text-amber-700`)
+    * 🔵 **Ofiste / In-Office:** `#3B82F6` (`blue-500` / `bg-blue-50` / `text-blue-700`)
+    * 🔴 **Hata & Uyarı / Alert:** `#E11D48` (`rose-600` / `bg-rose-50` / `text-rose-700`)
+* **Core Principles:** Rounded-2xl card surfaces, glassmorphism sticky navigation (`backdrop-blur-md`), WCAG AA contrast compliance, and transparent salary displays.
+
+👉 **[Explore Full Brand Guidelines, Design Tokens & Rules in brand.md &rarr;](brand.md)**
+
+---
+
+### 📐 2. Visual Architecture & Refero References ([`DESIGN.md`](DESIGN.md))
+The aesthetic layout framework synthesized from 6 world-class Refero Design references:
+* **Storybook & Warm Paper Surfaces:** Moving from clinical stark white to warm cream and ivory paper (`#fbfaf9`, `#f5f1e4`, `#ffe9ce`).
+* **Anti-Shadow Philosophy:** Replacing muddy black drop shadows with razor-thin hairline inset borders (`#e5d5c3` / `#e2e8f0`).
+* **Dual-Axis Typography:** Pairing high-contrast literary editorial serif headlines with ultra-clean grotesque body text and monospace metadata.
+* **Paper-Cut Cards & Stadium Capsules:** High-radius pills (up to 144px), sticker-bombed decal badges, and marquee announcements.
+* **Refero Sources Analyzed:**
+  * 🎨 [Fictional Style](https://styles.refero.design/style/af2e0bc4-ef1c-4365-a25d-00b691218431) &bull; 📖 [Family Style](https://styles.refero.design/style/1bcae895-2245-4d33-aa43-1c1e80719554) &bull; 🌿 [Fable Style](https://styles.refero.design/style/ab650279-aa18-43e5-a998-34190d7bedc7)
+  * ✂️ [SuperHi Style](https://styles.refero.design/style/90b8631c-4e2c-407e-86a3-d2bff456dc93) &bull; 📰 [TOMO Style](https://styles.refero.design/style/6f148ff6-ae72-496a-a21d-84d7779825ff) &bull; 🧠 [MindMarket Style](https://styles.refero.design/style/9130ad37-bf80-458f-b808-ac0ef6a8d1e9)
+
+👉 **[Explore Visual Architecture & Refero Design System References in DESIGN.md &rarr;](DESIGN.md)**
+
+---
+
 ## 📂 Project Directory & File Structure
 
 A detailed map of the directories, folders, and key files comprising the **Alumni Tracking System**:
@@ -554,8 +610,10 @@ alumni/
 ├── .gitignore                              # Git version control ignore rules
 ├── docker-compose.yml                      # Multi-container orchestration (App, Web, MySQL, PMA)
 ├── Dockerfile                              # Custom PHP 8.3-FPM + Composer + Node container
+├── brand.md                                # Official Brand Identity, Colors & UI Design System Guide
 ├── composer.json                           # PHP packages & autoload mapping
 ├── ddd.md / add.md                         # Complete Data Design Documentation (DDD) & ER Diagram
+├── DESIGN.md                               # Visual Architecture & Refero Design System References
 ├── package.json                            # NPM dependencies & front-end scripts
 └── README.md                               # Complete project documentation & guide
 ```
