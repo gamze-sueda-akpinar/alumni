@@ -849,6 +849,33 @@ flowchart TD
 
 ---
 
+### 5.8 User-Specific Portals & Role Dashboard Architecture
+
+To maximize contextual relevance and protect sensitive workflows, the application delivers tailored, role-specific portal dashboards (`PortalController` & `resources/views/portals/*`):
+
+```mermaid
+flowchart TD
+    UserReq["User navigates to /dashboard or /portal"]
+    Dispatcher{"PortalController::dashboard()<br/>Inspects auth()->user()->role"}
+    
+    Dispatcher -->|student| StudentPortal["🎓 Student Portal (/student/dashboard)<br/>• Active internship/job applications tracker<br/>• Department-specific hiring openings<br/>• Alumni mentor contacts (Ahmet Yılmaz, Elif Kaya)<br/>• Upcoming career events & seminars"]
+    Dispatcher -->|alumni| AlumniPortal["💼 Alumni Portal (/alumni/dashboard)<br/>• Published job openings & applicant management<br/>• Candidate evaluations & interview invitations<br/>• Applied opportunities tracking<br/>• 14.850+ graduate networking directory"]
+    Dispatcher -->|academic| AcademicPortal["🏛️ Academic Portal (/academic/dashboard)<br/>• Hosted alumni reunions & webinar moderation<br/>• ➕ New event & symposium creation form<br/>• Department employment statistics (%94.2)<br/>• Departmental announcement bulletin"]
+    Dispatcher -->|admin| AdminPortal["👑 Admin Panel (/admin)<br/>• Unverified user approval queue<br/>• Live role manipulation<br/>• Job posting moderation (Active/Passive)<br/>• System metrics & audit logs"]
+```
+
+#### Portal Route Specifications:
+
+| Role | Portal Route | Controller Action | Blade View | Key Capabilities |
+| :--- | :--- | :--- | :--- | :--- |
+| **`student`** | `/student/dashboard` | `PortalController@studentDashboard` | `portals.student` | Track application status (`İnceleniyor`, `Mülakata Alındı`), department job openings, connect with alumni mentors. |
+| **`alumni`** | `/alumni/dashboard` | `PortalController@alumniDashboard` | `portals.alumni` | Manage published vacancies, review student applicants, invite candidates to interview, view alumni networking. |
+| **`academic`** | `/academic/dashboard`| `PortalController@academicDashboard`| `portals.academic`| Host & publish alumni reunions/webinars, view department employment rate (%94.2), communicate with department alumni. |
+| **`admin`** | `/admin` | Filament / `AdminController@index` | `filament` / `admin` | Approve unverified student/alumni registrations, edit roles, moderate job postings, delete records. |
+| **Universal Dispatcher** | `/dashboard` / `/portal` | `PortalController@dashboard` | *Redirects by Role* | Single entry point automatically routing each authenticated user to their role's home portal. |
+
+---
+
 ## 6. 🛡️ Data Integrity & Relationship Constraints
 
 The database enforces strict referential integrity rules and domain invariants:

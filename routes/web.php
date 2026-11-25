@@ -13,6 +13,7 @@ use App\Http\Controllers\ApiUserController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\JobApplicationController;
 use App\Http\Controllers\JobPostingController;
+use App\Http\Controllers\PortalController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -45,6 +46,27 @@ Route::get('/home', function () {
 Route::get('/about', function () {
     return view('about');
 });
+
+// =========================================================================
+// User-Specific Role Portals & Dashboard Dispatcher (/dashboard, /portal)
+// =========================================================================
+Route::get('/dashboard', [PortalController::class, 'dashboard'])->middleware('auth')->name('dashboard');
+Route::get('/portal', [PortalController::class, 'dashboard'])->middleware('auth')->name('portal');
+
+// 1. Student Portal (Öğrenci Portalı - Gamze Süeda Akpınar)
+Route::get('/student/dashboard', [PortalController::class, 'studentDashboard'])
+    ->middleware(['auth', 'role:student'])
+    ->name('student.dashboard');
+
+// 2. Alumni Portal (Mezun Portalı - Ahmet Yılmaz)
+Route::get('/alumni/dashboard', [PortalController::class, 'alumniDashboard'])
+    ->middleware(['auth', 'role:alumni'])
+    ->name('alumni.dashboard');
+
+// 3. Academic Portal (Akademisyen Portalı - Prof. Dr. Ahmet Yılmaz)
+Route::get('/academic/dashboard', [PortalController::class, 'academicDashboard'])
+    ->middleware(['auth', 'role:academic'])
+    ->name('academic.dashboard');
 
 // =========================================================================
 // Authentication & Onboarding Routes (Register, Login, Logout -> AuthController)
