@@ -214,6 +214,11 @@
                                 </td>
                                 <td class="py-3 px-3 font-mono font-bold">
                                     {{ $pUser->alumniProfile->graduation_year ?? '-' }}
+                                    @if(($pUser->alumniProfile->graduation_year ?? 0) > 2026)
+                                        <span class="text-[9px] bg-cream-200 text-forest-800 px-1 py-0.5 rounded font-sans block mt-0.5 font-bold">
+                                            Aktif Öğrenci (Gelecekte)
+                                        </span>
+                                    @endif
                                 </td>
                                 <td class="py-3 px-3">
                                     <span class="bg-sticker-yellow text-ink-black px-2 py-0.5 rounded text-[10px] font-mono font-bold border border-ink-black">
@@ -221,24 +226,48 @@
                                     </span>
                                 </td>
                                 <td class="py-3 px-3">
-                                    <span class="bg-cream-200 text-forest-800 px-2 py-0.5 rounded text-[10px] font-mono font-bold">
-                                        Mezun (Alumni)
-                                    </span>
+                                    @if(($pUser->alumniProfile->graduation_year ?? 0) > 2026)
+                                        <span class="bg-sticker-sky/40 text-forest-900 px-2 py-0.5 rounded text-[10px] font-mono font-bold border border-sky-300">
+                                            📚 Öğrenci (Student)
+                                        </span>
+                                    @else
+                                        <span class="bg-cream-200 text-forest-800 px-2 py-0.5 rounded text-[10px] font-mono font-bold">
+                                            🎓 Mezun (Alumni)
+                                        </span>
+                                    @endif
                                 </td>
                                 <td class="py-3 px-3 text-right">
                                     <div class="flex items-center justify-end gap-1.5">
-                                        <!-- Approve Button -->
-                                        <form action="{{ route('admin.users.approve', $pUser->id) }}" method="POST" class="inline">
-                                            @csrf
-                                            <input type="hidden" name="role" value="alumni">
-                                            <button type="submit" class="retro-btn px-2.5 py-1 bg-sticker-green text-ink-black font-bold text-[11px] rounded-lg">
-                                                ✓ Onayla &amp; Mezun Yap
-                                            </button>
-                                        </form>
+                                        @if(($pUser->alumniProfile->graduation_year ?? 0) > 2026)
+                                            <!-- Approve as Student Button -->
+                                            <form action="{{ route('admin.users.approve', $pUser->id) }}" method="POST" class="inline">
+                                                @csrf
+                                                <input type="hidden" name="role" value="student">
+                                                <button type="submit" class="retro-btn px-2.5 py-1 bg-sticker-green text-ink-black font-bold text-[11px] rounded-lg">
+                                                    ✓ Onayla (Öğrenci Yap)
+                                                </button>
+                                            </form>
+                                            <form action="{{ route('admin.users.approve', $pUser->id) }}" method="POST" class="inline">
+                                                @csrf
+                                                <input type="hidden" name="role" value="alumni">
+                                                <button type="submit" class="retro-btn px-2 py-1 bg-cream-200 text-ink-black font-bold text-[11px] rounded-lg">
+                                                    🎓 Mezun Yap
+                                                </button>
+                                            </form>
+                                        @else
+                                            <!-- Approve as Alumni Button -->
+                                            <form action="{{ route('admin.users.approve', $pUser->id) }}" method="POST" class="inline">
+                                                @csrf
+                                                <input type="hidden" name="role" value="alumni">
+                                                <button type="submit" class="retro-btn px-2.5 py-1 bg-sticker-green text-ink-black font-bold text-[11px] rounded-lg">
+                                                    ✓ Onayla &amp; Mezun Yap
+                                                </button>
+                                            </form>
+                                        @endif
                                         <!-- Reject Button -->
                                         <form action="{{ route('admin.users.reject', $pUser->id) }}" method="POST" class="inline">
                                             @csrf
-                                            <button type="submit" class="retro-btn px-2.5 py-1 bg-white text-sticker-coral font-bold text-[11px] rounded-lg">
+                                            <button type="submit" class="retro-btn px-2 py-1 bg-white text-sticker-coral font-bold text-[11px] rounded-lg">
                                                 ✕ Reddet
                                             </button>
                                         </form>

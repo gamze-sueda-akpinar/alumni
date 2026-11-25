@@ -80,15 +80,19 @@ class AdminController extends Controller
     {
         $user = User::findOrFail($id);
         
-        // Resolve target role from profile or request
+        // Resolve target role from profile or request (students with future graduation year like 2027 are supported)
         $targetRole = $request->input('role');
         if (!$targetRole) {
+            $gradYear = $user->alumniProfile->graduation_year ?? null;
             if ($user->alumniProfile && str_contains(strtolower($user->alumniProfile->bio ?? ''), 'academic')) {
                 $targetRole = 'academic';
-            } elseif ($user->alumniProfile && $user->alumniProfile->graduation_year) {
+            } elseif ($gradYear && $gradYear > 2026) {
+                // Future graduation year indicates an active student (e.g. 2027)
+                $targetRole = 'student';
+            } elseif ($gradYear) {
                 $targetRole = 'alumni';
             } else {
-                $targetRole = 'alumni';
+                $targetRole = 'student';
             }
         }
 
@@ -100,7 +104,15 @@ class AdminController extends Controller
             $user->alumniProfile->save();
         }
 
-        $msg = "{$user->name} kullanıcısının doğrulaması onaylandı ve rolü '{$targetRole}' olarak aktif edildi.";
+        $roleLabel = match($targetRole) {
+            'student' => 'Öğrenci (Aktif Öğrenci)',
+            'alumni' => 'Mezun (Alumni)',
+            'academic' => 'Akademisyen',
+            'admin' => 'Yönetici',
+            default => strtoupper($targetRole),
+        };
+
+        $msg = "{$user->name} kullanıcısının doğrulaması onaylandı ve rolü '{$roleLabel}' olarak aktif edildi.";
 
         if ($request->wantsJson()) {
             return response()->json([

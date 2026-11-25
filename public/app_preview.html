@@ -465,9 +465,10 @@
                     </p>
                     <div class="bg-white border border-ink-black rounded-xl p-3 text-xs font-mono text-ink-muted grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <div><strong>Ad Soyad:</strong> <span id="res-name">Gamze Süeda Akpınar</span></div>
-                        <div><strong>E-posta:</strong> <span id="res-email">sueda@istanbul.edu.tr</span></div>
-                        <div><strong>Talep Edilen Rol:</strong> <span id="res-role" class="capitalize text-forest-700 font-bold">Alumni</span></div>
-                        <div><strong>Doğrulama Aşaması:</strong> <span class="text-amber-700 font-bold">Rektörlük İncelemesinde</span></div>
+                        <div><strong>E-posta:</strong> <span id="res-email">gamze.akpinar@ogr.iu.edu.tr</span></div>
+                        <div><strong>Talep Edilen Rol:</strong> <span id="res-role" class="capitalize text-forest-700 font-bold">Öğrenci (Student)</span></div>
+                        <div><strong>Beklenen Mezuniyet:</strong> <span id="res-grad" class="font-bold text-ink-black">2027 (Aktif Öğrenci)</span></div>
+                        <div><strong>Doğrulama Aşaması:</strong> <span class="text-amber-700 font-bold">Öğrenci İşleri İncelemesinde</span></div>
                     </div>
                     <div class="mt-4 flex items-center gap-3">
                         <button onclick="showPage('alumni')" class="retro-btn px-4 py-2 bg-ink-black text-white text-xs font-bold rounded-full">
@@ -543,17 +544,17 @@
                             </label>
                             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                 <label class="retro-card p-3 rounded-2xl flex items-center gap-3 cursor-pointer hover:bg-cream-100 transition">
-                                    <input type="radio" name="intended_role" value="alumni" checked class="accent-forest-700 w-4 h-4">
-                                    <div>
-                                        <span class="block text-xs font-bold text-ink-black">🎓 Mezun (Alumni)</span>
-                                        <span class="block text-[10px] text-ink-muted">İş ilanı paylaşma &amp; başvuru</span>
-                                    </div>
-                                </label>
-                                <label class="retro-card p-3 rounded-2xl flex items-center gap-3 cursor-pointer hover:bg-cream-100 transition">
-                                    <input type="radio" name="intended_role" value="student" class="accent-forest-700 w-4 h-4">
+                                    <input type="radio" name="intended_role" value="student" checked class="accent-forest-700 w-4 h-4">
                                     <div>
                                         <span class="block text-xs font-bold text-ink-black">📚 Öğrenci (Student)</span>
                                         <span class="block text-[10px] text-ink-muted">İlanlara başvuru &amp; staj</span>
+                                    </div>
+                                </label>
+                                <label class="retro-card p-3 rounded-2xl flex items-center gap-3 cursor-pointer hover:bg-cream-100 transition">
+                                    <input type="radio" name="intended_role" value="alumni" class="accent-forest-700 w-4 h-4">
+                                    <div>
+                                        <span class="block text-xs font-bold text-ink-black">🎓 Mezun (Alumni)</span>
+                                        <span class="block text-[10px] text-ink-muted">İş ilanı paylaşma &amp; başvuru</span>
                                     </div>
                                 </label>
                                 <label class="retro-card p-3 rounded-2xl flex items-center gap-3 cursor-pointer hover:bg-cream-100 transition">
@@ -591,10 +592,11 @@
 
                         <div>
                             <label class="block text-xs font-bold text-ink-black mb-1.5">
-                                Mezuniyet Yılı (Mezunlar için)
+                                Mezuniyet / Beklenen Mezuniyet Yılı <span class="text-sticker-coral font-bold">*</span>
                             </label>
-                            <input type="number" id="reg-grad-year" value="2024" min="1950" max="2030"
+                            <input type="number" id="reg-grad-year" value="2027" min="1950" max="2035"
                                    class="retro-input w-full px-4 py-2.5 rounded-xl bg-cream-50 text-xs text-ink-black">
+                            <span class="text-[10px] text-ink-muted mt-0.5 block">Öğrenciler için beklenen yıl: <strong>2027</strong></span>
                         </div>
 
                         <div>
@@ -727,8 +729,8 @@
                 ⚡ Hızlı Simülasyon Oturumu Aç
             </span>
             <div class="grid grid-cols-3 gap-2 text-xs">
-                <button onclick="handleQuickLogin('Gamze Süeda Akpınar', 'gamze.akpinar@ogr.iu.edu.tr', 'student', true)" class="retro-btn px-2 py-1.5 bg-sticker-yellow text-ink-black font-bold rounded-xl text-[10px]">
-                    🎓 Öğrenci
+                <button onclick="handleQuickLogin('Gamze Süeda Akpınar', 'gamze.akpinar@ogr.iu.edu.tr', 'student', false)" class="retro-btn px-2 py-1.5 bg-sticker-green text-ink-black font-bold rounded-xl text-[10px]">
+                    📚 Gamze (Öğrenci 2027)
                 </button>
                 <button onclick="handleQuickLogin('Prof. Dr. Ahmet Yılmaz', 'ahmet.yilmaz@istanbul.edu.tr', 'academic', false)" class="retro-btn px-2 py-1.5 bg-forest-800 text-sticker-yellow font-bold rounded-xl text-[10px]">
                     🏛️ Akademisyen
@@ -791,7 +793,7 @@
             </div>
             <div class="retro-card p-4 rounded-2xl text-center bg-white">
                 <span class="text-[10px] font-mono uppercase text-ink-muted font-bold block">Aktif Öğrenci</span>
-                <span class="font-editorial text-2xl font-extrabold text-ink-black">1.150</span>
+                <span id="admin-student-count" class="font-editorial text-2xl font-extrabold text-ink-black">1.150</span>
             </div>
             <div class="retro-card p-4 rounded-2xl text-center bg-white">
                 <span class="text-[10px] font-mono uppercase text-ink-muted font-bold block">Aktif İlanlar</span>
@@ -841,24 +843,29 @@
                                 <span class="block text-ink-black">Bilgisayar Mühendisliği</span>
                                 <span class="font-mono text-[10px] text-ink-muted">No: 1306200045</span>
                             </td>
-                            <td class="py-3 px-3 font-mono font-bold">2024</td>
+                            <td class="py-3 px-3 font-mono font-bold text-forest-700">
+                                2027
+                                <span class="text-[9px] bg-cream-200 text-forest-800 px-1 py-0.5 rounded font-sans block mt-0.5 font-bold">
+                                    Aktif Öğrenci (Gelecekte)
+                                </span>
+                            </td>
                             <td class="py-3 px-3">
                                 <span id="pending-badge-1" class="bg-sticker-yellow text-ink-black px-2 py-0.5 rounded text-[10px] font-mono font-bold border border-ink-black">
                                     ÖĞRENCİ (ONAY BEKLİYOR)
                                 </span>
                             </td>
                             <td class="py-3 px-3">
-                                <span class="bg-cream-200 text-forest-800 px-2 py-0.5 rounded text-[10px] font-mono font-bold">
-                                    Mezun (Alumni)
+                                <span class="bg-sticker-sky/40 text-forest-900 px-2 py-0.5 rounded text-[10px] font-mono font-bold border border-sky-300">
+                                    📚 Öğrenci (Student)
                                 </span>
                             </td>
                             <td class="py-3 px-3 text-right">
                                 <div id="pending-actions-1" class="flex items-center justify-end gap-1.5">
-                                    <button onclick="adminApproveUser('pending-row-1', 'pending-badge-1', 'pending-actions-1', 'Gamze Süeda Akpınar', 'ALUMNI')" class="retro-btn px-2.5 py-1 bg-sticker-green text-ink-black font-bold text-[11px] rounded-lg">
-                                        ✓ Onayla (Mezun Yap)
+                                    <button onclick="adminApproveUser('pending-row-1', 'pending-badge-1', 'pending-actions-1', 'Gamze Süeda Akpınar', 'STUDENT')" class="retro-btn px-2.5 py-1 bg-sticker-green text-ink-black font-bold text-[11px] rounded-lg">
+                                        ✓ Onayla (Öğrenci Olarak)
                                     </button>
-                                    <button onclick="adminApproveUser('pending-row-1', 'pending-badge-1', 'pending-actions-1', 'Gamze Süeda Akpınar', 'ACADEMIC')" class="retro-btn px-2.5 py-1 bg-sticker-sky text-ink-black font-bold text-[11px] rounded-lg">
-                                        🏛️ Akademisyen Yap
+                                    <button onclick="adminApproveUser('pending-row-1', 'pending-badge-1', 'pending-actions-1', 'Gamze Süeda Akpınar', 'ALUMNI')" class="retro-btn px-2 py-1 bg-cream-200 text-ink-black font-bold text-[11px] rounded-lg">
+                                        🎓 Mezun Yap
                                     </button>
                                     <button onclick="adminRejectUser('pending-row-1', 'pending-badge-1', 'pending-actions-1')" class="retro-btn px-2 py-1 bg-white text-sticker-coral font-bold text-[11px] rounded-lg">
                                         ✕ Reddet
@@ -896,6 +903,30 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-cream-200">
+                        <tr id="user-row-0" class="hover:bg-cream-50 transition bg-cream-50/50">
+                            <td class="py-3 px-3 font-bold text-ink-black">
+                                Gamze Süeda Akpınar
+                                <span class="text-[9px] bg-sticker-yellow text-ink-black px-1.5 py-0.5 rounded font-mono font-bold ml-1 border border-ink-black">2027 Öğrenci</span>
+                            </td>
+                            <td class="py-3 px-3 font-mono text-ink-muted">gamze.akpinar@ogr.iu.edu.tr</td>
+                            <td class="py-3 px-3"><span id="user-badge-0" class="bg-sticker-green text-ink-black px-2 py-0.5 rounded text-[10px] font-mono font-bold border border-ink-black">STUDENT</span></td>
+                            <td class="py-3 px-3">
+                                <div class="flex items-center gap-2">
+                                    <select id="user-select-0" class="retro-input px-2 py-1 rounded bg-cream-50 text-xs font-bold">
+                                        <option value="student" selected>student (Öğrenci)</option>
+                                        <option value="alumni">alumni (Mezun)</option>
+                                        <option value="academic">academic (Akademisyen)</option>
+                                        <option value="admin">admin (Yönetici)</option>
+                                    </select>
+                                    <button onclick="adminChangeRole('user-select-0', 'user-badge-0', 'Gamze Süeda Akpınar')" class="retro-btn px-2.5 py-1 bg-ink-black text-white text-[10px] font-bold rounded">
+                                        Güncelle
+                                    </button>
+                                </div>
+                            </td>
+                            <td class="py-3 px-3 text-right">
+                                <button onclick="adminDeleteRow('user-row-0', 'Gamze Süeda Akpınar')" class="text-sticker-coral font-bold text-xs hover:underline">Sil</button>
+                            </td>
+                        </tr>
                         <tr id="user-row-1" class="hover:bg-cream-50 transition">
                             <td class="py-3 px-3 font-bold text-ink-black">Ahmet Yılmaz</td>
                             <td class="py-3 px-3 font-mono text-ink-muted">ahmet.yilmaz@example.com</td>
@@ -1475,18 +1506,21 @@
 
         function handlePreviewRegister() {
             const name = document.getElementById('reg-name')?.value || 'Gamze Süeda Akpınar';
-            const email = document.getElementById('reg-email')?.value || 'gamze.akpinar@istanbul.edu.tr';
+            const email = document.getElementById('reg-email')?.value || 'gamze.akpinar@ogr.iu.edu.tr';
             const roleEl = document.querySelector('input[name="intended_role"]:checked');
-            const intendedRole = roleEl ? roleEl.value : 'alumni';
+            const intendedRole = roleEl ? roleEl.value : 'student';
+            const gradYear = document.getElementById('reg-grad-year')?.value || '2027';
 
             const resName = document.getElementById('res-name');
             const resEmail = document.getElementById('res-email');
             const resRole = document.getElementById('res-role');
+            const resGrad = document.getElementById('res-grad');
             const successCard = document.getElementById('register-success-card');
 
             if (resName) resName.textContent = name;
             if (resEmail) resEmail.textContent = email;
-            if (resRole) resRole.textContent = intendedRole.toUpperCase();
+            if (resRole) resRole.textContent = intendedRole === 'student' ? 'ÖĞRENCİ (STUDENT)' : intendedRole.toUpperCase();
+            if (resGrad) resGrad.textContent = gradYear + ' (Aktif Öğrenci)';
 
             if (successCard) {
                 successCard.classList.remove('hidden');
@@ -1518,6 +1552,9 @@
                 } else if (role === 'admin') {
                     navUserRoleBadge.textContent = '👑 SUPER ADMIN';
                     navUserRoleBadge.className = 'bg-ink-black text-sticker-yellow font-mono font-bold text-[10px] px-1.5 py-0.5 rounded border border-sticker-yellow';
+                } else if (role === 'student') {
+                    navUserRoleBadge.textContent = '📚 ÖĞRENCİ (ONAYLI 2027)';
+                    navUserRoleBadge.className = 'bg-sticker-green text-ink-black font-mono font-bold text-[10px] px-1.5 py-0.5 rounded border border-ink-black';
                 } else {
                     navUserRoleBadge.textContent = role.toUpperCase();
                     navUserRoleBadge.className = 'bg-forest-800 text-sticker-yellow font-mono font-bold text-[10px] px-1.5 py-0.5 rounded';
@@ -1550,14 +1587,18 @@
             const actions = document.getElementById(actionsId);
             const pendingCountEl = document.getElementById('admin-pending-count');
             const alumniCountEl = document.getElementById('admin-alumni-count');
+            const studentCountEl = document.getElementById('admin-student-count');
+
+            const isStudent = (role === 'STUDENT' || role === 'student');
+            const displayRole = isStudent ? 'ÖĞRENCİ' : role;
 
             if (badge) {
                 badge.className = 'bg-sticker-green text-ink-black px-2 py-0.5 rounded text-[10px] font-mono font-bold border border-ink-black';
-                badge.textContent = 'ONAYLANDI (' + role + ')';
+                badge.textContent = 'ONAYLANDI (' + displayRole + ')';
             }
 
             if (actions) {
-                actions.innerHTML = '<span class="text-xs font-bold text-forest-700 bg-cream-100 px-3 py-1 rounded-full border border-ink-black">✓ Yetki Onaylandı</span>';
+                actions.innerHTML = '<span class="text-xs font-bold text-forest-700 bg-cream-100 px-3 py-1 rounded-full border border-ink-black">✓ ' + (isStudent ? 'Öğrenci Doğrulandı (2027)' : 'Yetki Onaylandı') + '</span>';
             }
 
             if (pendingCountEl) {
@@ -1568,9 +1609,12 @@
             if (role === 'ALUMNI' && alumniCountEl) {
                 let currentAlumni = parseInt(alumniCountEl.textContent, 10) || 420;
                 alumniCountEl.textContent = currentAlumni + 1;
+            } else if (isStudent && studentCountEl) {
+                let currentStudent = parseInt(studentCountEl.textContent.replace('.', ''), 10) || 1150;
+                studentCountEl.textContent = (currentStudent + 1).toLocaleString('tr-TR');
             }
 
-            alert('İŞLEM BAŞARILI (Admin Manipülasyonu):\n' + name + ' kullanıcısı rektörlük onayından geçti.\nYeni Rolü: ' + role + ' (Aktif)');
+            alert('İŞLEM BAŞARILI (Admin Manipülasyonu):\n' + name + ' ' + (isStudent ? 'öğrencilik kaydı ve 2027 tahmini mezuniyet belgesi' : 'başvurusu') + ' rektörlük tarafından onaylandı!\nAktif Rolü: ' + (isStudent ? 'ÖĞRENCİ (DOĞRULANMIŞ AKTİF ÖĞRENCİ)' : role));
         }
 
         function adminRejectUser(rowId, badgeId, actionsId) {

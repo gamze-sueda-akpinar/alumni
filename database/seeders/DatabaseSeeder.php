@@ -32,7 +32,7 @@ class DatabaseSeeder extends Seeder
         $admin = User::firstOrCreate(
             ['email' => 'admin@alumni.com'],
             [
-                'name' => 'Gamze Şüeda Akpınar',
+                'name' => 'İÜ Rektörlük Yöneticisi',
                 'password' => Hash::make('password123'),
                 'role' => 'admin',
             ]
@@ -77,7 +77,37 @@ class DatabaseSeeder extends Seeder
             ['faculty_id' => $iibf->id, 'code' => 'BA']
         );
 
-        // 4. Örnek Mezun Kullanıcıları & Profilleri
+        // 4. Öğrenci Kullanıcısı (Gamze Süeda Akpınar - Aktif Öğrenci, Mezuniyet: 2027)
+        $gamzeStudent = User::firstOrCreate(
+            ['email' => 'gamze.akpinar@ogr.iu.edu.tr'],
+            [
+                'name' => 'Gamze Süeda Akpınar',
+                'password' => Hash::make('password123'),
+                'role' => 'student',
+            ]
+        );
+        $gamzeStudent->role = 'student';
+        $gamzeStudent->save();
+
+        AlumniProfile::firstOrCreate(
+            ['user_id' => $gamzeStudent->id],
+            [
+                'department_id' => $ceng->id,
+                'student_number' => '1306200045',
+                'graduation_year' => 2027,
+                'phone' => '+90 532 555 43 21',
+                'current_company' => 'İstanbul Üniversitesi',
+                'current_position' => 'Bilgisayar Mühendisliği Lisans Öğrencisi',
+                'city' => 'İstanbul',
+                'country' => 'Türkiye',
+                'linkedin_url' => 'https://www.linkedin.com/in/gamzesueda',
+                'github_url' => 'https://github.com/gamzesueda',
+                'bio' => 'İstanbul Üniversitesi Bilgisayar Mühendisliği 3. sınıf öğrencisi. Mezuniyet hedefi 2027. Staj ve kariyer fırsatlarını araştırıyor.',
+                'status' => 'pending',
+            ]
+        );
+
+        // 5. Örnek Mezun Kullanıcıları & Profilleri
         $mezun1 = User::firstOrCreate(
             ['email' => 'ahmet.yilmaz@example.com'],
             ['name' => 'Ahmet Yılmaz', 'password' => Hash::make('password123')]

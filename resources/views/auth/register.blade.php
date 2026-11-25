@@ -280,17 +280,17 @@
                             </label>
                             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                 <label class="retro-card p-3 rounded-2xl flex items-center gap-3 cursor-pointer hover:bg-cream-100 transition">
-                                    <input type="radio" name="intended_role" value="alumni" {{ old('intended_role', 'alumni') === 'alumni' ? 'checked' : '' }} class="accent-forest-700 w-4 h-4">
-                                    <div>
-                                        <span class="block text-xs font-bold text-ink-black">🎓 Mezun (Alumni)</span>
-                                        <span class="block text-[10px] text-ink-muted">İş ilanı paylaşma &amp; başvuru</span>
-                                    </div>
-                                </label>
-                                <label class="retro-card p-3 rounded-2xl flex items-center gap-3 cursor-pointer hover:bg-cream-100 transition">
-                                    <input type="radio" name="intended_role" value="student" {{ old('intended_role') === 'student' ? 'checked' : '' }} class="accent-forest-700 w-4 h-4">
+                                    <input type="radio" name="intended_role" value="student" {{ old('intended_role', 'student') === 'student' ? 'checked' : '' }} class="accent-forest-700 w-4 h-4">
                                     <div>
                                         <span class="block text-xs font-bold text-ink-black">📚 Öğrenci (Student)</span>
                                         <span class="block text-[10px] text-ink-muted">İlanlara başvuru &amp; staj</span>
+                                    </div>
+                                </label>
+                                <label class="retro-card p-3 rounded-2xl flex items-center gap-3 cursor-pointer hover:bg-cream-100 transition">
+                                    <input type="radio" name="intended_role" value="alumni" {{ old('intended_role') === 'alumni' ? 'checked' : '' }} class="accent-forest-700 w-4 h-4">
+                                    <div>
+                                        <span class="block text-xs font-bold text-ink-black">🎓 Mezun (Alumni)</span>
+                                        <span class="block text-[10px] text-ink-muted">İş ilanı paylaşma &amp; başvuru</span>
                                     </div>
                                 </label>
                                 <label class="retro-card p-3 rounded-2xl flex items-center gap-3 cursor-pointer hover:bg-cream-100 transition">
@@ -329,13 +329,13 @@
                                    class="retro-input w-full px-4 py-2.5 rounded-xl bg-cream-50 text-xs text-ink-black placeholder:text-ink-muted/50">
                         </div>
 
-                        <!-- Graduation Year -->
+                        <!-- Graduation / Expected Graduation Year -->
                         <div>
                             <label for="graduation_year" class="block text-xs font-bold text-ink-black mb-1.5">
-                                Mezuniyet Yılı (Mezunlar için)
+                                Mezuniyet / Beklenen Yıl (Öğrenciler için 2027 vb.)
                             </label>
-                            <input type="number" id="graduation_year" name="graduation_year" value="{{ old('graduation_year') }}" min="1950" max="2030"
-                                   placeholder="Örn: 2024"
+                            <input type="number" id="graduation_year" name="graduation_year" value="{{ old('graduation_year', '2027') }}" min="1950" max="2035"
+                                   placeholder="Örn: 2027"
                                    class="retro-input w-full px-4 py-2.5 rounded-xl bg-cream-50 text-xs text-ink-black placeholder:text-ink-muted/50">
                         </div>
 
