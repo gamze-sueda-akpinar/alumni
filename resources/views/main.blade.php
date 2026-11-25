@@ -151,18 +151,68 @@
                 <a href="/about" class="px-3.5 py-1.5 rounded-full hover:bg-cream-200 transition">Hakkımızda</a>
             </nav>
 
-            <!-- Action Button -->
+            <!-- Action Buttons / User Auth State -->
             <div class="flex items-center gap-2">
-                <a href="/users/create" class="retro-btn px-4 py-2 bg-ink-black text-white text-xs font-bold rounded-full flex items-center gap-1.5">
-                    <span>Rehbere Katıl</span>
-                    <span>&rarr;</span>
-                </a>
+                @auth
+                    <div class="flex items-center gap-2 bg-cream-100 border border-ink-black px-3 py-1 rounded-full text-xs">
+                        <span class="w-2 h-2 rounded-full bg-sticker-green"></span>
+                        <span class="font-bold text-ink-black">{{ auth()->user()->name }}</span>
+                        @if(auth()->user()->isUnverified())
+                            <span class="bg-sticker-yellow text-ink-black font-mono font-bold text-[10px] px-1.5 py-0.5 rounded border border-ink-black">
+                                Öğrenci (Onay Bekliyor)
+                            </span>
+                        @else
+                            <span class="bg-forest-800 text-sticker-yellow font-mono font-bold text-[10px] px-1.5 py-0.5 rounded">
+                                {{ strtoupper(auth()->user()->role) }}
+                            </span>
+                        @endif
+                    </div>
+                    <form action="{{ route('logout') }}" method="POST" class="inline">
+                        @csrf
+                        <button type="submit" class="retro-btn px-3 py-1.5 bg-sticker-coral text-white text-xs font-bold rounded-full">
+                            Çıkış
+                        </button>
+                    </form>
+                @else
+                    <a href="{{ route('login') }}" class="text-xs font-bold px-3 py-1.5 rounded-full hover:bg-cream-200 transition">
+                        Giriş Yap
+                    </a>
+                    <a href="{{ route('register') }}" class="retro-btn px-4 py-1.5 bg-forest-800 text-sticker-yellow text-xs font-bold rounded-full flex items-center gap-1.5">
+                        <span>Kayıt Ol</span>
+                        <span>&rarr;</span>
+                    </a>
+                @endauth
             </div>
         </div>
     </header>
 
     <!-- 3. Hero Section (Fable + Fictional + MindMarket) -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-16 text-center relative w-full flex-1">
+        
+        @if(session('success'))
+            <div class="max-w-3xl mx-auto mb-8 text-left bg-white border-2 border-ink-black shadow-[4px_4px_0px_#121214] p-5 rounded-3xl">
+                <div class="flex items-start gap-3">
+                    <div class="w-10 h-10 rounded-2xl bg-sticker-green border-2 border-ink-black flex items-center justify-center text-xl font-bold flex-shrink-0">
+                        ✓
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2 flex-wrap mb-1">
+                            <h3 class="font-editorial text-lg font-bold text-ink-black">
+                                {{ session('success.title') ?? 'İşlem Başarılı' }}
+                            </h3>
+                            @if(session('success.is_pending'))
+                                <span class="bg-sticker-yellow text-ink-black font-mono font-bold text-[10px] px-2 py-0.5 rounded border border-ink-black">
+                                    Varsayılan Rol: ÖĞRENCİ (Doğrulama Bekliyor)
+                                </span>
+                            @endif
+                        </div>
+                        <p class="text-xs text-ink-charcoal leading-relaxed">
+                            {{ session('success.message') }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        @endif
         
         <!-- Sticker Decal (Fictional Style) -->
         <div class="inline-block transform -rotate-2 hover:rotate-0 transition-transform mb-4">

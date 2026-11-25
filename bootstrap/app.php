@@ -21,8 +21,23 @@ return Application::configure(basePath: dirname(__DIR__))
         // Register 5xx Guardian Middleware to intercept and format 5xx server errors safely with reasons & reference IDs
         $middleware->append(\App\Http\Middleware\Guardian5xxMiddleware::class);
 
+        // Configure Authentication Guest/User redirects
+        $middleware->redirectTo(
+            guests: '/login',
+            users: '/main',
+        );
+
+        // Register Route Middleware Aliases for Auth and RBAC Role checks
+        $middleware->alias([
+            'auth' => \App\Http\Middleware\EnsureAuthenticatedMiddleware::class,
+            'role' => \App\Http\Middleware\CheckRoleMiddleware::class,
+        ]);
+
         $middleware->validateCsrfTokens(except: [
             'api/*',
+            'login',
+            'logout',
+            'register',
             'users',
             'users/*',
             'announcements',

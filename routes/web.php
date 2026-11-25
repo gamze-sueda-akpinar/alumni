@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\ApiAnnouncementController;
 use App\Http\Controllers\ApiDepartmentController;
@@ -9,6 +10,7 @@ use App\Http\Controllers\ApiFacultyController;
 use App\Http\Controllers\ApiJobApplicationController;
 use App\Http\Controllers\ApiJobPostingController;
 use App\Http\Controllers\ApiUserController;
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\JobApplicationController;
 use App\Http\Controllers\JobPostingController;
 use App\Http\Controllers\UserController;
@@ -43,6 +45,24 @@ Route::get('/home', function () {
 Route::get('/about', function () {
     return view('about');
 });
+
+// =========================================================================
+// Authentication & Onboarding Routes (Register, Login, Logout -> AuthController)
+// Rules:
+// 1. Unverified users can log in, maintain active sessions, and log out.
+// 2. Until official verification is approved, all users default to 'student' role.
+// =========================================================================
+Route::get('/register', [AuthController::class, 'showRegisterForm'])->name('register');
+Route::post('/register', [AuthController::class, 'register'])->name('register.submit');
+Route::post('/api/register', [AuthController::class, 'register'])->name('api.register');
+
+Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
+Route::post('/login', [AuthController::class, 'login'])->name('login.submit');
+Route::post('/api/login', [AuthController::class, 'login'])->name('api.login');
+
+Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->name('logout');
+Route::get('/logout', [AuthController::class, 'logout'])->middleware('auth')->name('logout.get');
+Route::post('/api/logout', [AuthController::class, 'logout'])->middleware('auth')->name('api.logout');
 
 Route::get('/api/health', function () {
     try {
@@ -125,25 +145,25 @@ Route::delete('/api/announcements/{id}', [ApiAnnouncementController::class, 'des
 //    - [D] DELETE /job-postings/{id}      --> Deletes job posting and redirects
 // =========================================================================
 Route::get('/job-postings', [JobPostingController::class, 'index'])->name('job-postings.index');
-Route::get('/job-postings/create', [JobPostingController::class, 'create'])->name('job-postings.create');
-Route::post('/job-postings', [JobPostingController::class, 'store'])->name('job-postings.store');
+Route::get('/job-postings/create', [JobPostingController::class, 'create'])->middleware(['auth', 'role:alumni,admin'])->name('job-postings.create');
+Route::post('/job-postings', [JobPostingController::class, 'store'])->middleware(['auth', 'role:alumni,admin'])->name('job-postings.store');
 Route::get('/job-postings/{id}', [JobPostingController::class, 'show'])->name('job-postings.show');
-Route::get('/job-postings/{id}/edit', [JobPostingController::class, 'edit'])->name('job-postings.edit');
-Route::match(['put', 'patch'], '/job-postings/{id}', [JobPostingController::class, 'update'])->name('job-postings.update');
-Route::delete('/job-postings/{id}', [JobPostingController::class, 'destroy'])->name('job-postings.destroy');
+Route::get('/job-postings/{id}/edit', [JobPostingController::class, 'edit'])->middleware(['auth', 'role:alumni,admin'])->name('job-postings.edit');
+Route::match(['put', 'patch'], '/job-postings/{id}', [JobPostingController::class, 'update'])->middleware(['auth', 'role:alumni,admin'])->name('job-postings.update');
+Route::delete('/job-postings/{id}', [JobPostingController::class, 'destroy'])->middleware(['auth', 'role:alumni,admin'])->name('job-postings.destroy');
 
 // =========================================================================
 // 6. RESTful API Routes (/api/job-postings -> ApiJobPostingController)
 // =========================================================================
 Route::prefix('api/job-postings')->name('api.job-postings.')->group(function () {
     Route::get('/', [ApiJobPostingController::class, 'index'])->name('index');
-    Route::post('/', [ApiJobPostingController::class, 'store'])->name('store');
+    Route::post('/', [ApiJobPostingController::class, 'store'])->middleware(['auth', 'role:alumni,admin'])->name('store');
     Route::get('/{id}', [ApiJobPostingController::class, 'show'])->name('show');
-    Route::match(['put', 'patch'], '/{id}', [ApiJobPostingController::class, 'update'])->name('update');
-    Route::delete('/{id}', [ApiJobPostingController::class, 'destroy'])->name('destroy');
+    Route::match(['put', 'patch'], '/{id}', [ApiJobPostingController::class, 'update'])->middleware(['auth', 'role:alumni,admin'])->name('update');
+    Route::delete('/{id}', [ApiJobPostingController::class, 'destroy'])->middleware(['auth', 'role:alumni,admin'])->name('destroy');
     // Nested: Applications under Job Posting
     Route::get('/{id}/applications', [ApiJobApplicationController::class, 'forJobPosting'])->name('applications.index');
-    Route::post('/{id}/applications', [ApiJobApplicationController::class, 'storeForJobPosting'])->name('applications.store');
+    Route::post('/{id}/applications', [ApiJobApplicationController::class, 'storeForJobPosting'])->middleware(['auth', 'role:student,alumni,admin'])->name('applications.store');
 });
 
 // =========================================================================
@@ -197,10 +217,10 @@ Route::prefix('api/experiences')->name('api.experiences.')->group(function () {
 // =========================================================================
 Route::prefix('api/events')->name('api.events.')->group(function () {
     Route::get('/', [ApiEventController::class, 'index'])->name('index');
-    Route::post('/', [ApiEventController::class, 'store'])->name('store');
+    Route::post('/', [ApiEventController::class, 'store'])->middleware(['auth', 'role:academic,admin'])->name('store');
     Route::get('/{id}', [ApiEventController::class, 'show'])->name('show');
-    Route::match(['put', 'patch'], '/{id}', [ApiEventController::class, 'update'])->name('update');
-    Route::delete('/{id}', [ApiEventController::class, 'destroy'])->name('destroy');
+    Route::match(['put', 'patch'], '/{id}', [ApiEventController::class, 'update'])->middleware(['auth', 'role:academic,admin'])->name('update');
+    Route::delete('/{id}', [ApiEventController::class, 'destroy'])->middleware(['auth', 'role:academic,admin'])->name('destroy');
 });
 
 // =========================================================================
@@ -260,11 +280,27 @@ Route::prefix('api/applications')->name('api.applications.')->group(function () 
 //    - [D] DELETE /applications/{id}         --> Deletes / withdraws application
 // =========================================================================
 Route::get('/applications', [JobApplicationController::class, 'index'])->name('applications.index');
-Route::get('/applications/create', [JobApplicationController::class, 'create'])->name('applications.create');
-Route::post('/applications', [JobApplicationController::class, 'store'])->name('applications.store');
+Route::get('/applications/create', [JobApplicationController::class, 'create'])->middleware(['auth', 'role:student,alumni,admin'])->name('applications.create');
+Route::post('/applications', [JobApplicationController::class, 'store'])->middleware(['auth', 'role:student,alumni,admin'])->name('applications.store');
 Route::get('/applications/{id}', [JobApplicationController::class, 'show'])->name('applications.show');
-Route::post('/applications/{id}/status', [JobApplicationController::class, 'updateStatus'])->name('applications.status');
-Route::delete('/applications/{id}', [JobApplicationController::class, 'destroy'])->name('applications.destroy');
+Route::post('/applications/{id}/status', [JobApplicationController::class, 'updateStatus'])->middleware(['auth', 'role:alumni,admin'])->name('applications.status');
+Route::delete('/applications/{id}', [JobApplicationController::class, 'destroy'])->middleware(['auth', 'role:student,alumni,admin'])->name('applications.destroy');
+
+// =========================================================================
+// 13. Institutional Admin Panel Routes (/admin -> AdminController)
+// Protected by 'auth' and 'role:admin' middleware
+// Allows Antigravity Admin to access panel and manipulate all system data
+// =========================================================================
+Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->group(function () {
+    Route::get('/', [AdminController::class, 'index'])->name('dashboard');
+    Route::post('/users/{id}/approve', [AdminController::class, 'approveUser'])->name('users.approve');
+    Route::post('/users/{id}/reject', [AdminController::class, 'rejectUser'])->name('users.reject');
+    Route::post('/users/{id}/role', [AdminController::class, 'updateUserRole'])->name('users.role');
+    Route::delete('/users/{id}', [AdminController::class, 'deleteUser'])->name('users.delete');
+    Route::post('/job-postings/{id}/toggle', [AdminController::class, 'toggleJobPosting'])->name('job-postings.toggle');
+    Route::delete('/job-postings/{id}', [AdminController::class, 'deleteJobPosting'])->name('job-postings.delete');
+    Route::post('/applications/{id}/status', [AdminController::class, 'updateApplicationStatus'])->name('applications.status');
+});
 
 // GET /api/swagger - Swagger UI Arayüzü
 Route::get('/api/swagger', function () {

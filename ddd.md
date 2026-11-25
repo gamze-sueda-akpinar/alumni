@@ -19,11 +19,18 @@
    - [4.8 Announcements Entity (`announcements`)](#48-announcements-entity-announcements)
    - [4.9 Cache & Session Storage (`cache`, `sessions`)](#49-cache--session-storage-cache-sessions)
    - [4.10 Job Applications (`job_applications` / `applications`)](#410-job-applications-job_applications--applications)
-5. [Data Integrity & Relationship Constraints](#5-data-integrity--relationship-constraints)
-6. [State Machines & Entity Lifecycles](#6-state-machines--entity-lifecycles)
-7. [Direct vs. Nested Routing Architecture](#7-direct-vs-nested-routing-architecture)
-8. [Persistence Strategy & "The Forgetting Test" Verification](#8-persistence-strategy--the-forgetting-test-verification)
-9. [Cross-Reference Navigation](#9-cross-reference-navigation)
+5. [System Roles, Permissions & Authorization Architecture (RBAC)](#5-system-roles-permissions--authorization-architecture-rbac)
+   - [5.1 Ubiquitous Language & Role Domain Definitions](#51-ubiquitous-language--role-domain-definitions)
+   - [5.2 Domain Capabilities & Core Business Invariants](#52-domain-capabilities--core-business-invariants)
+   - [5.3 Comprehensive CRUD Permissions Matrix (Role vs. Resource)](#53-comprehensive-crud-permissions-matrix-role-vs-resource)
+   - [5.4 Domain Policies & Gate Specifications (Laravel Authorization)](#54-domain-policies--gate-specifications-laravel-authorization)
+   - [5.5 Bounded Contexts & Authorization Context Map](#55-bounded-contexts--authorization-context-map)
+   - [5.6 State Transition Authorization Rules](#56-state-transition-authorization-rules)
+6. [Data Integrity & Relationship Constraints](#6-data-integrity--relationship-constraints)
+7. [State Machines & Entity Lifecycles](#7-state-machines--entity-lifecycles)
+8. [Direct vs. Nested Routing & Authorization Architecture](#8-direct-vs-nested-routing--authorization-architecture)
+9. [Persistence Strategy & "The Forgetting Test" Verification](#9-persistence-strategy--the-forgetting-test-verification)
+10. [Cross-Reference Navigation](#10-cross-reference-navigation)
 
 ---
 
@@ -95,8 +102,10 @@ The relational schema and logical entities are structured around the following e
 erDiagram
     USERS ||--o| ALUMNI_PROFILES : "has one"
     USERS ||--o{ EXPERIENCES : "has many"
-    USERS ||--o{ JOB_POSTINGS : "creates"
-    USERS ||--o{ JOB_APPLICATIONS : "submits"
+    USERS ||--o{ JOB_POSTINGS : "creates (alumni, admin)"
+    USERS ||--o{ JOB_APPLICATIONS : "submits (student, alumni)"
+    USERS ||--o{ EVENTS : "organizes / hosts (academic, admin)"
+    USERS ||--o{ ANNOUNCEMENTS : "publishes (academic, admin)"
     JOB_POSTINGS ||--o{ JOB_APPLICATIONS : "receives"
     FACULTIES ||--o{ DEPARTMENTS : "contains"
     DEPARTMENTS ||--o{ ALUMNI_PROFILES : "graduated from"
@@ -105,6 +114,7 @@ erDiagram
         bigint id PK
         string name
         string email UK
+        enum role "'unverified', 'guest', 'student', 'alumni', 'academic', 'admin'"
         timestamp email_verified_at
         string password
         string remember_token
@@ -179,6 +189,7 @@ erDiagram
 
     EVENTS {
         bigint id PK
+        bigint user_id FK "Host / Organizer (Academic or Admin)"
         string title
         text description
         datetime event_date
@@ -220,20 +231,53 @@ erDiagram
 ## 4. 📖 Data Dictionary & Table Specifications
 
 ### 4.1 Users (`users`)
-- **Purpose:** Core identity, credential, and authentication store for administrators, coordinators, and graduates.
+- **Purpose:** Core identity, credential, and authentication store defining system actors, security principals, and role-based access levels.
 - **Migration:** `0001_01_01_000000_create_users_table.php`
 - **Eloquent Model:** [`app/Models/User.php`](app/Models/User.php)
 
-| Column | Type | Constraints | Description |
-| :--- | :--- | :--- | :--- |
-| `id` | `BIGINT UNSIGNED` | `PRIMARY KEY`, `AUTO_INCREMENT` | Unique user identifier |
-| `name` | `VARCHAR(255)` | `NOT NULL` | Full name of the user |
-| `email` | `VARCHAR(255)` | `NOT NULL`, `UNIQUE` | Unique email for authentication & contact |
-| `email_verified_at` | `TIMESTAMP` | `NULLABLE` | Timestamp when user verified email |
-| `password` | `VARCHAR(255)` | `NOT NULL` | Bcrypt/Argon2 hashed password string |
-| `remember_token` | `VARCHAR(100)` | `NULLABLE` | Token for "Remember Me" session persistence |
-| `created_at` | `TIMESTAMP` | `NULLABLE` | Record creation timestamp |
-| `updated_at` | `TIMESTAMP` | `NULLABLE` | Record last update timestamp |
+| Column | Type | Constraints | Default | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| `id` | `BIGINT UNSIGNED` | `PRIMARY KEY`, `AUTO_INCREMENT` | *None* | Unique user identifier |
+| `name` | `VARCHAR(255)` | `NOT NULL` | *None* | Full name of the user |
+| `email` | `VARCHAR(255)` | `NOT NULL`, `UNIQUE` | *None* | Unique email for authentication & contact |
+| `role` | `ENUM('unverified', 'guest', 'student', 'alumni', 'academic', 'admin')` | `NOT NULL`, `INDEX` | `'unverified'` | Authorization role defining system privileges & capabilities. New users default to 'unverified'. |
+| `email_verified_at` | `TIMESTAMP` | `NULLABLE` | `NULL` | Timestamp when user verified email |
+| `password` | `VARCHAR(255)` | `NOT NULL` | *None* | Bcrypt/Argon2 hashed password string |
+| `remember_token` | `VARCHAR(100)` | `NULLABLE` | `NULL` | Token for "Remember Me" session persistence |
+| `created_at` | `TIMESTAMP` | `NULLABLE` | `NULL` | Record creation timestamp |
+| `updated_at` | `TIMESTAMP` | `NULLABLE` | `NULL` | Record last update timestamp |
+
+#### 👥 System Actors & Role Taxonomy (Sistem Rolleri ve Yetki Kapsamı):
+The domain model distinguishes six user roles, each with defined business rules, operational scopes, and authorization boundaries:
+
+1. **`unverified` (Doğrulanmamış Yeni Kullanıcı):**
+   - **Domain Definition:** Any newly registered user accessing the system for the first time who has not yet completed the official identity, diploma, or student verification process.
+   - **Allowed Capabilities:** Can view their personal registration status, update verification credentials (student number, department, graduation year, LinkedIn/document reference URL), and browse public application surfaces.
+   - **Restrictions:** In accordance with institutional integrity rules, `unverified` accounts cannot share job postings, cannot apply for jobs, cannot create events, and are hidden from the verified public alumni directory until reviewed and approved by an administrator.
+
+2. **`guest` (Ziyaretçi / Misafir):**
+   - **Domain Definition:** Unauthenticated visitors exploring the portal.
+   - **Allowed Capabilities:** Can view the application, including the public landing page, alumni gazette, public announcements, and active job/event catalogs in read-only mode.
+   - **Restrictions:** Cannot post job opportunities, cannot create events, cannot submit job applications, and cannot access the admin panel.
+
+3. **`student` (Öğrenci):**
+   - **Domain Definition:** Active undergraduate or graduate students verified with current student credentials.
+   - **Allowed Capabilities:** Can view the full directory, read announcements, view academic and alumni events, and **apply for active job postings** (`job_applications`).
+   - **Restrictions:** Cannot publish job postings (`job_postings`), cannot create events, and cannot modify system configurations.
+
+4. **`alumni` (Mezun):**
+   - **Domain Definition:** Verified graduates of the university holding an academic degree.
+   - **Allowed Capabilities:** Can **share job postings** (`job_postings`) to hire fellow graduates, **apply for jobs** (`job_applications`), manage their own public `alumni_profiles`, record professional career `experiences`, and participate in networking directories.
+   - **Restrictions:** Cannot create institutional events (must be proposed via academics or alumni office) and cannot administer other users.
+
+5. **`academic` (Akademisyen / Fakülte Üyesi):**
+   - **Domain Definition:** Professors, lecturers, and academic faculty members of the university.
+   - **Allowed Capabilities:** Can **post and create events** (such as alumni events, academic panels, homecoming reunions, career roundtables, and departmental seminars), publish academic announcements, and mentor students/alumni.
+   - **Restrictions:** Cannot access system-wide administrative control panels or mutate global system settings outside departmental/event scope.
+
+6. **`admin` (Yönetici / Sistem Yöneticisi):**
+   - **Domain Definition:** Institutional coordinators and IT administrators of the Alumni Tracking System.
+   - **Allowed Capabilities:** **Manages the entire system** — complete operational CRUD over users, role assignment and verification status approvals (`unverified` &rarr; `student` / `alumni` / `academic`), moderation of job postings and events, management of faculties and departments, audit logs, and Filament Admin Panel access.
 
 ---
 
@@ -402,22 +446,29 @@ The `job_postings` entity enforces explicit domain validation rules across Web F
 ---
 
 ### 4.7 Events (`events`)
-- **Purpose:** Reunions, seminars, webinars, and networking meetups for the alumni community.
+- **Purpose:** Reunions, academic panels, webinars, networking meetups, and institutional alumni days organized primarily by academic staff and university administrators.
 - **Migration:** `2026_09_23_073306_create_events_table.php`
 - **Eloquent Model:** [`app/Models/Event.php`](app/Models/Event.php)
+- **Domain Authorization:** Restricted creation rights: **`academic`** and **`admin`** roles are exclusively authorized to post and create events.
 
-| Column | Type | Constraints | Description |
-| :--- | :--- | :--- | :--- |
-| `id` | `BIGINT UNSIGNED` | `PRIMARY KEY`, `AUTO_INCREMENT` | Unique event identifier |
-| `title` | `VARCHAR(255)` | `NOT NULL` | Title of the event |
-| `description` | `TEXT` | `NOT NULL` | Full event agenda and details |
-| `event_date` | `DATETIME` | `NOT NULL` | Scheduled date and time of the event |
-| `location` | `VARCHAR(255)` | `NULLABLE` | Physical venue or room |
-| `is_online` | `BOOLEAN` | `DEFAULT FALSE` | Virtual/Online meeting indicator |
-| `meeting_link` | `VARCHAR(255)` | `NULLABLE` | URL for Zoom, Google Meet, or Teams session |
-| `is_active` | `BOOLEAN` | `DEFAULT TRUE` | Active status flag for public display |
-| `created_at` | `TIMESTAMP` | `NULLABLE` | Event creation timestamp |
-| `updated_at` | `TIMESTAMP` | `NULLABLE` | Event last update timestamp |
+| Column | Type | Constraints | Default | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| `id` | `BIGINT UNSIGNED` | `PRIMARY KEY`, `AUTO_INCREMENT` | *None* | Unique event identifier |
+| `user_id` | `BIGINT UNSIGNED` | `NOT NULL`, `FK` &rarr; `users.id`, `ON DELETE CASCADE` | *None* | Event organizer/host identity (`academic` or `admin`) |
+| `title` | `VARCHAR(255)` | `NOT NULL` | *None* | Title of the event (e.g. 2026 Bahar Mezunlar Buluşması) |
+| `description` | `TEXT` | `NOT NULL` | *None* | Full event agenda, speaker list, and details |
+| `event_date` | `DATETIME` | `NOT NULL` | *None* | Scheduled date and time of the event |
+| `location` | `VARCHAR(255)` | `NULLABLE` | `NULL` | Physical venue, campus amphitheater, or room |
+| `is_online` | `BOOLEAN` | `NOT NULL` | `FALSE` | Virtual/Online meeting indicator |
+| `meeting_link` | `VARCHAR(255)` | `NULLABLE` | `NULL` | URL for Zoom, Google Meet, or Teams session |
+| `is_active` | `BOOLEAN` | `NOT NULL` | `TRUE` | Active status flag for public display |
+| `created_at` | `TIMESTAMP` | `NULLABLE` | `NULL` | Event creation timestamp |
+| `updated_at` | `TIMESTAMP` | `NULLABLE` | `NULL` | Event last update timestamp |
+
+#### 🎓 Academic Event Organization Rules:
+- **Academic Authority:** Academics can create both academic seminars (department panels, symposiums) and alumni events (homecoming days, career mentoring sessions).
+- **Public Visibility:** Events marked `is_active = 1` are visible to all users, including **guests**, **students**, and **alumni**.
+- **Management:** Organizers can update their own events; **admin** users retain system-wide moderation authority to edit, unpublish, or delete any event.
 
 ---
 
@@ -502,26 +553,292 @@ CREATE TABLE `cache_locks` (
 
 ---
 
-## 5. 🛡️ Data Integrity & Relationship Constraints
+## 5. 🔐 System Roles, Permissions & Authorization Architecture (RBAC)
 
-The database enforces strict referential integrity rules:
+The system implements a domain-driven **Role-Based Access Control (RBAC)** architecture. Authorization is structured around clear aggregate boundaries, explicit user roles, domain invariants, and decoupled Laravel policy guards.
+
+```mermaid
+flowchart TD
+    Guest["👤 Guest (Visitor)<br/>• Read-Only Catalog<br/>• View Public Announcements"]
+    Student["🎓 Student<br/>• View Network & Events<br/>• Apply for Job Postings"]
+    Alumni["💼 Alumni (Graduate)<br/>• Share Job Postings<br/>• Apply for Jobs<br/>• Manage Profile & CV"]
+    Academic["🏛️ Academic (Faculty)<br/>• Post & Create Events<br/>• Publish Announcements<br/>• Host Alumni Reunions"]
+    Admin["⚙️ Admin (System)<br/>• Full System Management<br/>• User & Role Assignment<br/>• Moderation & Config"]
+
+    subgraph Operations["Core Application Domain Operations"]
+        OpView["Public Application Viewing"]
+        OpApply["Submit Job Applications"]
+        OpPostJob["Share & Publish Job Postings"]
+        OpCreateEvent["Post & Create Alumni Events"]
+        OpManageSys["System & User Governance"]
+    end
+
+    Guest -->|Can access| OpView
+    Student -->|Can access| OpView
+    Student -->|Authorized| OpApply
+    Alumni -->|Can access| OpView
+    Alumni -->|Authorized| OpApply
+    Alumni -->|Authorized| OpPostJob
+    Academic -->|Can access| OpView
+    Academic -->|Authorized| OpCreateEvent
+    Admin -->|Full Access| OpManageSys
+    Admin -->|Superuser Override| OpPostJob
+    Admin -->|Superuser Override| OpCreateEvent
+    Admin -->|Superuser Override| OpApply
+```
+
+---
+
+### 5.1 Ubiquitous Language & Role Domain Definitions
+
+In accordance with Domain-Driven Design (DDD) principles, the following ubiquitous terms define the security principals and actors across the application:
+
+| Role Term | Ubiquitous Language Definition | Authentication State | Primary Domain Responsibility |
+| :--- | :--- | :--- | :--- |
+| **`unverified`** | **Doğrulanmamış Yeni Kullanıcı (Unverified Onboardee):** Newly registered user accessing the system for the first time whose academic diploma or student credentials are under administrative review. | Authenticated (`role = 'unverified'`) | Accesses onboarding dashboard and verification progress; submits proof of graduation or student identity. |
+| **`guest`** | **Public Visitor / Prospective Member:** Any unauthenticated visitor or unregistered party browsing the public application surface. | Unauthenticated (Session/Guest) | Browses public catalogs, institutional news, and alumni gazette in read-only mode without write permissions. |
+| **`student`** | **Enrolled Undergraduate/Graduate Student:** Active learner verified with current student credentials. | Authenticated (`role = 'student'`) | Discovers career paths, networks with graduates, and **applies for verified job postings** (`job_applications`). |
+| **`alumni`** | **Verified University Graduate:** Degree holder confirmed through diploma verification. | Authenticated (`role = 'alumni'`) | Enriches the alumni ecosystem by **sharing job postings** (`job_postings`), **applying for career roles**, and updating their professional profile and work history. |
+| **`academic`** | **Faculty Member / Academic Staff:** Professors, associate professors, and department lecturers. | Authenticated (`role = 'academic'`) | Fosters institutional engagement by **posting and creating events** (such as alumni reunions, symposiums, departmental workshops) and publishing academic notices. |
+| **`admin`** | **System & Institutional Administrator:** Alumni Office coordinators and IT operations engineers. | Authenticated (`role = 'admin'`) | **Manages the entire system:** oversees users, approves/rejects alumni verifications, moderates all postings/events, audits activity, and configures faculties and departments. |
+
+---
+
+### 5.2 Domain Capabilities & Core Business Invariants
+
+The application enforces the following core business invariants at the domain and policy layers:
+
+1. **Unverified Login & Default Student Role Invariant:**
+   - Unverified users (users awaiting diploma or academic credential approval) are explicitly permitted to log in (`/login`), maintain authenticated sessions, and log out (`/logout`).
+   - By default, until official verification is approved, all new accounts operate with the **`student`** role and baseline student privileges (can browse the directory, read announcements, and apply for active job listings). They cannot author jobs or create events until their target role (`alumni` or `academic`) is approved by an administrator.
+
+2. **Guest Read-Only Invariant:**
+   - Guests can view the application, its public landing sections, public announcements, and open job listings.
+   - Guests have zero state-mutating capabilities; attempting to post jobs, submit applications, or create events triggers a 401 Unauthorized or redirect to authentication.
+
+3. **Student Career Opportunity Invariant:**
+   - Active verified students are granted first-class rights to **apply for jobs** (`POST /api/applications` / web form).
+   - Students cannot author job postings (`POST /api/job-postings`) or organize institutional events.
+
+4. **Alumni Reciprocal Networking Invariant:**
+   - Verified alumni can **share job postings** to recruit junior colleagues or students.
+   - Alumni can also **apply for jobs** shared by other alumni or partner enterprises.
+   - Alumni maintain exclusive self-management rights over their own `alumni_profiles` and `experiences`.
+
+5. **Academic Event Creation Invariant:**
+   - Academics are empowered to **post and create events** (e.g., annual alumni events, career panels, research showcases, graduation celebrations).
+   - Academics can author departmental and academic announcements.
+
+6. **Admin System Governance Invariant:**
+   - Administrators **manage the entire system**.
+   - Admin authority includes: user lifecycle management, role transitions (`unverified` &rarr; `student` &rarr; `alumni` &rarr; `academic` &rarr; `admin`), profile verification approvals, administrative deletion/curation of content, and Filament Admin Panel access.
+
+---
+
+### 5.3 Comprehensive CRUD Permissions Matrix (Role vs. Resource)
+
+The following matrix formally specifies Create, Read, Update, Delete (CRUD) rights across all system aggregates:
+
+| Aggregate / Resource | `unverified` (Yeni) | `guest` (Misafir) | `student` (Öğrenci) | `alumni` (Mezun) | `academic` (Akademisyen) | `admin` (Yönetici) |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| **Public Landing & Web App Views** | Read ✅ | Read ✅ | Read ✅ | Read ✅ | Read ✅ | Full ✅ |
+| **User Directory (`users`)** | Read (Public) ✅ | Read (Public) ✅ | Read ✅ | Read ✅ | Read ✅ | Full (CRUD) ✅ |
+| **Own Profile & CV (`alumni_profiles`)** | Create/Edit (Pending) ✅ | ❌ | Read ✅ | Create/Edit (Own) ✅ | Read/Edit (Own) ✅ | Full (Manage Any) ✅ |
+| **Work Experiences (`experiences`)** | ❌ | ❌ | ❌ | Create/Edit/Delete (Own) ✅ | ❌ | Full (Manage Any) ✅ |
+| **Job Postings (`job_postings`) - Read** | Read (Active) ✅ | Read (Active) ✅ | Read (Active) ✅ | Read (All Active) ✅ | Read (All Active) ✅ | Full (Read All) ✅ |
+| **Job Postings (`job_postings`) - Share/Create** | ❌ | ❌ | ❌ | **Create ✅** | ❌ | **Create ✅** |
+| **Job Postings (`job_postings`) - Edit/Delete** | ❌ | ❌ | ❌ | Edit/Delete (Own Only) ✅ | ❌ | Full (Edit/Delete Any) ✅ |
+| **Job Applications (`job_applications`) - Apply**| **Apply (Student Default) ✅** | ❌ | **Apply ✅** | **Apply ✅** | ❌ | Apply (Test) ✅ |
+| **Job Applications (`job_applications`) - View** | View (Own) ✅ | ❌ | View (Own) ✅ | View (Own + Received for Own Jobs) ✅ | View (Dept) ✅ | Full (View All) ✅ |
+| **Events (`events`) - View** | Read (Active) ✅ | Read (Active) ✅ | Read (Active) ✅ | Read (Active) ✅ | Read (Active) ✅ | Full (Read All) ✅ |
+| **Events (`events`) - Post & Create** | ❌ | ❌ | ❌ | ❌ | **Create & Host ✅** | **Create & Host ✅** |
+| **Events (`events`) - Edit / Delete** | ❌ | ❌ | ❌ | ❌ | Edit/Delete (Own Events) ✅ | Full (Edit/Delete Any) ✅ |
+| **Announcements (`announcements`)** | Read ✅ | Read ✅ | Read ✅ | Read ✅ | Create / Publish ✅ | Full (CRUD) ✅ |
+| **Faculties & Departments (`faculties`)** | Read ✅ | Read ✅ | Read ✅ | Read ✅ | Read ✅ | Full (CRUD) ✅ |
+| **Filament Admin Panel (`/admin`)** | ❌ | ❌ | ❌ | ❌ | ❌ | **Full Access ✅** |
+| **Job Applications (`job_applications`) - Apply**| ❌ | **Apply ✅** | **Apply ✅** | ❌ | Apply (Test) ✅ |
+| **Job Applications (`job_applications`) - View** | ❌ | View (Own) ✅ | View (Own + Received for Own Jobs) ✅ | View (Dept) ✅ | Full (View All) ✅ |
+| **Events (`events`) - View** | Read (Active) ✅ | Read (Active) ✅ | Read (Active) ✅ | Read (Active) ✅ | Full (Read All) ✅ |
+| **Events (`events`) - Post & Create** | ❌ | ❌ | ❌ | **Create & Host ✅** | **Create & Host ✅** |
+| **Events (`events`) - Edit / Delete** | ❌ | ❌ | ❌ | Edit/Delete (Own Events) ✅ | Full (Edit/Delete Any) ✅ |
+| **Announcements (`announcements`)** | Read ✅ | Read ✅ | Read ✅ | Create / Publish ✅ | Full (CRUD) ✅ |
+| **Faculties & Departments (`faculties`)** | Read ✅ | Read ✅ | Read ✅ | Read ✅ | Full (CRUD) ✅ |
+| **Filament Admin Panel (`/admin`)** | ❌ | ❌ | ❌ | ❌ | **Full Access ✅** |
+
+---
+
+### 5.4 Domain Policies & Gate Specifications (Laravel Authorization)
+
+Authorization rules are encapsulated into declarative Laravel Policies and Gates:
+
+```php
+// App\Policies\JobPostingPolicy.php
+class JobPostingPolicy
+{
+    /**
+     * Determine whether the user can create job postings.
+     * Allowed: Alumni and Admin.
+     */
+    public function create(User $user): bool
+    {
+        return in_array($user->role, ['alumni', 'admin']);
+    }
+
+    public function update(User $user, JobPosting $posting): bool
+    {
+        return $user->role === 'admin' || $user->id === $posting->user_id;
+    }
+
+    public function delete(User $user, JobPosting $posting): bool
+    {
+        return $user->role === 'admin' || $user->id === $posting->user_id;
+    }
+}
+```
+
+```php
+// App\Policies\JobApplicationPolicy.php
+class JobApplicationPolicy
+{
+    /**
+     * Determine whether the user can apply for jobs.
+     * Allowed: Student and Alumni.
+     */
+    public function create(User $user): bool
+    {
+        return in_array($user->role, ['student', 'alumni', 'admin']);
+    }
+
+    public function view(User $user, JobApplication $application): bool
+    {
+        // Candidate can view own; Alumnus publisher can view received applications
+        return $user->role === 'admin' 
+            || $user->id === $application->user_id 
+            || $user->id === $application->jobPosting->user_id;
+    }
+}
+```
+
+```php
+// App\Policies\EventPolicy.php
+class EventPolicy
+{
+    /**
+     * Determine whether the user can create and host events.
+     * Allowed: Academic and Admin.
+     */
+    public function create(User $user): bool
+    {
+        return in_array($user->role, ['academic', 'admin']);
+    }
+
+    public function update(User $user, Event $event): bool
+    {
+        return $user->role === 'admin' || $user->id === $event->user_id;
+    }
+
+    public function delete(User $user, Event $event): bool
+    {
+        return $user->role === 'admin' || $user->id === $event->user_id;
+    }
+}
+```
+
+#### Authorization Middleware Pipeline:
+- **`auth` (`EnsureAuthenticatedMiddleware`):**
+  - Enforces session or token authentication.
+  - Redirects unauthenticated web requests to `/login` with an informative notice; returns HTTP 401 JSON for API requests.
+  - Explicitly permits **unverified** accounts to authenticate, maintain sessions, and safely log out.
+- **`role:student,alumni,admin` (`CheckRoleMiddleware`):**
+  - Authorizes job application submissions. Unverified users awaiting official diploma/academic review automatically resolve to the `student` role and are granted access.
+- **`role:alumni,admin` (`CheckRoleMiddleware`):**
+  - Protects job posting creation (`/job-postings/create`) and employer management. Requires approved alumnus or admin status; unverified users attempting access receive HTTP 403 Forbidden.
+- **`role:academic,admin` (`CheckRoleMiddleware`):**
+  - Enforces event creation (`POST /api/events`) and institutional announcement authoring.
+- **`role:admin` (`CheckRoleMiddleware`):**
+  - Restricts system configuration and Filament Admin Panel access strictly to system administrators.
+- **`guest`:** Permits unauthenticated visitors to view the application catalogs in read-only mode.
+
+---
+
+### 5.5 Bounded Contexts & Authorization Context Map
+
+The system separates concerns across four distinct Bounded Contexts with strict upstream/downstream relationships:
+
+```mermaid
+flowchart LR
+    subgraph IAM_Context["Identity & Access Management (IAM) Context"]
+        UserAgg["User Aggregate Root<br/>(id, name, email, role)"]
+        RoleVO["UserRole Value Object<br/>(guest, student, alumni, academic, admin)"]
+        AuthGuards["Policies & Gates"]
+    end
+
+    subgraph Career_Context["Career & Opportunity Context"]
+        JobAgg["JobPosting Aggregate<br/>(Author: Alumni, Admin)"]
+        AppAgg["JobApplication Aggregate<br/>(Applicant: Student, Alumni)"]
+    end
+
+    subgraph Event_Context["Academic & Event Context"]
+        EventAgg["Event Aggregate<br/>(Host: Academic, Admin)"]
+        AnnounceAgg["Announcement Entity"]
+    end
+
+    subgraph Governance_Context["Institutional Governance Context"]
+        VerificationAgg["Alumni Verification Service"]
+        AuditAgg["Admin Audit Logs"]
+        OrgAgg["Faculty & Department Aggregates"]
+    end
+
+    IAM_Context -->|"Confers Identity & Role"| Career_Context
+    IAM_Context -->|"Confers Host Role"| Event_Context
+    IAM_Context -->|"Admin Superuser Control"| Governance_Context
+```
+
+---
+
+### 5.6 State Transition Authorization Rules
+
+State transitions in aggregate lifecycles are restricted to designated actor roles:
+
+| Aggregate | State Transition | Authorized Triggering Role | Business Justification |
+| :--- | :--- | :--- | :--- |
+| **`User Account (Role)`** | `unverified` &rarr; `student` / `alumni` / `academic` | **`admin` / Registrar Service** | Upgrades newly registered accounts following diploma, student number, or academic staff verification. |
+| **`AlumniProfile`** | `pending` &rarr; `approved` | **`admin` only** | Verifies student ID, graduation transcript, and diploma authenticity. |
+| **`AlumniProfile`** | `pending` &rarr; `rejected` | **`admin` only** | Marks incomplete, falsified, or duplicate alumni registration attempts. |
+| **`JobPosting`** | `Active` &rarr; `Closed` | **Author Alumnus / `admin`** | Closes position once hiring goal is fulfilled. |
+| **`JobApplication`** | `pending` &rarr; `reviewed` | **Posting Author Alumnus / `admin`**| Recruiter acknowledges receipt of CV and begins evaluation. |
+| **`JobApplication`** | `reviewed` &rarr; `shortlisted` | **Posting Author Alumnus / `admin`**| Advances candidate to technical/cultural interview stage. |
+| **`JobApplication`** | `shortlisted` &rarr; `accepted` | **Posting Author Alumnus / `admin`**| Issues formal job offer to candidate. |
+| **`JobApplication`** | Any &rarr; `rejected` | **Posting Author Alumnus / `admin`**| Concludes candidate evaluation when qualifications do not match. |
+
+---
+
+## 6. 🛡️ Data Integrity & Relationship Constraints
+
+The database enforces strict referential integrity rules and domain invariants:
 1. **User Deletion Cascades (`ON DELETE CASCADE`):**
-   - When a record in `users` is deleted, all associated `alumni_profiles`, `experiences`, `job_postings`, and `job_applications` are automatically purged by MySQL foreign keys, preventing orphaned data.
+   - When a record in `users` is deleted, all associated `alumni_profiles`, `experiences`, `job_postings`, `job_applications`, and `events` are automatically purged by MySQL foreign keys, preventing orphaned data across all aggregates.
 2. **Job Posting Deletion Cascades (`ON DELETE CASCADE`):**
    - When a record in `job_postings` is deleted, all submitted `job_applications` are automatically purged.
-3. **Department Protection (`ON DELETE SET NULL`):**
+3. **Event Host Integrity (`ON DELETE CASCADE`):**
+   - The `events.user_id` foreign key ensures institutional accountability by linking each event to its host (`academic` or `admin`). Deleting the host user safely purges their authored events or reassigns them via administrative migration.
+4. **Department Protection (`ON DELETE SET NULL`):**
    - If an academic department is deleted or merged, `alumni_profiles.department_id` is automatically set to `NULL` to preserve the graduate's historical profile and contact details.
-4. **Faculty Deletion Cascades (`ON DELETE CASCADE`):**
+5. **Faculty Deletion Cascades (`ON DELETE CASCADE`):**
    - Deleting a faculty cascades to all departments belonging to that faculty.
-5. **Targeted Performance Indexes:**
-   - Indexes are established on frequently filtered columns:
+6. **Role Domain Check Constraint:**
+   - Enforces that `users.role` must strictly equal one of the five approved domain roles: `'guest'`, `'student'`, `'alumni'`, `'academic'`, or `'admin'`.
+7. **Targeted Performance Indexes:**
+   - Indexes are established on frequently filtered and authorized columns:
+     - `users.role` (High-speed RBAC policy checks)
+     - `events.user_id` (Host query filtering)
      - `alumni_profiles.graduation_year`
      - `alumni_profiles.current_company`
      - `alumni_profiles.city`
      - `alumni_profiles.status`
      - `job_postings.workplace_type`
      - `job_postings.city`
-6. **Job Posting Domain Integrity & Rules:**
+8. **Job Posting Domain Integrity & Rules:**
    - **Mandatory Fields:** `title`, `company_name`, `workplace_type`, and `salary` are enforced as `NOT NULL`.
    - **Workplace Type Domain Check:** `workplace_type` is restricted strictly to `hybrid`, `remote`, or `in-office`.
    - **Compensation Constraint:** `salary` must be a non-negative decimal value (`salary >= 0`).
@@ -529,14 +846,14 @@ The database enforces strict referential integrity rules:
 
 ---
 
-## 6. 🔄 State Machines & Entity Lifecycles
+## 7. 🔄 State Machines & Entity Lifecycles
 
 ### Alumni Profile Status Workflow
 ```mermaid
 stateDiagram-v2
     [*] --> pending: Alumnus registers profile
-    pending --> approved: Coordinator verifies student number & diploma
-    pending --> rejected: Invalid graduation or duplicate record
+    pending --> approved: Admin verifies student number & diploma
+    pending --> rejected: Admin rejects invalid graduation or duplicate
     rejected --> pending: Alumnus submits corrected documentation
     approved --> [*]: Active in public alumni directory
 ```
@@ -544,21 +861,21 @@ stateDiagram-v2
 ### Job Posting Lifecycle
 ```mermaid
 stateDiagram-v2
-    [*] --> Active: Coordinator or Alumnus posts job
+    [*] --> Active: Alumnus (or Admin) shares and publishes job
     Active --> Expired: Application deadline date reached
-    Active --> Closed: Position filled / manually closed (is_active = 0)
-    Closed --> Active: Re-opened by creator
+    Active --> Closed: Alumnus/Admin marks position filled (is_active = 0)
+    Closed --> Active: Re-opened by Alumnus/Admin
     Closed --> [*]: Deleted
 ```
 
 ### Job Application Status Workflow
 ```mermaid
 stateDiagram-v2
-    [*] --> pending: Alumnus submits application
-    pending --> reviewed: Recruiter/Poster reviews profile & CV
-    reviewed --> shortlisted: Candidate advanced to interview
-    reviewed --> rejected: Not matching requirements
-    shortlisted --> accepted: Candidate offered position
+    [*] --> pending: Student or Alumnus submits application
+    pending --> reviewed: Alumnus Poster (or Admin) reviews profile & CV
+    reviewed --> shortlisted: Alumnus Poster advances candidate to interview
+    reviewed --> rejected: Alumnus Poster flags not matching requirements
+    shortlisted --> accepted: Alumnus Poster offers position
     shortlisted --> rejected: Not selected
     accepted --> [*]: Application successful
     rejected --> [*]: Application closed
@@ -566,45 +883,58 @@ stateDiagram-v2
 
 ---
 
-## 7. 🚦 Direct vs. Nested Routing Architecture
+## 8. 🚦 Direct vs. Nested Routing & Authorization Architecture
 
-The HTTP routing layer is structured into **Direct (Top-Level)** and **Nested (Scoped/Hierarchical)** routes to support both decoupled catalog queries and relational parent-child data operations:
+The HTTP routing layer is structured into **Direct (Top-Level)** and **Nested (Scoped/Hierarchical)** routes, strictly protected by role-based authorization middleware:
 
-### 7.1 Direct Routes (Bağımsız Doğrudan Rotalar)
+### 8.1 Direct Routes (Bağımsız Doğrudan Rotalar)
 Direct routes access an entity collection or single record directly by its unique identifier:
 
-| HTTP Method | Route URI | Controller & Action | Resource Description |
-| :--- | :--- | :--- | :--- |
-| `GET` | `/users` | `UserController@index` | HTML view: All users list |
-| `GET` | `/users/{id}` | `UserController@show` | HTML view: Single user detail |
-| `GET` | `/api/users` | `ApiUserController@index` | JSON: All users list |
-| `GET` | `/api/users/{id}` | `ApiUserController@show` | JSON: Single user detail |
-| `GET` | `/job-postings` | `JobPostingController@index` | HTML view: Job catalog |
-| `GET` | `/api/job-postings` | `ApiJobPostingController@index` | JSON: All job postings |
-| `GET` | `/api/job-postings/{id}` | `ApiJobPostingController@show` | JSON: Single job detail |
-| `GET` | `/announcements` | `AnnouncementController@index` | HTML view: Announcements |
-| `GET` | `/api/announcements` | `ApiAnnouncementController@index` | JSON: Announcements list |
-| `GET` | `/api/faculties` | `ApiFacultyController@index` | JSON: All university faculties |
-| `GET` | `/api/faculties/{id}` | `ApiFacultyController@show` | JSON: Single faculty details |
-| `GET` | `/api/departments` | `ApiDepartmentController@index` | JSON: All academic departments |
-| `GET` | `/api/departments/{id}` | `ApiDepartmentController@show` | JSON: Single department details |
-| `GET` | `/api/experiences/{id}` | `ApiExperienceController@show` | JSON: Single experience record |
-| `PUT` | `/api/experiences/{id}` | `ApiExperienceController@update` | JSON: Update experience |
-| `DELETE` | `/api/experiences/{id}` | `ApiExperienceController@destroy` | JSON: Delete experience |
-| `GET` | `/api/events` | `ApiEventController@index` | JSON: All upcoming/past events |
-| `POST` | `/api/events` | `ApiEventController@store` | JSON: Create a new event |
-| `GET` | `/api/events/{id}` | `ApiEventController@show` | JSON: Event details |
-| `GET` | `/api/applications` | `ApiJobApplicationController@index` | JSON: All job applications |
-| `POST` | `/api/applications` | `ApiJobApplicationController@store` | JSON: Submit an application |
-| `GET` | `/api/applications/{id}` | `ApiJobApplicationController@show` | JSON: Single application details |
-| `PUT/PATCH` | `/api/applications/{id}` | `ApiJobApplicationController@update` | JSON: Update application status & notes |
-| `DELETE` | `/api/applications/{id}` | `ApiJobApplicationController@destroy` | JSON: Delete / withdraw application |
-| `GET` | `/404` | `errors.404` (View) | HTML view: Generic 404 page with dynamic reason card & 6s auto-redirect to `/main` |
-| `ANY` | `/*` (Fallback) | `Route::fallback` | Fallback route redirecting browser to `/404?from=...` (302) and returning 404 JSON for API |
+| HTTP Method | Route URI | Controller & Action | Authorized Role(s) & Middleware | Resource Description |
+| :--- | :--- | :--- | :--- | :--- |
+| `GET` | `/register` | `AuthController@showRegisterForm` | `Public (unauthenticated, guest)` | HTML view: New user registration form |
+| `POST` | `/register` | `AuthController@register` | `Public (defaults to 'student' role)` | Submits registration and creates user |
+| `POST` | `/api/register` | `AuthController@register` | `Public (defaults to 'student' role)` | REST API registration endpoint |
+| `GET` | `/login` | `AuthController@showLoginForm` | `Public (unauthenticated, guest)` | HTML view: User login form |
+| `POST` | `/login` | `AuthController@login` | `All (Unverified users allowed to login)` | Authenticates user into session |
+| `POST` | `/api/login` | `AuthController@login` | `All (Unverified users allowed to login)` | REST API login endpoint |
+| `POST` | `/logout` | `AuthController@logout` | `Authenticated (unverified, student, alumni, academic, admin)` | Terminates user session |
+| `GET` | `/logout` | `AuthController@logout` | `Authenticated (unverified, student, alumni, academic, admin)` | Quick logout redirect |
+| `GET` | `/users` | `UserController@index` | `unverified, guest, student, alumni, academic, admin` | HTML view: All users list |
+| `GET` | `/users/{id}` | `UserController@show` | `guest, student, alumni, academic, admin` | HTML view: Single user detail |
+| `GET` | `/api/users` | `ApiUserController@index` | `guest, student, alumni, academic, admin` | JSON: All users list |
+| `GET` | `/api/users/{id}` | `ApiUserController@show` | `guest, student, alumni, academic, admin` | JSON: Single user detail |
+| `GET` | `/job-postings` | `JobPostingController@index` | `guest, student, alumni, academic, admin` | HTML view: Job catalog |
+| `GET` | `/job-postings/create` | `JobPostingController@create` | **`alumni, admin`** (`auth`, `role:alumni,admin`) | HTML view: Create job posting form |
+| `POST` | `/job-postings` | `JobPostingController@store` | **`alumni, admin`** (`auth`, `role:alumni,admin`) | Persists job posting to MySQL |
+| `GET` | `/api/job-postings` | `ApiJobPostingController@index` | `guest, student, alumni, academic, admin` | JSON: All active job postings |
+| `POST` | `/api/job-postings` | `ApiJobPostingController@store` | **`alumni, admin`** (`auth:sanctum`, `role:alumni,admin`) | Creates job posting via API |
+| `GET` | `/api/job-postings/{id}` | `ApiJobPostingController@show` | `guest, student, alumni, academic, admin` | JSON: Single job detail |
+| `GET` | `/announcements` | `AnnouncementController@index` | `guest, student, alumni, academic, admin` | HTML view: Announcements |
+| `GET` | `/api/announcements` | `ApiAnnouncementController@index` | `guest, student, alumni, academic, admin` | JSON: Announcements list |
+| `POST` | `/api/announcements` | `ApiAnnouncementController@store` | **`academic, admin`** (`auth:sanctum`, `role:academic,admin`) | Publishes new announcement |
+| `GET` | `/api/faculties` | `ApiFacultyController@index` | `guest, student, alumni, academic, admin` | JSON: All university faculties |
+| `GET` | `/api/faculties/{id}` | `ApiFacultyController@show` | `guest, student, alumni, academic, admin` | JSON: Single faculty details |
+| `GET` | `/api/departments` | `ApiDepartmentController@index` | `guest, student, alumni, academic, admin` | JSON: All academic departments |
+| `GET` | `/api/departments/{id}` | `ApiDepartmentController@show` | `guest, student, alumni, academic, admin` | JSON: Single department details |
+| `GET` | `/api/experiences/{id}` | `ApiExperienceController@show` | `guest, student, alumni, academic, admin` | JSON: Single experience record |
+| `PUT` | `/api/experiences/{id}` | `ApiExperienceController@update` | **`alumni (owner), admin`** (`auth:sanctum`) | JSON: Update career experience |
+| `DELETE` | `/api/experiences/{id}` | `ApiExperienceController@destroy` | **`alumni (owner), admin`** (`auth:sanctum`) | JSON: Delete career experience |
+| `GET` | `/api/events` | `ApiEventController@index` | `guest, student, alumni, academic, admin` | JSON: All upcoming/past events |
+| `POST` | `/api/events` | `ApiEventController@store` | **`academic, admin`** (`auth:sanctum`, `role:academic,admin`) | **Creates & hosts a new alumni event** |
+| `GET` | `/api/events/{id}` | `ApiEventController@show` | `guest, student, alumni, academic, admin` | JSON: Event details |
+| `GET` | `/api/applications` | `ApiJobApplicationController@index` | **`student, alumni, admin`** (`auth:sanctum`) | JSON: Job applications list |
+| `POST` | `/api/applications` | `ApiJobApplicationController@store` | **`student, alumni, admin`** (`auth:sanctum`, `role:student,alumni,admin`) | **Submits application for a job** |
+| `GET` | `/api/applications/{id}` | `ApiJobApplicationController@show` | **`student (applicant), alumni (poster), admin`** | JSON: Single application details |
+| `PUT/PATCH` | `/api/applications/{id}` | `ApiJobApplicationController@update` | **`alumni (poster), admin`** | JSON: Update application status/notes |
+| `DELETE` | `/api/applications/{id}` | `ApiJobApplicationController@destroy` | **`student (applicant), alumni, admin`** | JSON: Delete / withdraw application |
+| `GET` | `/admin/*` | Filament Dashboard & Resources | **`admin` only** (`auth`, `role:admin`) | **Full administrative management** |
+| `GET` | `/404` | `errors.404` (View) | `guest, student, alumni, academic, admin` | HTML view: Generic 404 page |
+| `ANY` | `/*` (Fallback) | `Route::fallback` | `guest, student, alumni, academic, admin` | Fallback route redirecting browser to `/404` |
 
 ---
 
-### 7.2 Nested Routes (İç İçe / Bağımlı Rotalar)
+### 8.2 Nested Routes (İç İçe / Bağımlı Rotalar)
 Nested routes represent child entities scoped strictly under their parent entity identifier:
 
 ```mermaid
@@ -618,25 +948,25 @@ graph LR
     Job["/api/job-postings/{id}"] -->|"/applications"| JobApps["1:N Received Applications"]
 ```
 
-| HTTP Method | Route URI | Controller & Action | Relational Scope & Purpose |
-| :--- | :--- | :--- | :--- |
-| `GET` | `/api/faculties/{id}/departments` | `ApiFacultyController@departments` | Lists all departments belonging to the specified faculty |
-| `POST` | `/api/faculties/{id}/departments` | `ApiFacultyController@storeDepartment` | Creates a new department nested under the specified faculty |
-| `GET` | `/api/departments/{id}/alumni` | `ApiDepartmentController@alumni` | Lists all alumni graduates from the specified department |
-| `GET` | `/api/users/{id}/profile` | `ApiUserController@profile` | Returns the 1:1 alumni profile for the specified user |
-| `PUT/PATCH` | `/api/users/{id}/profile` | `ApiUserController@updateProfile` | Updates the 1:1 alumni profile for the specified user |
-| `GET` | `/api/users/{id}/experiences` | `ApiUserController@experiences` | Lists all 1:N career experiences belonging to this user |
-| `POST` | `/api/users/{id}/experiences` | `ApiUserController@storeExperience` | Creates a new career experience scoped to this user |
-| `GET` | `/api/users/{id}/job-postings` | `ApiUserController@jobPostings` | Lists all 1:N job postings authored by this user |
-| `POST` | `/api/users/{id}/job-postings` | `ApiUserController@storeJobPosting` | Creates a new job posting authored by this user |
-| `GET` | `/api/users/{id}/applications` | `ApiUserController@applications` | Lists all 1:N job applications submitted by this user |
-| `POST` | `/api/users/{id}/applications` | `ApiUserController@storeApplication` | Submits a new job application on behalf of this user |
-| `GET` | `/api/job-postings/{id}/applications` | `ApiJobApplicationController@forJobPosting` | Lists all candidate applications received for this job posting |
-| `POST` | `/api/job-postings/{id}/applications` | `ApiJobApplicationController@storeForJobPosting` | Submits an application directly to this job posting |
+| HTTP Method | Route URI | Controller & Action | Authorized Role(s) | Relational Scope & Purpose |
+| :--- | :--- | :--- | :--- | :--- |
+| `GET` | `/api/faculties/{id}/departments` | `ApiFacultyController@departments` | `guest, student, alumni, academic, admin` | Lists all departments belonging to the specified faculty |
+| `POST` | `/api/faculties/{id}/departments` | `ApiFacultyController@storeDepartment` | **`admin` only** | Creates a new department nested under the specified faculty |
+| `GET` | `/api/departments/{id}/alumni` | `ApiDepartmentController@alumni` | `guest, student, alumni, academic, admin` | Lists all alumni graduates from the specified department |
+| `GET` | `/api/users/{id}/profile` | `ApiUserController@profile` | `guest, student, alumni, academic, admin` | Returns the 1:1 alumni profile for the specified user |
+| `PUT/PATCH` | `/api/users/{id}/profile` | `ApiUserController@updateProfile` | **`alumni (owner), admin`** | Updates the 1:1 alumni profile for the specified user |
+| `GET` | `/api/users/{id}/experiences` | `ApiUserController@experiences` | `guest, student, alumni, academic, admin` | Lists all 1:N career experiences belonging to this user |
+| `POST` | `/api/users/{id}/experiences` | `ApiUserController@storeExperience` | **`alumni (owner), admin`** | Creates a new career experience scoped to this user |
+| `GET` | `/api/users/{id}/job-postings` | `ApiUserController@jobPostings` | `guest, student, alumni, academic, admin` | Lists all 1:N job postings authored by this user |
+| `POST` | `/api/users/{id}/job-postings` | `ApiUserController@storeJobPosting` | **`alumni (owner), admin`** | Creates a new job posting authored by this user |
+| `GET` | `/api/users/{id}/applications` | `ApiUserController@applications` | **`student (owner), alumni (owner), admin`** | Lists all 1:N job applications submitted by this user |
+| `POST` | `/api/users/{id}/applications` | `ApiUserController@storeApplication` | **`student, alumni, admin`** | Submits a new job application on behalf of this user |
+| `GET` | `/api/job-postings/{id}/applications` | `ApiJobApplicationController@forJobPosting` | **`alumni (poster), admin`** | Lists all candidate applications received for this job posting |
+| `POST` | `/api/job-postings/{id}/applications` | `ApiJobApplicationController@storeForJobPosting` | **`student, alumni, admin`** | Submits an application directly to this job posting |
 
 ---
 
-## 8. 🧪 Persistence Strategy & "The Forgetting Test" Verification
+## 9. 🧪 Persistence Strategy & "The Forgetting Test" Verification
 
 A critical concern in containerized cloud native environments is **Data Persistence** across service lifecycles.
 
@@ -669,10 +999,11 @@ The persistence was verified via **"The Forgetting Test"**:
 
 ---
 
-## 9. 🔗 Cross-Reference Navigation
+## 10. 🔗 Cross-Reference Navigation
 
 - 📄 **Main Architecture & Setup:** [README.md](README.md)
 - 🎨 **Brand Identity & Design System:** [brand.md](brand.md)
+- 📐 **Visual Design System Reference:** [DESIGN.md](DESIGN.md)
 - 📡 **REST API Specification:** [public/openapi.json](public/openapi.json)
 - 👁️ **Live Interactive Swagger UI:** [resources/views/swagger.blade.php](resources/views/swagger.blade.php)
 - 🎮 **HTTP Routes Definition:** [routes/web.php](routes/web.php)

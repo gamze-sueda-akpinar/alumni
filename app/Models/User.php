@@ -19,12 +19,100 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'role',
+    ];
+
+    /**
+     * Default attributes.
+     * By domain requirement: Until official verification is completed,
+     * every user defaults to the 'student' role with baseline privileges.
+     */
+    protected $attributes = [
+        'role' => 'student',
     ];
 
     protected $hidden = [
         'password',
         'remember_token',
     ];
+
+    /**
+     * Check if the user is unverified / pending official verification.
+     * Users awaiting diploma/academic review remain unverified while holding the student role.
+     */
+    public function isUnverified(): bool
+    {
+        return $this->role === 'unverified' 
+            || ($this->alumniProfile && $this->alumniProfile->status === 'pending');
+    }
+
+    /**
+     * Check if the user is a verified account.
+     */
+    public function isVerified(): bool
+    {
+        return !$this->isUnverified();
+    }
+
+    /**
+     * Check if the user acts with student capabilities.
+     * All unverified users act as students by default until approved.
+     */
+    public function isStudent(): bool
+    {
+        return $this->role === 'student' || $this->role === 'unverified';
+    }
+
+    /**
+     * Check if the user is an approved alumnus/alumna.
+     */
+    public function isAlumni(): bool
+    {
+        return $this->role === 'alumni' && (!$this->alumniProfile || $this->alumniProfile->status === 'approved');
+    }
+
+    /**
+     * Check if the user is an approved academic faculty member.
+     */
+    public function isAcademic(): bool
+    {
+        return $this->role === 'academic' && (!$this->alumniProfile || $this->alumniProfile->status === 'approved');
+    }
+
+    /**
+     * Check if the user is a system administrator.
+     */
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
+
+    /**
+     * Determine if user can apply for jobs.
+     * Allowed for: student (including unverified users defaulting to student), alumni, and admin.
+     */
+    public function canApplyForJobs(): bool
+    {
+        return in_array($this->role, ['student', 'unverified', 'alumni', 'admin']);
+    }
+
+    /**
+     * Determine if user can share job postings.
+     * Allowed for: verified alumni and admin.
+     */
+    public function canShareJobPostings(): bool
+    {
+        return in_array($this->role, ['alumni', 'admin']) && $this->isVerified();
+    }
+
+    /**
+     * Determine if user can create and host events.
+     * Allowed for: verified academic staff and admin.
+     */
+    public function canCreateEvents(): bool
+    {
+        return in_array($this->role, ['academic', 'admin']) && $this->isVerified();
+    }
 
     protected $appends = [
         'student_number',

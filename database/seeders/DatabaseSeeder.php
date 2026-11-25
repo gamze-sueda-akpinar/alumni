@@ -17,14 +17,28 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        // 1. Admin Kullanıcısı
+        // 1. Admin Kullanıcıları (Antigravity AI & Sistem Yöneticileri)
+        $antigravityAdmin = User::firstOrCreate(
+            ['email' => 'antigravity@alumni.edu.tr'],
+            [
+                'name' => 'Antigravity (Super Admin)',
+                'password' => Hash::make('admin123'),
+                'role' => 'admin',
+            ]
+        );
+        $antigravityAdmin->role = 'admin';
+        $antigravityAdmin->save();
+
         $admin = User::firstOrCreate(
             ['email' => 'admin@alumni.com'],
             [
                 'name' => 'Gamze Şüeda Akpınar',
                 'password' => Hash::make('password123'),
+                'role' => 'admin',
             ]
         );
+        $admin->role = 'admin';
+        $admin->save();
 
         // 2. Fakülteler
         $muhendislik = Faculty::firstOrCreate(

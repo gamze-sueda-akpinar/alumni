@@ -7,7 +7,7 @@ const PUBLIC_DIR = path.join(__dirname, 'public');
 
 const server = http.createServer((req, res) => {
     let reqPath = req.url.split('?')[0];
-    if (reqPath === '/' || reqPath === '/main') {
+    if (reqPath === '/' || reqPath === '/main' || reqPath === '/register' || reqPath === '/login' || reqPath === '/admin') {
         reqPath = '/app_preview.html';
     }
 
