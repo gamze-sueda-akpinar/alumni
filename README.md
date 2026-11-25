@@ -19,6 +19,7 @@ A modern, full-featured **Alumni Tracking System** built for universities, facul
 
 | Document | Description | Direct Anchor |
 | :--- | :--- | :---: |
+| 🔐 **Authentication & Authorization (Auth)** | Roles (`guest`, `student`, `unverified`, `alumni`, `academic`, `admin`), registration/login, middleware, and user portals | [**Jump to Auth Section ↓**](#-authentication--authorization-auth-architecture) |
 | 🎨 **Brand Guidelines** | Official institutional color palette, Plus Jakarta Sans font scale, workplace badges, UI tokens & usage rules | [**`brand.md` →**](brand.md) |
 | 📐 **Visual Design System** | Refero Design references (Fictional, Family, Fable, SuperHi, TOMO, MindMarket), paper-cut layouts, card blueprints | [**`DESIGN.md` →**](DESIGN.md) |
 | 🗄️ **Data Design Document** | Complete Entity-Relationship (ER) model, database tables, data dictionary & field constraints | [**`ddd.md` →**](ddd.md) \| [**`add.md` →**](add.md) |
@@ -421,6 +422,128 @@ flowchart LR
 
 ---
 
+## 🔐 Authentication & Authorization (Auth) Architecture
+
+The Alumni Tracking System enforces a granular **Role-Based Access Control (RBAC)** model and a multi-tier authentication pipeline designed around institutional governance, graduation verification workflows, and least-privilege principles.
+
+```mermaid
+flowchart TD
+    User([🌐 User Access]) --> AuthCheck{Authenticated?}
+    
+    AuthCheck -->|No| GuestRole["👤 GUEST (Unauthenticated)<br/>• Read-only access to catalog<br/>• View announcements & directory<br/>• Register & Login actions"]
+    
+    AuthCheck -->|Yes| VerifCheck{Verified by Admin?}
+    
+    VerifCheck -->|No / Pending| UnverifiedRole["⏳ UNVERIFIED (New Registration)<br/>• Can log in & log out<br/>• Defaulted to Student capabilities<br/>• Apply for jobs & internships<br/>• Job posting creation BLOCKED"]
+    
+    VerifCheck -->|Yes| RoleDispatch{Active Role}
+    
+    RoleDispatch -->|student| StudentPortal["🎓 STUDENT Portal (/student/dashboard)<br/>• Track job/internship applications<br/>• Department hiring opportunities<br/>• Connect with alumni mentors<br/>• Attend academic events & webinarlar"]
+    
+    RoleDispatch -->|alumni| AlumniPortal["💼 ALUMNI Portal (/alumni/dashboard)<br/>• Publish job openings (/job-postings/create)<br/>• Review student applicant CVs<br/>• Issue interview invitations (Mülakat)<br/>• 14.850+ graduate networking"]
+    
+    RoleDispatch -->|academic| AcademicPortal["🏛️ ACADEMIC Portal (/academic/dashboard)<br/>• Host/publish alumni events & webinars<br/>• Department employment stats (%94.2)<br/>• Publish academic notices & panels<br/>• Faculty career coordination"]
+    
+    RoleDispatch -->|admin| AdminPortal["👑 ADMIN Panel (/admin)<br/>• Verification queue approval/rejection<br/>• Live user role manipulation<br/>• Job posting moderation (Active/Passive)<br/>• Audit logs & database maintenance"]
+```
+
+### 1. 👥 System Roles & Permissions Matrix
+
+The domain model identifies six operational actors (`guest`, `student`, `unverified`, `alumni`, `academic`, `admin`):
+
+| Role | Domain Identity | Key Permissions & Capabilities | Explicit Boundaries & Restrictions |
+| :--- | :--- | :--- | :--- |
+| **`guest`** | Unauthenticated Public Visitor | Browse public home portal, view verified alumni list, browse active career listings, view public announcements. | Cannot apply to jobs, post vacancies, host events, or access any portal dashboard. |
+| **`unverified`** | Newly Registered Account (Pending) | Authenticate, maintain active session, logout, browse directory, apply for jobs (**defaulted to `student` role privileges**). | Cannot publish job vacancies or host events until academic credentials or diploma are verified by admin. |
+| **`student`** | Active Enrolled Student *(e.g. Gamze Süeda Akpınar, '27)* | Track personal job/internship applications, view department-specific hiring calls, contact alumni mentors, attend webinars. | Cannot post job openings or access administrative management tools. |
+| **`alumni`** | Verified Graduate *(e.g. Ahmet Yılmaz, Senior Dev @ Trendyol)* | Publish job/internship vacancies (`/job-postings/create`), review student applicants, issue interview invites, apply for jobs, network. | Cannot create university-wide academic events or modify user roles. |
+| **`academic`** | Faculty Staff / Chair *(e.g. Prof. Dr. Ahmet Yılmaz)* | Host & publish alumni reunions, webinars, and symposia (`/events/create`), view department employment stats (%94.2), post notices. | Cannot publish corporate hiring vacancies unless authorized as department recruiter. |
+| **`admin`** | System Superuser *(e.g. Antigravity Super Admin)* | Full control over Filament Admin Panel (`/admin`), unverified verification queue, live user role manipulation, job moderation. | Bound by institutional audit logs. |
+
+---
+
+### 2. 📝 Registration & Unverified Flow
+
+When new users register for the platform via `/register`:
+* **Input Fields:**
+  - `name`: Full Name *(e.g. Gamze Süeda Akpınar)*
+  - `email`: Institutional or personal email address *(e.g. gamze.akpinar@ogr.iu.edu.tr)*
+  - `password` & `password_confirmation`: Minimum 8 characters
+  - `intended_role`: Target role selection (`student`, `alumni`, `academic`)
+  - `graduation_year`: Anticipated or historical graduation year *(e.g. 2027 for active students)*
+  - `student_id` / `diploma_proof`: Academic identity proof for verification
+* **Unverified User Access Guarantee:**
+  - New users are assigned `is_verified = false` with an initial status of `unverified`.
+  - **Zero-Friction Access:** Users are not locked out; they are permitted to log in, maintain sessions, and safely log out immediately upon registration.
+  - **Default Student Privileges:** In compliance with domain rules, unverified users automatically resolve to the **`student`** role, granting immediate access to browse listings, connect with mentors, and submit applications while awaiting official verification.
+  - **Verification by Admin:** University registrars review credentials in the Admin Verification Queue (`/admin#pending`) to approve accounts to their intended permanent role (`alumni`, `academic`, or verified `student`).
+
+---
+
+### 3. 🛡️ Authentication & Authorization Middleware
+
+The application enforces access boundaries using standard Laravel authentication and custom role middleware:
+
+* **`auth` Middleware:**
+  - Validates session state for web requests and bearer tokens for API requests.
+  - Automatically redirects unauthenticated web users to `/login` with an informative status message.
+  - Returns HTTP 401 Unauthorized JSON for unauthenticated API requests.
+  - Explicitly accommodates **`unverified`** users, allowing them to remain authenticated without middleware rejection.
+* **`CheckRoleMiddleware` (`role:...`):**
+  - **`role:student,alumni,admin`:** Authorizes job application submissions (`POST /applications`). Unverified accounts automatically fulfill this requirement under default student privileges.
+  - **`role:alumni,admin`:** Protects job vacancy authoring (`GET|POST /job-postings/create`). Unverified users attempting to access this route receive HTTP 403 Forbidden.
+  - **`role:academic,admin`:** Enforces event authoring (`POST /events/create`, `POST /api/events`).
+  - **`role:admin`:** Restricts Filament Admin Panel access strictly to system administrators.
+
+---
+
+### 4. 🧭 Dynamic Role-Based Navigation Architecture
+
+Header navigation dynamically adapts to the authenticated user's role, presenting role-tailored actions:
+
+| Menu Item / Action | `guest` | `student` / `unverified` | `alumni` | `academic` | `admin` | Destination |
+| :--- | :---: | :---: | :---: | :---: | :---: | :--- |
+| **Ana Sayfa** | ✅ | ✅ | ✅ | ✅ | ✅ | Public portal (`/main`) |
+| **🎓 Öğrenci Portalı** | ❌ | **✅ (Özel Buton)** | ❌ | ❌ | ❌ | Student dashboard (`/student/dashboard`) |
+| **💼 Mezun Portalı** | ❌ | ❌ | **✅ (Özel Buton)** | ❌ | ❌ | Alumni dashboard (`/alumni/dashboard`) |
+| **🏛️ Akademisyen Portalı**| ❌ | ❌ | ❌ | **✅ (Özel Buton)** | ❌ | Academic dashboard (`/academic/dashboard`) |
+| **👑 Admin Paneli** | ❌ | ❌ | ❌ | ❌ | **✅ (Sarı Rozet)**| Central governance (`/admin`) |
+| **Kariyer & İlanlar** | ✅ *(Gözlem)* | ✅ *(Staj/İş)* | ✅ | ✅ | ✅ | Career listings (`/job-postings`) |
+| **➕ İlan Paylaş** | ❌ | ❌ | **✅ (Vurgulu Buton)**| ❌ | **✅** | Post vacancy (`/job-postings/create`) |
+| **📋 Başvurularım** | ❌ | **✅ (Aktif Takip)** | **✅ (Gelen/Yapılan)**| ❌ | **✅ (Tüm Başvurular)** | Track/review applications (`/applications`) |
+| **🏛️ ➕ Etkinlik Oluştur**| ❌ | ❌ | ❌ | **✅ (Vurgulu Buton)**| **✅** | Create webinar/reunion (`/events/create`) |
+| **Mezun Rehberi** | ✅ | ✅ | ✅ | ✅ | ✅ | Directory (`/users`) |
+| **Giriş Yap / Kayıt Ol** | **✅** | ❌ *(Oturum Açık)* | ❌ *(Oturum Açık)* | ❌ *(Oturum Açık)* | ❌ *(Oturum Açık)* | Auth forms (`/login`, `/register`) |
+| **Çıkış Yap (Logout)** | ❌ | **✅** | **✅** | **✅** | **✅** | Terminate session (`/logout`) |
+
+---
+
+### 5. 🔀 User-Specific Portals & Universal Dispatcher
+
+To provide frictionless access to each user's primary workspace, the application features dedicated role dashboards and an automatic routing dispatcher:
+
+* **Universal Dispatcher (`/dashboard` & `/portal` &bull; `PortalController@dashboard`):**
+  - Reads `auth()->user()->role`.
+  - Automatically redirects users to their designated role portal without manual navigation.
+* **🎓 Student Portal (`/student/dashboard` &bull; `portals.student`):**
+  - **Live Application Tracker:** Detailed status table for submitted applications (`🔍 İnceleniyor`, `✓ Mülakata Alındı`).
+  - **Curated Department Openings:** Internships and junior developer roles filtered for Computer Engineering students.
+  - **Alumni Mentors:** Direct access to experienced graduate engineers for mentoring and career guidance.
+* **💼 Alumni Portal (`/alumni/dashboard` &bull; `portals.alumni`):**
+  - **Vacancy Management:** Moderation panel for job openings published by the alumnus.
+  - **Student Applicant Review:** Displays student applicants with one-click **"✓ Mülakata Çağır"** (Invite to Interview) action.
+  - **Alumni Network:** High-speed connection to 14.850+ registered graduates.
+* **🏛️ Academic Portal (`/academic/dashboard` &bull; `portals.academic`):**
+  - **Academic Events Manager:** Moderates webinars and homecoming reunions with live Zoom links.
+  - **New Event Publisher:** Integrated form for launching new department webinars and symposiums.
+  - **Employment Analytics:** Displays key institutional metrics including **94.2% department employment rate**.
+* **👑 Admin Panel (`/admin` &bull; Filament v3 / Custom):**
+  - Approval queue for unverified student and alumni registrations.
+  - Live role assignment and data manipulation.
+  - Immediate job posting moderation (Active/Passive toggling).
+
+---
+
 ## 💼 Job Posting Domain Rules & Transparency Architecture
 
 The **Career & Job Board** entity ([`app/Models/JobPosting.php`](app/Models/JobPosting.php)) enforces strict domain integrity rules across database schemas, Eloquent models, web forms, and REST API controllers:
@@ -511,8 +634,10 @@ alumni/
 │   │   │   ├── ApiUserController.php       # JSON RESTful API CRUD Controller
 │   │   │   ├── Controller.php              # Base Laravel controller
 │   │   │   ├── JobPostingController.php    # Web & Resource Job Posting CRUD Controller
+│   │   │   ├── PortalController.php        # Role-specific portal dispatcher & dashboards
 │   │   │   └── UserController.php          # Web & Resource CRUD Controller
 │   │   └── Middleware/                     # Observability & Security Middleware
+│   │       ├── CheckRoleMiddleware.php     # RBAC role authorization guard
 │   │       ├── Guardian404Middleware.php   # 404 Interceptor with dynamic reason deduction
 │   │       ├── Guardian5xxMiddleware.php   # 5xx Exception guardian with tracking ref ID
 │   │       └── LoggerMiddleware.php        # Live terminal stdout + dual-file logger
@@ -587,6 +712,10 @@ alumni/
 │       │   ├── edit.blade.php              # Job posting edit form (GET /job-postings/{id}/edit -> PUT /job-postings/{id})
 │       │   ├── index.blade.php             # Job postings board & listing (GET /job-postings)
 │       │   └── show.blade.php              # Single job posting detail view (GET /job-postings/{id})
+│       ├── portals/                        # Role-Specific Dashboard Views (Auth)
+│       │   ├── academic.blade.php          # Academic portal (webinars, reunions, department stats)
+│       │   ├── alumni.blade.php            # Alumni portal (vacancies, applicants, interview calls)
+│       │   └── student.blade.php           # Student portal (application tracker, mentors, internships)
 │       ├── users/                          # User CRUD View Layer
 │       │   ├── create.blade.php            # New user creation form (GET /users/create -> POST /users)
 │       │   ├── edit.blade.php              # User edit form (GET /users/{id}/edit -> PUT /users/{id})
