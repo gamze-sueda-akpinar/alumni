@@ -141,14 +141,62 @@
                 </div>
             </a>
 
-            <!-- Nav Links -->
-            <nav class="hidden md:flex items-center gap-2 text-xs font-bold">
-                <a href="/main" class="px-3.5 py-1.5 rounded-full bg-cream-200 text-ink-black transition">Ana Sayfa</a>
-                <a href="/users" class="px-3.5 py-1.5 rounded-full hover:bg-cream-200 transition">Mezunlar</a>
-                <a href="/job-postings" class="px-3.5 py-1.5 rounded-full hover:bg-cream-200 transition">Kariyer &amp; İlanlar</a>
-                <a href="/announcements" class="px-3.5 py-1.5 rounded-full hover:bg-cream-200 transition">Duyurular</a>
-                <a href="/applications" class="px-3.5 py-1.5 rounded-full hover:bg-cream-200 transition">Başvurular</a>
-                <a href="/about" class="px-3.5 py-1.5 rounded-full hover:bg-cream-200 transition">Hakkımızda</a>
+            <!-- Dynamic Nav Links (Rendered by User Role) -->
+            <nav class="hidden md:flex items-center gap-1.5 text-xs font-bold">
+                <a href="/main" class="px-3 py-1.5 rounded-full {{ request()->is('main') || request()->is('/') ? 'bg-cream-200 text-ink-black' : 'hover:bg-cream-200' }} transition">
+                    Ana Sayfa
+                </a>
+
+                @guest
+                    <!-- GUEST (Ziyaretçi) Dynamic Navigation -->
+                    <a href="/users" class="px-3 py-1.5 rounded-full hover:bg-cream-200 transition">Mezunlar</a>
+                    <a href="/job-postings" class="px-3 py-1.5 rounded-full hover:bg-cream-200 transition">Kariyer &amp; İlanlar</a>
+                    <a href="/announcements" class="px-3 py-1.5 rounded-full hover:bg-cream-200 transition">Duyurular</a>
+                    <a href="/about" class="px-3 py-1.5 rounded-full hover:bg-cream-200 transition">Hakkımızda</a>
+                @endguest
+
+                @auth
+                    @if(auth()->user()->role === 'admin')
+                        <!-- ADMIN (Süper Yönetici) Dynamic Navigation -->
+                        <a href="/admin" class="px-3.5 py-1.5 rounded-full bg-sticker-yellow text-ink-black border border-ink-black font-extrabold shadow-[2px_2px_0px_#121214] hover:bg-yellow-400 transition flex items-center gap-1">
+                            <span>👑 Admin Paneli</span>
+                        </a>
+                        <a href="/users" class="px-3 py-1.5 rounded-full hover:bg-cream-200 transition">Kullanıcılar</a>
+                        <a href="/job-postings" class="px-3 py-1.5 rounded-full hover:bg-cream-200 transition">İlan Moderasyonu</a>
+                        <a href="/applications" class="px-3 py-1.5 rounded-full hover:bg-cream-200 transition">Tüm Başvurular</a>
+                        <a href="/announcements" class="px-3 py-1.5 rounded-full hover:bg-cream-200 transition">Duyurular</a>
+
+                    @elseif(auth()->user()->role === 'academic')
+                        <!-- ACADEMIC (Akademisyen) Dynamic Navigation -->
+                        <a href="/users" class="px-3 py-1.5 rounded-full hover:bg-cream-200 transition">Akademik &amp; Mezun Rehberi</a>
+                        <a href="/announcements" class="px-3 py-1.5 rounded-full hover:bg-cream-200 transition">Etkinlikler &amp; Paneller</a>
+                        <a href="/events/create" class="px-3 py-1.5 rounded-full bg-forest-800 text-sticker-yellow border border-ink-black hover:bg-forest-900 transition flex items-center gap-1 font-bold shadow-[1px_1px_0px_#121214]">
+                            <span>➕ Etkinlik Oluştur</span>
+                        </a>
+                        <a href="/job-postings" class="px-3 py-1.5 rounded-full hover:bg-cream-200 transition">Kariyer İlanları</a>
+                        <a href="/about" class="px-3 py-1.5 rounded-full hover:bg-cream-200 transition">Manifesto</a>
+
+                    @elseif(auth()->user()->role === 'alumni')
+                        <!-- ALUMNI (Mezun) Dynamic Navigation -->
+                        <a href="/users" class="px-3 py-1.5 rounded-full hover:bg-cream-200 transition">🎓 Mezun Ağı</a>
+                        <a href="/job-postings" class="px-3 py-1.5 rounded-full hover:bg-cream-200 transition">Kariyer &amp; İlanlar</a>
+                        <a href="/job-postings/create" class="px-3 py-1.5 rounded-full bg-sticker-yellow text-ink-black border border-ink-black hover:bg-yellow-400 transition flex items-center gap-1 font-bold shadow-[1px_1px_0px_#121214]">
+                            <span>➕ İlan Paylaş</span>
+                        </a>
+                        <a href="/applications" class="px-3 py-1.5 rounded-full hover:bg-cream-200 transition">Başvurular &amp; İlanlarım</a>
+                        <a href="/announcements" class="px-3 py-1.5 rounded-full hover:bg-cream-200 transition">Duyurular</a>
+
+                    @else
+                        <!-- STUDENT (Öğrenci) & UNVERIFIED Dynamic Navigation -->
+                        <a href="/users" class="px-3 py-1.5 rounded-full hover:bg-cream-200 transition">Mezun Rehberi</a>
+                        <a href="/job-postings" class="px-3 py-1.5 rounded-full hover:bg-cream-200 transition">Staj &amp; İş İlanları</a>
+                        <a href="/applications" class="px-3 py-1.5 rounded-full bg-cream-200 text-forest-800 border border-ink-black/20 hover:bg-cream-300 transition flex items-center gap-1 font-bold">
+                            <span>📋 Başvurularım</span>
+                        </a>
+                        <a href="/announcements" class="px-3 py-1.5 rounded-full hover:bg-cream-200 transition">Duyurular</a>
+                        <a href="/about" class="px-3 py-1.5 rounded-full hover:bg-cream-200 transition">Hakkımızda</a>
+                    @endif
+                @endauth
             </nav>
 
             <!-- Action Buttons / User Auth State -->

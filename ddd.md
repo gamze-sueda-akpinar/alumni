@@ -26,6 +26,7 @@
    - [5.4 Domain Policies & Gate Specifications (Laravel Authorization)](#54-domain-policies--gate-specifications-laravel-authorization)
    - [5.5 Bounded Contexts & Authorization Context Map](#55-bounded-contexts--authorization-context-map)
    - [5.6 State Transition Authorization Rules](#56-state-transition-authorization-rules)
+   - [5.7 Dynamic Role-Based Navigation Architecture](#57-dynamic-role-based-navigation-architecture)
 6. [Data Integrity & Relationship Constraints](#6-data-integrity--relationship-constraints)
 7. [State Machines & Entity Lifecycles](#7-state-machines--entity-lifecycles)
 8. [Direct vs. Nested Routing & Authorization Architecture](#8-direct-vs-nested-routing--authorization-architecture)
@@ -810,6 +811,41 @@ State transitions in aggregate lifecycles are restricted to designated actor rol
 | **`JobApplication`** | `reviewed` &rarr; `shortlisted` | **Posting Author Alumnus / `admin`**| Advances candidate to technical/cultural interview stage. |
 | **`JobApplication`** | `shortlisted` &rarr; `accepted` | **Posting Author Alumnus / `admin`**| Issues formal job offer to candidate. |
 | **`JobApplication`** | Any &rarr; `rejected` | **Posting Author Alumnus / `admin`**| Concludes candidate evaluation when qualifications do not match. |
+
+---
+
+### 5.7 Dynamic Role-Based Navigation Architecture
+
+The user interface implements dynamic role-based navigation (menu items) enforcing the principle of least privilege while providing tailored, frictionless shortcuts according to the authenticated actor's domain capabilities:
+
+```mermaid
+flowchart TD
+    RoleCheck{User Identity & Role}
+    
+    RoleCheck -->|Unauthenticated| NavGuest["👤 GUEST Menu<br/>• Ana Sayfa<br/>• Mezunlar (Genel)<br/>• Kariyer & İlanlar<br/>• Duyurular<br/>• Hakkımızda<br/>• [Giriş Yap] [Kayıt Ol]"]
+    RoleCheck -->|student / unverified| NavStudent["📚 STUDENT Menu<br/>• Ana Sayfa<br/>• Mezun Rehberi<br/>• Staj & İş İlanları<br/>• 📋 Başvurularım (Aktif Başvurular)<br/>• Duyurular<br/>• Hakkımızda"]
+    RoleCheck -->|alumni| NavAlumni["🎓 ALUMNI Menu<br/>• Ana Sayfa<br/>• Mezun Ağı & Rehberi<br/>• Kariyer & İlanlar<br/>• ➕ İlan Paylaş (İş/Staj İlanı Verme)<br/>• Başvurular & İlanlarım<br/>• Duyurular"]
+    RoleCheck -->|academic| NavAcademic["🏛️ ACADEMIC Menu<br/>• Ana Sayfa<br/>• Akademik & Mezun Rehberi<br/>• Etkinlikler & Paneller<br/>• 🏛️ ➕ Etkinlik Oluştur (Mezun Paneli / Sempozyum)<br/>• Kariyer İlanları<br/>• Manifesto"]
+    RoleCheck -->|admin| NavAdmin["👑 ADMIN (Superuser) Menu<br/>• Ana Sayfa<br/>• 👑 Admin Paneli<br/>• ⏳ Doğrulama Kuyruğu (Pending Verifications)<br/>• 👥 Rol & Yetki Yönetimi<br/>• 🛡️ İlan Moderasyonu<br/>• Tüm Başvurular"]
+```
+
+#### Dynamic Navigation Mapping Matrix:
+
+| Navigation Item / Action | `guest` (Misafir) | `student` (Öğrenci) | `alumni` (Mezun) | `academic` (Akademisyen) | `admin` (Yönetici) | Purpose & Destination |
+| :--- | :---: | :---: | :---: | :---: | :---: | :--- |
+| **Ana Sayfa** | ✅ | ✅ | ✅ | ✅ | ✅ | Public landing & university headlines (`/main`) |
+| **Mezunlar / Rehber** | ✅ *(Genel)* | ✅ *(Öğrenci Görünümü)* | ✅ *(🎓 Mezun Ağı)* | ✅ *(🏛️ Akademik Ağ)* | ✅ *(Mezun Veritabanı)* | Directory search & verified profiles (`/users`) |
+| **Kariyer & İlanlar** | ✅ *(Görüntüleme)* | ✅ *(Staj & İş Arama)* | ✅ *(İlan Kataloğu)* | ✅ *(Gözlem)* | ✅ *(İlan Listesi)* | Job listings catalog (`/job-postings`) |
+| **➕ İlan Paylaş** | ❌ | ❌ | **✅ (Özel Sarı Buton)** | ❌ | **✅** | Publishes new hiring role (`/job-postings/create`) |
+| **📋 Başvurularım** | ❌ | **✅ (Aktif Takip)** | **✅ (Gelen/Yapılan)** | ❌ | **✅ (Tüm Başvurular)** | Application tracking & review (`/applications`) |
+| **Etkinlikler & Paneller**| ❌ | ❌ | ❌ | **✅ (Akademik Etkinlikler)** | **✅** | University events list (`/events` / `/announcements`) |
+| **🏛️ ➕ Etkinlik Oluştur**| ❌ | ❌ | ❌ | **✅ (Özel Yeşil Buton)** | **✅** | Creates alumni reunion or symposium (`/events/create`) |
+| **👑 Admin Paneli** | ❌ | ❌ | ❌ | ❌ | **✅ (Süper Yönetici)** | Central administrative dashboard (`/admin`) |
+| **⏳ Doğrulama Kuyruğu** | ❌ | ❌ | ❌ | ❌ | **✅** | Approves unverified users / students (`/admin#pending`) |
+| **👥 Rol & Yetki** | ❌ | ❌ | ❌ | ❌ | **✅** | Manipulates live user roles (`/admin#roles`) |
+| **🛡️ İlan Moderasyonu** | ❌ | ❌ | ❌ | ❌ | **✅** | Toggles job postings active/inactive (`/admin#jobs`) |
+| **Duyurular** | ✅ | ✅ | ✅ | ✅ | ✅ | Institutional news & bulletin (`/announcements`) |
+| **Hakkımızda / Manifesto**| ✅ | ✅ | ❌ | ✅ *(Manifesto)* | ❌ | University values & contact info (`/about`) |
 
 ---
 
